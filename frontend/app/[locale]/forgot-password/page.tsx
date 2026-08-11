@@ -1,0 +1,12 @@
+"use client";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { parseError } from "../../../services/auth-client";
+export default function ForgotPasswordPage() {
+  const router = useRouter();
+  const [identifier, setIdentifier] = useState(""); const [method, setMethod] = useState<"email" | "otp" | null>(null); const [code, setCode] = useState(""); const [message, setMessage] = useState(""); const [error, setError] = useState("");
+  const submit = async (event: React.FormEvent) => { event.preventDefault(); setError(""); const response = await fetch("/api/v1/auth/password/forgot/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ identifier }) }); const data = await response.json(); if (!response.ok) return setError(await parseError(response)); setMethod(data.method); setMessage(data.detail); if (data.method === "otp") await fetch("/api/v1/auth/otp/request/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone_number: identifier, purpose: "password_reset" }) }); };
+  const verify = async (event: React.FormEvent) => { event.preventDefault(); const response = await fetch("/api/v1/auth/otp/verify/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone_number: identifier, code, purpose: "password_reset" }) }); const data = await response.json(); if (!response.ok) return setError(data.detail); if (data.reset_token) router.push(`/fa/reset-password?reset_token=${encodeURIComponent(data.reset_token)}`); else setMessage(data.detail); };
+  return <main className="auth-page"><section className="auth-panel"><header><span>بازیابی امن</span><h1>فراموشی رمز عبور</h1><p>ایمیل یا شماره موبایل حساب خود را وارد کنید.</p></header>{method === "otp" ? <form className="auth-form" onSubmit={verify}><label>کد یکبار مصرف<input value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" dir="ltr" maxLength={6} required /></label><button className="auth-primary">تأیید کد</button></form> : <form className="auth-form" onSubmit={submit}><label>ایمیل یا شماره موبایل<input value={identifier} onChange={(e) => setIdentifier(e.target.value)} dir="ltr" required /></label><button className="auth-primary">ادامه</button></form>}{message && <p className="auth-success">{message}</p>}{error && <p className="auth-error">{error}</p>}<p className="auth-switch"><Link href="/fa/login">بازگشت به ورود</Link></p></section></main>;
+}

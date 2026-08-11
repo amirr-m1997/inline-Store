@@ -1,0 +1,13 @@
+import django.db.models.deletion
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+    initial = True
+    dependencies = []
+    operations = [
+        migrations.CreateModel(name="Category", fields=[("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")), ("created_at", models.DateTimeField(auto_now_add=True)), ("updated_at", models.DateTimeField(auto_now=True)), ("code", models.CharField(max_length=64)), ("name_fa", models.CharField(max_length=255)), ("name_en", models.CharField(blank=True, max_length=255)), ("slug", models.SlugField(max_length=255)), ("level", models.PositiveSmallIntegerField(default=0, editable=False)), ("is_active", models.BooleanField(default=True)), ("parent", models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name="children", to="catalog.category"))], options={"ordering": ("parent_id", "code")}),
+        migrations.CreateModel(name="Product", fields=[("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")), ("created_at", models.DateTimeField(auto_now_add=True)), ("updated_at", models.DateTimeField(auto_now=True)), ("code", models.CharField(db_index=True, max_length=64, unique=True)), ("name", models.CharField(max_length=255)), ("slug", models.SlugField(max_length=255, unique=True)), ("unit", models.CharField(max_length=64)), ("description", models.TextField(blank=True)), ("is_active", models.BooleanField(default=True)), ("category", models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name="products", to="catalog.category"))], options={"ordering": ("name",)}),
+        migrations.CreateModel(name="ProductImage", fields=[("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")), ("created_at", models.DateTimeField(auto_now_add=True)), ("updated_at", models.DateTimeField(auto_now=True)), ("image", models.ImageField(upload_to="products/%Y/%m/")), ("alt_text", models.CharField(blank=True, max_length=255)), ("is_primary", models.BooleanField(default=False)), ("sort_order", models.PositiveIntegerField(default=0)), ("product", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="images", to="catalog.product"))], options={"ordering": ("sort_order", "id")}),
+        migrations.AddConstraint(model_name="category", constraint=models.UniqueConstraint(fields=("parent", "code"), name="category_parent_code_unique")), migrations.AddConstraint(model_name="category", constraint=models.UniqueConstraint(fields=("parent", "slug"), name="category_parent_slug_unique")),
+    ]

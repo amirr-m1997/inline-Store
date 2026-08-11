@@ -1,0 +1,5 @@
+import { CatalogExplorer } from "../../../components/catalog/catalog-explorer";
+
+export default function BestDiscountsPage() {
+  return <CatalogExplorer slug="best-discounts" />;
+}
