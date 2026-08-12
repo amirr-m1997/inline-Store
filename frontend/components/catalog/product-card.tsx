@@ -36,3 +36,17 @@ export function ProductCard({ product, priority = false }: { product: CatalogPro
     <footer className="industrial-card-actions"><Link href={`/fa/product/${product.slug}`}>مشاهده جزئیات <span aria-hidden="true">←</span></Link></footer>
   </article>;
 }
+
+export function ProductCardSkeleton() {
+  return <div className="industrial-product-card animate-pulse bg-slate-50/50 p-4 rounded-xl border border-slate-200/60 shadow-sm">
+    <div className="h-48 w-full rounded-lg bg-slate-200" />
+    <div className="mt-4 h-3 w-1/4 rounded bg-slate-200" />
+    <div className="mt-2 h-5 w-4/5 rounded bg-slate-200" />
+    <div className="mt-2 h-3 w-1/3 rounded bg-slate-200" />
+    <div className="mt-4 flex items-center justify-between">
+      <div className="h-4 w-1/3 rounded bg-slate-200" />
+      <div className="h-4 w-1/4 rounded bg-slate-200" />
+    </div>
+    <div className="mt-4 h-10 w-full rounded-lg bg-slate-200" />
+  </div>;
+}

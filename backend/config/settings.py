@@ -26,7 +26,14 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-CORS_ALLOWED_ORIGINS = [value.strip() for value in os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3005,http://127.0.0.1:3005").split(",") if value.strip()]
+CORS_ALLOWED_ORIGINS = [
+    value.strip()
+    for value in os.environ.get(
+        "CORS_ALLOWED_ORIGINS",
+        "http://localhost:3005,http://localhost:3006,http://127.0.0.1:3005,http://127.0.0.1:3006,https://circuits-temporary-using-number.trycloudflare.com"
+    ).split(",")
+    if value.strip()
+]
 CORS_ALLOW_CREDENTIALS = True
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG

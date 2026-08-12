@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.db.models import Count, DecimalField, F, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
@@ -21,13 +22,23 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=("get",), pagination_class=None)
     def roots(self, request):
-        roots = Category.objects.filter(is_active=True, parent=None).order_by("code")
-        return Response(CategoryNavigationSerializer(roots, many=True, context={"request": request}).data)
+        cache_key = "category_roots_v1"
+        data = cache.get(cache_key)
+        if data is None:
+            roots = Category.objects.filter(is_active=True, parent=None).order_by("code")
+            data = CategoryNavigationSerializer(roots, many=True, context={"request": request}).data
+            cache.set(cache_key, data, 300)
+        return Response(data)
 
     @action(detail=False, methods=("get",), url_path=r"children/(?P<parent_id>[^/.]+)", pagination_class=None)
     def children(self, request, parent_id=None):
-        children = Category.objects.filter(is_active=True, parent_id=parent_id).order_by("code")
-        return Response(CategoryNavigationSerializer(children, many=True, context={"request": request}).data)
+        cache_key = f"category_children_v1_{parent_id}"
+        data = cache.get(cache_key)
+        if data is None:
+            children = Category.objects.filter(is_active=True, parent_id=parent_id).order_by("code")
+            data = CategoryNavigationSerializer(children, many=True, context={"request": request}).data
+            cache.set(cache_key, data, 300)
+        return Response(data)
 
     @action(detail=False, methods=("get",), url_path=r"by-slug/(?P<slug>[^/.]+)", pagination_class=None)
     def by_slug(self, request, slug=None):
@@ -46,20 +57,24 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=("get",), pagination_class=None)
     def tree(self, request):
         """Return the complete category tree and product counts in one bounded query."""
-        categories = list(Category.objects.filter(is_active=True).annotate(product_count=Count("products")).order_by("parent_id", "code"))
-        nodes = {category.id: {"id": category.id, "code": category.code, "name_fa": category.name_fa, "name_en": category.name_en, "slug": category.slug, "level": category.level, "product_count": category.product_count, "children": []} for category in categories}
-        roots = []
-        for category in categories:
-            node = nodes[category.id]
-            if category.parent_id and category.parent_id in nodes:
-                nodes[category.parent_id]["children"].append(node)
-            else:
-                roots.append(node)
-        def accumulate(node):
-            node["product_count"] += sum(accumulate(child) for child in node["children"])
-            return node["product_count"]
-        for root in roots:
-            accumulate(root)
+        cache_key = "category_tree_v1"
+        roots = cache.get(cache_key)
+        if roots is None:
+            categories = list(Category.objects.filter(is_active=True).annotate(product_count=Count("products")).order_by("parent_id", "code"))
+            nodes = {category.id: {"id": category.id, "code": category.code, "name_fa": category.name_fa, "name_en": category.name_en, "slug": category.slug, "level": category.level, "product_count": category.product_count, "children": []} for category in categories}
+            roots = []
+            for category in categories:
+                node = nodes[category.id]
+                if category.parent_id and category.parent_id in nodes:
+                    nodes[category.parent_id]["children"].append(node)
+                else:
+                    roots.append(node)
+            def accumulate(node):
+                node["product_count"] += sum(accumulate(child) for child in node["children"])
+                return node["product_count"]
+            for root in roots:
+                accumulate(root)
+            cache.set(cache_key, roots, 300)
         return Response(roots)
 
 
