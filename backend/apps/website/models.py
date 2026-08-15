@@ -1,4 +1,13 @@
+import uuid
+from django.conf import settings
 from django.db import models
+
+
+def support_reference(prefix):
+    return f"{prefix}-{uuid.uuid4().hex[:10].upper()}"
+
+def warranty_reference(): return support_reference("WR")
+def request_reference(): return support_reference("SUP")
 
 
 class SiteNavigation(models.Model):
@@ -94,3 +103,59 @@ class ContactMessage(models.Model):
 
     def __str__(self):
         return f"{self.full_name} — {self.subject}"
+
+
+class WarrantyPolicy(models.Model):
+    title_fa = models.CharField(max_length=255)
+    title_en = models.CharField(max_length=255, blank=True)
+    body_fa = models.TextField(blank=True)
+    body_en = models.TextField(blank=True)
+    registration_enabled = models.BooleanField(default=False)
+    is_published = models.BooleanField(default=False)
+    migration_notes = models.TextField(blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "سیاست گارانتی"
+        verbose_name_plural = "سیاست‌های گارانتی"
+
+
+class WarrantyRegistration(models.Model):
+    reference = models.CharField(max_length=24, unique=True, default=warranty_reference, editable=False)
+    customer = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, related_name="warranty_registrations", on_delete=models.SET_NULL)
+    product = models.ForeignKey("catalog.Product", null=True, blank=True, on_delete=models.SET_NULL)
+    order = models.ForeignKey("orders.Order", null=True, blank=True, on_delete=models.SET_NULL)
+    serial_number = models.CharField(max_length=128, blank=True)
+    purchase_date = models.DateField(null=True, blank=True)
+    full_name = models.CharField(max_length=255)
+    phone = models.CharField(max_length=64)
+    email = models.EmailField(blank=True)
+    notes = models.TextField(blank=True)
+    status = models.CharField(max_length=24, default="submitted")
+    submitted_at = models.DateTimeField(auto_now_add=True)
+
+
+class CustomerSupportRequest(models.Model):
+    reference = models.CharField(max_length=24, unique=True, default=request_reference, editable=False)
+    request_type = models.CharField(max_length=32, default="other")
+    customer = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, related_name="support_requests", on_delete=models.SET_NULL)
+    product = models.ForeignKey("catalog.Product", null=True, blank=True, on_delete=models.SET_NULL)
+    order = models.ForeignKey("orders.Order", null=True, blank=True, on_delete=models.SET_NULL)
+    full_name = models.CharField(max_length=255)
+    phone = models.CharField(max_length=64)
+    email = models.EmailField(blank=True)
+    subject = models.CharField(max_length=255)
+    message = models.TextField(max_length=5000)
+    status = models.CharField(max_length=24, default="submitted")
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class CustomerFeedback(models.Model):
+    customer = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, related_name="customer_feedback", on_delete=models.SET_NULL)
+    order = models.ForeignKey("orders.Order", null=True, blank=True, on_delete=models.SET_NULL)
+    feedback_type = models.CharField(max_length=32, default="other")
+    rating = models.PositiveSmallIntegerField(null=True, blank=True)
+    message = models.TextField(max_length=5000)
+    contact_permission = models.BooleanField(default=False)
+    submitted_at = models.DateTimeField(auto_now_add=True)

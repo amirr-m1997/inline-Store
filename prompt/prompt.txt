@@ -1,378 +1,417 @@
-هدف:
-تکمیل کامل سیستم "سفارش‌های من" برای مشتری در فروشگاه مهر اصل.
+Implement Phase 9.14C — Mobile Category Navigation + Catalog Overflow Repair.
 
-این قابلیت باید از دیتابیس کنترل شود و فقط یک صفحه نمایشی نباشد.
+IMPORTANT:
 
-قبل از هر تغییر:
-1- مدل‌های فعلی Cart، User، Profile، Inventory و هر مدل مرتبط با سفارش را بررسی کن.
-2- اگر مدل Order که در فاز قبل ساخته شده وجود دارد از همان استفاده کن.
-3- اگر وجود ندارد ابتدا معماری Order را تکمیل کن.
-4- هیچ داده موجود حذف نشود.
+This is a mobile-first screenshot/video driven repair.
 
+Do not add backend features.
+Do not change category APIs.
+Do not change search semantics.
+Do not change catalog-query contracts.
+Do not redesign ProductCard.
+Do not hardcode category data.
 
-==============================
-بخش Backend و Database
-==============================
+Goal:
+Fix the mobile navigation/category experience and all catalog control overflow
+issues visible at ~388px width.
 
-1- مدل Order را کامل کن:
+==================================================
+1. MOBILE MENU INFORMATION ARCHITECTURE
+==================================================
 
-فیلدهای مورد نیاز:
+The current mobile menu is wrong.
 
-- order_number
-- customer
-- status
+Right now:
+- primary navigation is visible
+- then the category tree is appended below it
+- category expansion creates a long dark wall
+- both systems remain visible together
 
-وضعیت‌های سفارش:
+Replace this with TWO DISTINCT MOBILE MENU MODES:
 
-pending_payment
-در انتظار پرداخت
+MODE A — MAIN MENU
 
-processing
-در حال پردازش
+Show:
 
-confirmed
-تایید شده
+دسته‌بندی محصولات   >
 
-preparing
-در حال آماده سازی
+صفحه اصلی
+همه محصولات
+جدیدترین‌ها
+بیشترین تخفیف
+درباره ما
+تماس با ما
 
-shipped
-ارسال شده
+The category entry should be visually prominent and appear BEFORE the regular
+navigation links.
 
-delivered
-تحویل داده شده
+Do not render the category tree in this mode.
 
-cancelled
-لغو شده
+==================================================
+2. CATEGORY MODE
+==================================================
 
-returned
-مرجوع شده
+When the user taps "دسته‌بندی محصولات":
 
+Hide the normal primary navigation list.
 
-فیلدهای دیگر:
+Show only:
 
-- subtotal
-- discount_amount
-- shipping_cost
-- final_amount
+< بازگشت
+دسته‌بندی محصولات
 
-- created_at
-- updated_at
+Category rows
 
-- paid_at
-- shipped_at
-- delivered_at
+The category browsing experience must replace the main menu content, not append
+below it.
 
+==================================================
+3. CATEGORY DRILL-DOWN
+==================================================
 
-==============================
+When a category with children is selected:
 
-2- مدل OrderStatusHistory بساز
+Show:
 
-برای ثبت تاریخچه تغییر وضعیت:
+< بازگشت
+Parent category name
 
-مثال:
+Child categories
 
-سفارش شماره 1001
+Do not keep unrelated root categories and main navigation visible.
 
-10:00
-ثبت سفارش
+Maintain a simple navigation stack/state.
 
-12:00
-پرداخت موفق
+Back behavior:
 
-14:00
-در حال پردازش
+child category
+→ parent category
+→ root categories
+→ main menu
 
-روز بعد
-ارسال شده
+==================================================
+4. CATEGORY ROW DESIGN
+==================================================
 
+Make category rows compact.
 
-فیلدها:
+Each row should contain:
 
-- order
-- status
-- description
-- created_at
+category title
+optional product count
+one chevron/arrow
 
+Avoid:
+- giant dark full-width blocks
+- arrows on separate rows
+- excessive vertical padding
+- repeated gold borders
 
-مشتری باید بتواند تاریخچه سفارش خود را ببیند.
+Use restrained separators.
 
+==================================================
+5. MOBILE MENU HEIGHT
+==================================================
 
-==============================
+The menu should fit naturally within viewport height.
 
-3- مدل Invoice بساز
+Use:
 
+header
+scrollable menu content
 
-برای فاکتور رسمی و شرکتی:
+Do not make the whole page body extremely tall.
 
+Prevent double scrolling.
 
-فیلدها:
+Lock background scroll while drawer/menu is open using existing accessible
+Drawer behavior.
 
-- order
+==================================================
+6. MOBILE HEADER CONTROLS
+==================================================
 
-- invoice_number
+At 360–390px review:
 
-- company_name
+- hamburger
+- theme
+- cart
+- logo
+- search
 
-- customer_name
+Ensure:
+- consistent control sizing
+- no detached/rotated hamburger lines
+- no overlap
+- no excessive blank space
 
-- national_id (در صورت وجود)
+Do not remove functionality.
 
-- economic_code (در صورت وجود)
+==================================================
+7. CATALOG CONTROL OVERFLOW — CRITICAL
+==================================================
 
-- phone
+The user reports that entering/selecting product code causes controls to extend
+outside the mobile viewport.
 
-- address
+Audit all catalog toolbar/filter controls at 360/390px:
 
-- items_snapshot
+- search input
+- technical search
+- sort select
+- product code/SKU inputs
+- range inputs
+- facet labels
+- active filter chips
 
-- subtotal
+Find exact overflow source.
 
-- tax
+Fix layout structurally.
 
-- discount
+Use where appropriate:
 
-- final_amount
+min-width: 0
+max-width: 100%
+width: 100%
+flex-wrap
+grid minmax(0, 1fr)
+overflow-wrap
+text-overflow
 
-- created_at
+Do NOT simply shrink font size.
 
-- pdf_file
+==================================================
+8. PRODUCT CODE / SKU INPUT
+==================================================
 
+Specifically test long values such as:
 
-فاکتور نباید از اطلاعات لحظه‌ای محصول ساخته شود.
+DEMO-SKU-001
+DEMO-MPN-CH-100
+LONG-DEMO-PRODUCT-CODE-123456789
 
-اطلاعات باید snapshot باشد.
+The input/control must remain fully inside viewport.
 
+Requirements:
+- no horizontal page scroll
+- no clipping outside parent
+- clear text scrolling inside input when needed
+- clear/reset icon remains usable
+- RTL/LTR does not break it
 
-==============================
+==================================================
+9. SORT CONTROL OVERFLOW
+==================================================
 
-4- ارسال فاکتور ایمیلی
+The sort dropdown currently can create awkward width behavior.
 
+At mobile width:
 
-امکان ارسال فاکتور به ایمیل مشتری:
+[ مرتب‌سازی ]
+[ dropdown ]
 
+should fit naturally.
 
-API:
+If inline composition does not fit, stack deliberately.
 
-POST
-/api/orders/{id}/send-invoice/
+Do not allow label + select to push outside viewport.
 
+==================================================
+10. AVAILABILITY CONTROL
+==================================================
 
-عملکرد:
+Fix the "فقط موجود" control so it is compact and aligned.
 
-- PDF فاکتور تولید شود.
-- به ایمیل کاربر ارسال شود.
-- نتیجه ارسال ثبت شود.
+Preferred mobile layout:
 
+[ checkbox ] فقط کالاهای موجود
 
-برای ارسال ایمیل:
-از سیستم email فعلی پروژه استفاده کن.
+Keep native semantics.
 
+Do not use the current stretched narrow checkbox box.
 
-==============================
+==================================================
+11. RANGE FILTER MOBILE LAYOUT
+==================================================
 
-5- API های لازم
+For range facets:
 
+Title
 
-ایجاد کن:
+از
+[ 625000        ریال ]
 
+تا
+[ 2000000       ریال ]
 
-لیست سفارش‌های مشتری:
+At 360/390px:
+- inputs should be full-width
+- units should remain inside/attached
+- no horizontal overflow
+- no detached unit columns
 
-GET
+==================================================
+12. FILTER DRAWER WIDTH
+==================================================
 
-/api/customer/orders/
+Ensure the drawer uses the viewport correctly.
 
+At 388px:
 
-فقط سفارش‌های همان User.
+width should be approximately:
+min(94vw, 380px)
 
+with internal padding.
 
-جزئیات سفارش:
+No content may exceed drawer width.
 
-GET
+==================================================
+13. ACTIVE FILTER CHIPS
+==================================================
 
-/api/customer/orders/{id}/
+Long product codes and query chips must not expand page width.
 
+Use:
+- max-width
+- ellipsis where appropriate
+- horizontal scroll only inside chip row if needed
 
-شامل:
+Never create document-level horizontal scroll.
 
-- شماره سفارش
-- تاریخ
-- وضعیت فعلی
-- تاریخچه وضعیت
-- محصولات
-- مبلغ
-- فاکتور
+==================================================
+14. RESPONSIVE BREAKPOINTS
+==================================================
 
+Verify:
 
-ارسال فاکتور:
+360×800
+388×562
+390×844
+430×932
+768×1024
 
-POST
+At each size inspect:
+- main mobile menu
+- category mode
+- child category mode
+- filter drawer
+- code/SKU search
+- sorting
+- availability
+- range filters
 
-/api/customer/orders/{id}/invoice/send/
+==================================================
+15. ACCESSIBILITY
+==================================================
 
+Preserve:
 
-==============================
+- Drawer focus trap
+- Escape close
+- focus restoration
+- aria-expanded
+- aria-controls
+- explicit Back button name
+- keyboard category navigation
+- visible focus
 
-6- امنیت
+When switching between main-menu and category mode:
+move focus to the new mode heading/back button appropriately.
 
+==================================================
+16. REAL BROWSER QA
+==================================================
 
-مشتری نباید بتواند:
+Use the actual development server.
 
-- سفارش مشتری دیگر را ببیند.
-- مبلغ سفارش را تغییر دهد.
-- وضعیت سفارش را تغییر دهد.
+Manually verify:
 
+A. Open mobile menu
+B. Tap Categories
+C. Main menu disappears
+D. Root categories appear
+E. Open child category
+F. Parent context appears
+G. Back works correctly
+H. Close and reopen menu
 
-تغییر وضعیت فقط توسط Admin انجام شود.
+Catalog:
 
+I. Search with product code
+J. Search with SKU
+K. Search with MPN
+L. Open filter drawer
+M. Change sorting
+N. Toggle availability
+O. Enter range values
 
-==============================
-بخش Frontend
-==============================
+Confirm no horizontal overflow.
 
+==================================================
+17. SCREENSHOTS
+==================================================
 
-در پروفایل مشتری یک بخش اضافه کن:
+Capture:
 
-"سفارش‌های من"
+390px:
+- main menu
+- category root mode
+- category child mode
+- filter drawer
+- catalog with long product code
+- catalog with active filter chips
 
+768px:
+- menu/category state
+- filter drawer
 
-مسیر:
+Inspect screenshots before completion.
 
-/fa/account/orders
+==================================================
+18. TESTS
+==================================================
 
+Add regression tests for:
 
-طراحی مدرن شبیه فروشگاه‌های حرفه‌ای.
+- category mode replaces main navigation
+- Back navigation stack
+- main menu restoration
+- long SKU does not create overflow structure
+- sort mobile layout
+- availability control
+- range input semantics
+- drawer width
+- active chip long-value handling
 
-
-نمایش کارت سفارش:
-
-
-شماره سفارش
-
-تاریخ ثبت
-
-مبلغ کل
-
-وضعیت فعلی
-
-
-مثال:
-
-
-#10025
-
-25 مرداد 1405
-
-12,500,000 ریال
-
-
-● در حال پردازش
-
-
-
-با کلیک روی سفارش:
-
-
-صفحه جزئیات سفارش:
-
-
-نمایش:
-
-
-- محصولات سفارش
-- تعداد
-- قیمت زمان خرید
-- تخفیف
-- مبلغ نهایی
-
-
-نمایش Timeline وضعیت:
-
-
-ثبت سفارش
- |
-پرداخت
- |
-پردازش
- |
-ارسال
- |
-تحویل
-
-
-مرحله فعلی با رنگ مشخص شود.
-
-
-==============================
-
-فاکتور
-==============================
-
-
-در صفحه سفارش:
-
-
-دکمه:
-
-
-"دریافت فاکتور"
-
-و
-
-"ارسال فاکتور به ایمیل"
-
-
-نمایش داده شود.
-
-
-==============================
-
-Responsive
-==============================
-
-
-تمام صفحات سفارش:
-
-Desktop
-Tablet
-Mobile
-
-
-را بررسی کن.
-
-
-در موبایل:
-
-- کارت سفارش
-- Timeline
-- جدول محصولات
-
-نباید خراب شوند.
-
-
-==============================
-
-تست نهایی:
-
-
-Backend:
-
-python manage.py check
-
-python manage.py test
-
-
-Frontend:
+==================================================
+19. VALIDATION
+==================================================
 
 npm run lint
-
+npx tsc --noEmit
+npm test
 npm run build
+npm run test:e2e
+git diff --check
 
+==================================================
+20. REPORT
+==================================================
 
-هیچ بخش دیگری از سایت نباید خراب شود.
+Report:
 
+A. Mobile category architecture before/after
+B. Components changed
+C. Category navigation state model
+D. Overflow root cause
+E. Product-code overflow fix
+F. Sort/availability fix
+G. Range-filter mobile fix
+H. Viewports tested
+I. Screenshot paths
+J. Tests
+K. Validation
+L. Remaining visible mobile issues
 
-قبل از شروع تغییرات:
-یک گزارش کوتاه از وضعیت فعلی بده.
-بعد تغییرات را مرحله به مرحله انجام بده.
+Do not report completion until the real 388/390px screenshots have been
+inspected.

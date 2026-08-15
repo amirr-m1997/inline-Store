@@ -1,0 +1,14 @@
+export type ProductMedia = { id?: number; url: string; alt: string; isPrimary?: boolean };
+export type ProductPricing = { originalAmount?: string; finalAmount?: string; discountPercentage?: string; currency?: string };
+export type ProductAvailability = { quantity: number | null; availableToCart: number; label?: string };
+export type ProductSpecification = { label: string; value: unknown; group?: string; unit?: string };
+export type SpecificationAttribute = { name: string; value: unknown; unit?: string; group?: string; comparable?: boolean };
+export type SpecificationGroup = { name: string; attributes: SpecificationAttribute[] };
+export type DocumentType = "datasheet" | "manual" | "cad" | "certificate" | "other";
+export type ProductDocument = { id: string; title: string; type: DocumentType; fileUrl: string; fileName: string; size?: number; revision?: string; language?: string; };
+export type VariantAttribute = { name: string; value: string };
+export type ProductVariant = { id: string; sku: string; attributes: VariantAttribute[]; label?: string; availability?: ProductAvailability; pricing?: ProductPricing };
+export type VariantSelection = { selected: Record<string, string>; resolvedVariant?: ProductVariant };
+export type ProductRelationship = { type: "related" | "alternative" | "accessory" | "compatible"; product: ProductSummary };
+export type ProductSummary = { id: number; name: string; slug: string; code: string; sku?: string; unit: string; category?: { name: string }; brand?: string; media: ProductMedia[]; pricing?: ProductPricing; availability: ProductAvailability; technicalHighlights?: ProductSpecification[]; documents?: ProductDocument[]; purchaseMode?: "cart" | "quote" };
+export type ProductDetail = ProductSummary & { nameEn?: string; description?: string; categories: { id: number; name: string; slug: string }[]; specifications: ProductSpecification[]; specificationGroups?: SpecificationGroup[]; serviceAdvantages: { id: number; title: string; description?: string; icon?: string }[]; variants: ProductVariant[]; relationships: ProductRelationship[]; documents: ProductDocument[] };

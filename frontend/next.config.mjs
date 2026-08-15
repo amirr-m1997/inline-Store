@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Keep the deterministic Playwright server isolated from a developer's running .next instance.
+  distDir: process.env.NEXT_TEST_DIST_DIR || ".next",
   // Preserve DRF's slash-terminated routes before they reach the local proxy handler.
   skipTrailingSlashRedirect: true,
   images: {

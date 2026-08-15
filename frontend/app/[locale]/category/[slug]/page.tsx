@@ -1,11 +1,20 @@
+import { notFound, redirect } from "next/navigation";
 import { CatalogExplorer } from "../../../../components/catalog/catalog-explorer";
+import { getCategoryUrl } from "../../../../lib/category-url";
+import { catalogMetadata, catalogStructuredData, loadCatalogInitial, type CatalogInitialContext, type CatalogRouteSearch } from "../../../../lib/catalog-server";
+import { getCategoryServer } from "../../../../lib/api/products";
 
-type CategoryPageProps = {
-  params: Promise<{ locale: string; slug: string }>;
-  searchParams: Promise<{ q?: string }>;
-};
+type Props = { params: Promise<{ locale: string; slug: string }>; searchParams: Promise<CatalogRouteSearch> };
 
-export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
-  const [{ slug }, { q }] = await Promise.all([params, searchParams]);
-  return <CatalogExplorer slug={slug} query={q} />;
+export default async function CategoryPage({ params, searchParams }: Props) {
+  const [{ locale, slug }, currentSearchParams] = await Promise.all([params, searchParams]);
+  let initial: CatalogInitialContext;
+  try {
+    initial = await loadCatalogInitial(slug, currentSearchParams);
+  } catch (error) { if (error instanceof Error && error.message === "CATEGORY_NOT_FOUND") notFound(); throw error; }
+  if (initial.category?.redirect_slug) redirect(getCategoryUrl(initial.category, locale));
+  const jsonLd = catalogStructuredData(slug, locale, initial.category, initial.data);
+  return <><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} /><CatalogExplorer slug={slug} query={typeof currentSearchParams.q === "string" ? currentSearchParams.q : undefined} initialData={initial.data} initialCategory={initial.category} /></>;
 }
+
+export async function generateMetadata({ params, searchParams }: Props) { const [{ locale, slug }, currentSearchParams] = await Promise.all([params, searchParams]); let category: Awaited<ReturnType<typeof getCategoryServer>> | null = null; try { category = await getCategoryServer(slug); } catch (error) { if (error instanceof Error && error.message === "CATEGORY_NOT_FOUND") notFound(); throw error; } return catalogMetadata(slug, locale, category, currentSearchParams); }

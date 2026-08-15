@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useParams, usePathname } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getCategoryUrl } from "../../lib/category-url";
+import { getCategories } from "../../lib/api/products";
+import { getNavigation } from "../../lib/api/content";
 
 type NavigationItem = { id: number; title_fa: string; url: string; icon: string };
 export type CategoryTreeNode = { id: number; code: string; name_fa: string; name_en: string; slug: string; level: number; product_count: number; children: CategoryTreeNode[] };
@@ -13,6 +15,7 @@ function asArray<T>(data: unknown): T[] { return Array.isArray(data) ? data as T
 
 export function CategoryNavigation({ mobileOpen, onNavigate }: CategoryNavigationProps) {
   const { locale = "fa" } = useParams<{ locale: string }>();
+  const pathname = usePathname();
   const navigationRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [items, setItems] = useState<NavigationItem[]>([]);
@@ -21,20 +24,21 @@ export function CategoryNavigation({ mobileOpen, onNavigate }: CategoryNavigatio
   const [loading, setLoading] = useState(false);
   const [activeRootId, setActiveRootId] = useState<number | null>(null);
   const [mobilePath, setMobilePath] = useState<CategoryTreeNode[]>([]);
+  const [mobileMode, setMobileMode] = useState<"main" | "categories">("main");
 
   useEffect(() => {
-    fetch("/api/v1/site/navigation/").then((response) => response.ok ? response.json() : []).then((data) => setItems(asArray<NavigationItem>(data))).catch(() => setItems([]));
+    getNavigation<NavigationItem[]>().then((data) => setItems(asArray<NavigationItem>(data))).catch(() => setItems([]));
   }, []);
   const loadTree = () => {
     if (roots.length || loading) return;
     setLoading(true);
-    fetch("/api/v1/categories/tree/")
-      .then((response) => response.ok ? response.json() : [])
+    getCategories()
       .then((data) => { const tree = asArray<CategoryTreeNode>(data); setRoots(tree); setActiveRootId(tree[0]?.id ?? null); })
       .catch(() => setRoots([])).finally(() => setLoading(false));
   };
-  const toggleCategories = () => { setOpen((current) => { const next = !current; if (next) loadTree(); else setMobilePath([]); return next; }); };
-  const closeCategories = () => { setOpen(false); setMobilePath([]); };
+  const toggleCategories = () => { setMobileMode("categories"); setOpen((current) => { const next = !current; if (next) loadTree(); else setMobilePath([]); return next; }); };
+  const closeCategories = () => { setOpen(false); setMobilePath([]); setMobileMode("main"); };
+  const returnToMainMenu = () => { setOpen(false); setMobilePath([]); setMobileMode("main"); };
   const closeAll = () => { closeCategories(); onNavigate(); };
 
   useEffect(() => {
@@ -42,34 +46,35 @@ export function CategoryNavigation({ mobileOpen, onNavigate }: CategoryNavigatio
   }, [mobileOpen]);
   useEffect(() => {
     if (!open) return;
+    const previous = document.activeElement as HTMLElement | null;
     const onPointerDown = (event: PointerEvent) => { if (!navigationRef.current?.contains(event.target as Node)) closeCategories(); };
-    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") { closeCategories(); triggerRef.current?.focus(); } };
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") { closeCategories(); triggerRef.current?.focus(); return; } if (event.key !== "Tab" || !mobileOpen) return; const focusable = navigationRef.current?.querySelectorAll<HTMLElement>('a,button:not([disabled]),input,select,textarea,[tabindex]:not([tabindex="-1"])'); if (!focusable?.length) return; const first = focusable[0]; const last = focusable[focusable.length - 1]; if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); } else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); } };
     document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
-    return () => { document.removeEventListener("pointerdown", onPointerDown); document.removeEventListener("keydown", onKeyDown); };
-  }, [open]);
+    return () => { document.removeEventListener("pointerdown", onPointerDown); document.removeEventListener("keydown", onKeyDown); previous?.focus(); };
+  }, [mobileOpen, open]);
 
+  const localizeUrl = useCallback((url: string) => url.replace(/^\/(?:fa|en)(?=\/|$)/, `/${locale}`).replace(/\/$/, "") || `/${locale}`, [locale]);
   const ordinaryItems = useMemo(() => items.filter((item) => {
-    const normalizedUrl = item.url.replace(/\/$/, "");
+    const normalizedUrl = localizeUrl(item.url);
     return !normalizedUrl.includes("/categor")
       && !item.title_fa.includes("دسته‌بندی")
-      && normalizedUrl !== "/fa/shop"
+      && normalizedUrl !== `/${locale}/shop`
+      && normalizedUrl !== `/${locale}/support`
+      && !normalizedUrl.startsWith(`/${locale}/support/`)
       && item.title_fa !== "فروشگاه";
-  }), [items]);
-  const homeItems = ordinaryItems.filter((item) => item.url.replace(/\/$/, "") === "/fa" || item.title_fa === "صفحه اصلی");
+  }), [items, locale, localizeUrl]);
+  const homeItems = ordinaryItems.filter((item) => localizeUrl(item.url) === `/${locale}` || item.title_fa === "صفحه اصلی");
   const remainingItems = ordinaryItems.filter((item) => !homeItems.includes(item));
+  const supportActive = pathname === `/${locale}/support` || pathname.startsWith(`/${locale}/support/`);
   const activeRoot = roots.find((root) => root.id === activeRootId) ?? roots[0];
   const mobileParent = mobilePath.at(-1);
   const mobileNodes = mobileParent ? mobileParent.children : roots;
 
-  return <nav ref={navigationRef} className={`reference-category-nav site-container${mobileOpen ? " mobile-open" : ""}`} aria-label="ناوبری وب‌سایت">
+  return <nav id="site-mobile-navigation" ref={navigationRef} className={`reference-category-nav site-container${mobileOpen ? " mobile-open" : ""}${mobileMode === "categories" ? " category-mode" : ""}`} aria-label="ناوبری وب‌سایت">
     <div className="reference-nav-links">
-      <button ref={triggerRef} className="category-menu-trigger" type="button" onClick={toggleCategories} aria-expanded={open} aria-controls="product-category-menu"><span aria-hidden="true">☰</span><b>دسته‌بندی محصولات</b><i aria-hidden="true">⌄</i></button>
-      {homeItems.map((item) => <Link key={item.id} href={item.url} onClick={closeAll}>{item.icon && <span>{item.icon}</span>}{item.title_fa}</Link>)}
-      <Link href="/fa/shop" onClick={closeAll}>همه محصولات</Link>
-      <Link href="/fa/newest" onClick={closeAll}>جدیدترین‌ها</Link>
-      <Link href="/fa/best-discounts" onClick={closeAll}>بیشترین تخفیف</Link>
-      {remainingItems.map((item) => <Link key={item.id} href={item.url} onClick={closeAll}>{item.icon && <span>{item.icon}</span>}{item.title_fa}</Link>)}
+      {(!mobileOpen || mobileMode === "main") && <><div className="category-nav-section"><span className="mobile-nav-section-label">دسته‌بندی محصولات</span><button ref={triggerRef} className="category-menu-trigger" type="button" onClick={toggleCategories} aria-expanded={open} aria-controls="product-category-menu"><span className="category-menu-icon" aria-hidden="true"><i /><i /><i /></span><b>دسته‌بندی محصولات</b><i aria-hidden="true">⌄</i></button></div>
+      <div className="reference-primary-links">{homeItems.map((item) => <Link key={item.id} href={localizeUrl(item.url)} onClick={closeAll}>{item.icon && <span aria-hidden="true">{item.icon}</span>}{locale === "en" ? "Home" : "صفحه اصلی"}</Link>)}<Link href={`/${locale}/shop`} onClick={closeAll}>{locale === "en" ? "All products" : "همه محصولات"}</Link><Link href={`/${locale}/newest`} onClick={closeAll}>{locale === "en" ? "Latest" : "جدیدترین‌ها"}</Link><Link href={`/${locale}/best-discounts`} onClick={closeAll}>{locale === "en" ? "Best discounts" : "بیشترین تخفیف"}</Link><Link href={`/${locale}/support`} onClick={closeAll} aria-current={supportActive ? "page" : undefined}>{locale === "en" ? "Customer Service" : "امور مشتریان"}</Link>{remainingItems.map((item) => <Link key={item.id} href={localizeUrl(item.url)} onClick={closeAll}>{item.icon && <span aria-hidden="true">{item.icon}</span>}{item.title_fa}</Link>)}</div></>}
     </div>
 
     {open && <section id="product-category-menu" className="product-category-menu" aria-label="دسته‌بندی محصولات">
@@ -93,7 +98,7 @@ export function CategoryNavigation({ mobileOpen, onNavigate }: CategoryNavigatio
       </div>
 
       <div className="mobile-category-drawer">
-        <header><button type="button" onClick={() => mobilePath.length ? setMobilePath((path) => path.slice(0, -1)) : closeCategories()} aria-label={mobilePath.length ? "بازگشت به سطح قبل" : "بستن دسته‌بندی‌ها"}>{mobilePath.length ? "→" : "×"}</button><div><small>{mobilePath.length ? "زیرگروه‌های" : "فهرست"}</small><b>{mobileParent?.name_fa ?? "دسته‌بندی محصولات"}</b></div>{mobileParent ? <Link href={getCategoryUrl(mobileParent, locale)} onClick={closeAll}>همه</Link> : <span />}</header>
+        <header><button autoFocus type="button" onClick={() => mobilePath.length ? setMobilePath((path) => path.slice(0, -1)) : returnToMainMenu()} aria-label={mobilePath.length ? "بازگشت به سطح قبل" : "بازگشت به منوی اصلی"}><span aria-hidden="true">→</span><span className="mobile-category-back-label">بازگشت</span></button><div><small>{mobilePath.length ? "زیرگروه‌های" : "فهرست"}</small><b>{mobileParent?.name_fa ?? "دسته‌بندی محصولات"}</b></div>{mobileParent ? <Link href={getCategoryUrl(mobileParent, locale)} onClick={closeAll}>همه</Link> : <span />}</header>
         <div className="mobile-category-list">{loading && <p className="category-menu-state">در حال دریافت دسته‌بندی‌ها…</p>}{mobileNodes.map((node) => <div key={node.id}><Link href={getCategoryUrl(node, locale)} onClick={closeAll}>{node.name_fa}<small>{node.product_count.toLocaleString("fa-IR")} محصول</small></Link>{node.children.length > 0 && <button type="button" onClick={() => setMobilePath((path) => [...path, node])} aria-label={`نمایش زیرگروه‌های ${node.name_fa}`}><span className="category-direction-indicator" aria-hidden="true" /></button>}</div>)}</div>
       </div>
     </section>}

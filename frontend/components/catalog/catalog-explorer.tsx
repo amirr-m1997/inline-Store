@@ -1,81 +1,75 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { getCategorySearchUrl, getCategoryUrl } from "../../lib/category-url";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { getCategoryUrl } from "../../lib/category-url";
 import { CategoryChevron } from "./category-chevron";
 import type { NavCategory } from "./mega-menu";
-import { ProductCard, ProductCardSkeleton, type CatalogProduct } from "./product-card";
+import { ApiError } from "../../lib/api/client";
+import { getCategories, getCategoryBySlug, getCatalogQuery, type CatalogQueryFacet, type CatalogQueryResponse, type ProductPage, type CategoryRecord } from "../../lib/api/products";
+import { CatalogToolbar } from "./catalog-toolbar";
+import { ActiveFilterSummary, type ActiveCatalogFilter } from "./active-filter-summary";
+import { FacetSidebar } from "./facet-sidebar";
+import type { CatalogFacet } from "./facet-types";
+import { ProductGrid } from "./product-grid";
+import { CatalogPagination } from "./catalog-pagination";
+import { CatalogEmptyState } from "./catalog-empty-state";
+import { CatalogErrorState } from "./catalog-error-state";
+import { MobileFilterDrawer } from "./mobile-filter-drawer";
 
-type ProductPage = { count: number; results: CatalogProduct[] };
 type TreeCategory = NavCategory & { children: TreeCategory[]; product_count: number };
 type CategoryResponse = NavCategory & { redirect_slug?: string };
 const pageSize = 12;
-
 function branchContains(node: TreeCategory, slug: string): boolean { return node.slug === slug || node.children.some((child) => branchContains(child, slug)); }
 function findCategory(nodes: TreeCategory[], slug: string): TreeCategory | null { for (const node of nodes) { if (node.slug === slug) return node; const found = findCategory(node.children, slug); if (found) return found; } return null; }
+function TreeBranch({ node, activeSlug, locale, depth = 0 }: { node: TreeCategory; activeSlug: string; locale: string; depth?: number }) { const activePath = branchContains(node, activeSlug); const [open, setOpen] = useState(activePath); useEffect(() => { if (activePath) setOpen(true); }, [activePath]); return <div className="catalog-tree-node" style={{ "--tree-depth": depth } as React.CSSProperties}><div className="catalog-tree-row">{node.children.length > 0 ? <button type="button" onClick={() => setOpen((value) => !value)} aria-label={`${open ? "بستن" : "نمایش"} زیرگروه‌های ${node.name_fa}`} aria-expanded={open}><CategoryChevron open={open} locale={locale} /></button> : <span className="catalog-tree-spacer" />}<Link className={node.slug === activeSlug ? "active" : ""} href={getCategoryUrl(node, locale)} aria-current={node.slug === activeSlug ? "page" : undefined}>{node.name_fa}</Link></div>{open && node.children.length > 0 && <div className="catalog-tree-children">{node.children.map((child) => <TreeBranch key={child.id} node={child} activeSlug={activeSlug} locale={locale} depth={depth + 1} />)}</div>}</div>; }
 
-function TreeBranch({ node, activeSlug, locale, depth = 0 }: { node: TreeCategory; activeSlug: string; locale: string; depth?: number }) {
-  const activePath = branchContains(node, activeSlug);
-  const [open, setOpen] = useState(activePath);
-  useEffect(() => { if (activePath) setOpen(true); }, [activePath]);
-  return <div className="catalog-tree-node" style={{ "--tree-depth": depth } as React.CSSProperties}><div className="catalog-tree-row">{node.children.length > 0 ? <button type="button" onClick={() => setOpen((value) => !value)} aria-label={`${open ? "بستن" : "نمایش"} زیرگروه‌های ${node.name_fa}`} aria-expanded={open}><CategoryChevron open={open} locale={locale} /></button> : <span className="catalog-tree-spacer" />}<Link className={node.slug === activeSlug ? "active" : ""} href={getCategoryUrl(node, locale)} aria-current={node.slug === activeSlug ? "page" : undefined}>{node.name_fa}</Link></div>{open && node.children.length > 0 && <div className="catalog-tree-children">{node.children.map((child) => <TreeBranch key={child.id} node={child} activeSlug={activeSlug} locale={locale} depth={depth + 1} />)}</div>}</div>;
+export function mapFacets(facets: CatalogQueryFacet[]): CatalogFacet[] {
+  return facets.map((facet) => ({ ...facet, type: facet.type === "hierarchical_category" ? "category" : facet.type } as CatalogFacet));
 }
 
-export function CatalogExplorer({ slug, query }: { slug: string; query?: string }) {
+export function CatalogExplorer({ slug, query, initialData, initialCategory }: { slug: string; query?: string; initialData?: CatalogQueryResponse; initialCategory?: (CategoryRecord & { redirect_slug?: string }) | null }) {
   const router = useRouter();
-  const routeParams = useParams<{ locale: string }>();
-  const locale = routeParams.locale || "fa";
-  const isSearch = slug === "search";
-  const isShop = slug === "shop";
-  const isNewest = slug === "newest";
-  const isBestDiscounts = slug === "best-discounts";
-  const isSpecialListing = isNewest || isBestDiscounts;
-  const [roots, setRoots] = useState<TreeCategory[]>([]);
-  const [category, setCategory] = useState<NavCategory | null>(null);
-  const [categoryStatus, setCategoryStatus] = useState<"loading" | "resolved" | "not_found" | "error">(isSearch || isShop || isSpecialListing ? "resolved" : "loading");
-  const [products, setProducts] = useState<ProductPage | null>(null);
-  const [loadingProducts, setLoadingProducts] = useState(true);
-  const [productsError, setProductsError] = useState(false);
-  const [page, setPage] = useState(1);
-  const [inStock, setInStock] = useState(false);
-  const [ordering, setOrdering] = useState(isNewest ? "-created_at" : isBestDiscounts ? "-discount_percentage" : "code");
-
-  useEffect(() => { fetch("/api/v1/categories/tree/").then((response) => { if (!response.ok) throw new Error(); return response.json(); }).then(setRoots).catch(() => setRoots([])); }, []);
-  useEffect(() => {
-    setPage(1); setProducts(null);
-    if (isSearch || isShop || isSpecialListing) { setCategory(null); setCategoryStatus("resolved"); return; }
-    setCategory(null); setCategoryStatus("loading");
-    fetch(`/api/v1/categories/by-slug/${encodeURIComponent(slug)}/`)
-      .then(async (response) => { if (response.status === 404) { setCategoryStatus("not_found"); return null; } if (!response.ok) throw new Error(); const data = await response.json() as CategoryResponse; if (data.redirect_slug) router.replace(getCategoryUrl(data, locale)); setCategoryStatus("resolved"); return data; })
-      .then(setCategory)
-      .catch(() => { setCategory(null); setCategoryStatus("error"); });
-  }, [isSearch, isShop, isSpecialListing, locale, router, slug]);
-  useEffect(() => {
-    if (isNewest) setOrdering("-created_at");
-    else if (isBestDiscounts) setOrdering("-discount_percentage");
-  }, [isBestDiscounts, isNewest]);
+  const pathname = usePathname();
+  const params = useSearchParams();
+  const queryString = params.toString(), cursorContext = queryString.replace(/(^|&)cursor=[^&]*/g, "").replace(/(^|&)page=[^&]*/g, "");
+  const locale = useParams<{ locale: string }>().locale || "fa";
+  const isSearch = slug === "search", isShop = slug === "shop", isNewest = slug === "newest", isBestDiscounts = slug === "best-discounts", isSpecialListing = isNewest || isBestDiscounts;
+  const initialOrdering = isNewest ? "-created_at" : isBestDiscounts ? "-discount_percentage" : "code";
+  const initialProducts = initialData ? { count: initialData.total_count, results: initialData.products } : null;
+  const [roots, setRoots] = useState<TreeCategory[]>([]), [category, setCategory] = useState<NavCategory | null>(initialCategory || null), [products, setProducts] = useState<ProductPage | null>(initialProducts), [facets, setFacets] = useState<CatalogFacet[]>(initialData ? mapFacets(initialData.facets) : []);
+  const [categoryStatus, setCategoryStatus] = useState<"loading" | "resolved" | "not_found" | "error">(isSearch || isShop || isSpecialListing || initialCategory ? "resolved" : "loading");
+  const [loadingProducts, setLoadingProducts] = useState(!initialData), [productsError, setProductsError] = useState(false), [hasMore, setHasMore] = useState(initialData?.has_more ?? false), [nextCursor, setNextCursor] = useState<string | null>(initialData?.next_cursor ?? null);
+  const page = Math.max(1, Number(params.get("page") || "1") || 1), pageParam = params.get("page"), cursor = params.get("cursor"), inStock = params.get("in_stock") === "1", ordering = params.get("ordering") || initialOrdering, searchQuery = params.get("q") ?? query ?? "";
+  const requestId = useRef(0), cursorHistory = useRef<string[]>([]), initialConsumed = useRef(!initialData);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false), [cursorDepth, setCursorDepth] = useState(0);
+  const updateUrl = (updates: Record<string, string | null>) => { const next = new URLSearchParams(params.toString()); const stateKeys = Object.keys(updates).some((key) => key !== "cursor"); if (stateKeys) next.delete("cursor"); Object.entries(updates).forEach(([key, value]) => value === null || value === "" ? next.delete(key) : next.set(key, value)); router.push(`${pathname}${next.toString() ? `?${next}` : ""}`); };
+  useEffect(() => { cursorHistory.current = []; setCursorDepth(0); }, [cursorContext]);
+  useEffect(() => { getCategories().then((data) => setRoots(data as TreeCategory[])).catch(() => setRoots([])); }, []);
+  useEffect(() => { if (initialCategory) return; if (isSearch || isShop || isSpecialListing) { setCategory(null); setCategoryStatus("resolved"); return; } setCategory(null); setCategoryStatus("loading"); getCategoryBySlug<CategoryResponse>(slug).then((data) => { if (data.redirect_slug) router.replace(getCategoryUrl(data, locale)); setCategoryStatus("resolved"); setCategory(data); }).catch((error) => { setCategory(null); setCategoryStatus(error instanceof ApiError && error.status === 404 ? "not_found" : "error"); }); }, [initialCategory, isSearch, isShop, isSpecialListing, locale, router, slug]);
   useEffect(() => {
     if (!isSearch && !isShop && !isSpecialListing && (categoryStatus !== "resolved" || !category)) { setLoadingProducts(categoryStatus === "loading"); setProducts(null); return; }
-    const parameters = new URLSearchParams({ page: String(page), page_size: String(pageSize), ordering });
-    if ((isSearch || isShop) && query?.trim()) parameters.set("search", query.trim());
-    else if (category) parameters.set("category", String(category.id));
-    if (inStock) parameters.set("in_stock", "true");
-    if (isBestDiscounts) parameters.set("discounted", "true");
+    if (!initialConsumed.current) { initialConsumed.current = true; return; }
+    const id = ++requestId.current, controller = new AbortController(), current = new URLSearchParams(queryString), request: Record<string, string | number | boolean | undefined> = { page_size: pageSize, q: searchQuery.trim() || undefined, category: current.get("category") || category?.id, ordering, in_stock: inStock ? "1" : undefined, discounted: isBestDiscounts ? "1" : undefined, cursor: cursor || undefined, page: pageParam || undefined, price_min: current.get("price_min") || undefined, price_max: current.get("price_max") || undefined };
+    current.forEach((value, key) => { if (key === "brand" || key === "availability" || key.startsWith("attr_")) request[key] = value; });
     setLoadingProducts(true); setProductsError(false);
-    fetch(`/api/v1/products/?${parameters}`).then((response) => { if (!response.ok) throw new Error(); return response.json(); }).then(setProducts).catch(() => { setProducts(null); setProductsError(true); }).finally(() => setLoadingProducts(false));
-  }, [category, categoryStatus, inStock, isBestDiscounts, isSearch, isShop, isSpecialListing, ordering, page, query]);
-
-  const title = isShop ? "همه محصولات" : isNewest ? "جدیدترین‌ها" : isBestDiscounts ? "بیشترین تخفیف" : isSearch ? "جست‌وجوی کاتالوگ" : categoryStatus === "loading" ? "در حال دریافت دسته‌بندی…" : categoryStatus === "error" ? "خطا در دریافت دسته‌بندی" : category?.name_fa || "دسته‌بندی یافت نشد";
-  const totalPages = Math.max(1, Math.ceil((products?.count ?? 0) / pageSize));
-  const search = (value: string) => { setPage(1); router.push(isShop ? `/${locale}/shop?q=${encodeURIComponent(value)}` : getCategorySearchUrl(locale, value)); };
-  const activeTreeNode = findCategory(roots, slug);
-
-  return <main className="catalog-experience site-container"><div className="catalog-breadcrumb"><Link href={`/${locale}`}>خانه</Link><span>‹</span><span>{title}</span></div><div className="catalog-shell"><aside className="catalog-sidebar"><div className="catalog-side-title">درخت دسته‌بندی‌ها</div>{roots.map((root) => <TreeBranch key={root.id} node={root} activeSlug={slug} locale={locale} />)}</aside><section className="catalog-content"><header><div><p>کاتالوگ صنعتی</p><h1>{title}</h1><span>{(products?.count ?? 0).toLocaleString("fa-IR")} محصول</span></div></header>
-    <div className="catalog-filters"><label><span>جست‌وجوی فنی</span><input defaultValue={query} placeholder="نام، SKU یا کد فنی" onKeyDown={(event) => { if (event.key === "Enter") search(event.currentTarget.value); }} /></label><label><span>مرتب‌سازی</span><select value={ordering} onChange={(event) => { setOrdering(event.target.value); setPage(1); }}><option value="code">کد کالا</option><option value="name">نام کالا</option><option value="-created_at">جدیدترین</option></select></label><label className="stock-filter"><input type="checkbox" checked={inStock} onChange={(event) => { setInStock(event.target.checked); setPage(1); }} /> فقط موجود</label><button className="spec-filter" type="button">مشخصات فنی</button></div>
-    {activeTreeNode && activeTreeNode.children.length > 0 && <div className="catalog-children">{activeTreeNode.children.map((child) => <Link key={child.id} href={getCategoryUrl(child, locale)}>{child.name_fa}</Link>)}</div>}
-    {categoryStatus === "not_found" ? <div className="empty-state"><b>دسته‌بندی یافت نشد</b><p>نشانی این دسته‌بندی معتبر نیست یا دسته غیرفعال شده است.</p></div> : categoryStatus === "error" || productsError ? <div className="empty-state catalog-api-error"><b>دریافت اطلاعات ناموفق بود</b><p>ارتباط با سرویس کاتالوگ برقرار نشد. لطفاً دوباره تلاش کنید.</p></div> : loadingProducts ? <div className="industrial-product-grid catalog-card-grid">{Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}</div> : !products?.results.length ? <div className="empty-state"><b>محصولی موجود نیست</b><p>{isBestDiscounts ? "در حال حاضر محصول تخفیف‌داری وجود ندارد." : isShop || isNewest ? "محصول فعالی در فروشگاه ثبت نشده است." : "در این دسته‌بندی محصول فعالی ثبت نشده است."}</p></div> : <div className="industrial-product-grid catalog-card-grid">{products.results.map((product) => <ProductCard key={product.id} product={product} />)}</div>}
-    {(products?.count ?? 0) > pageSize && <div className="catalog-pagination"><button disabled={page === 1} onClick={() => setPage((value) => value - 1)}>صفحه قبل</button><span>{page.toLocaleString("fa-IR")} از {totalPages.toLocaleString("fa-IR")}</span><button disabled={page >= totalPages} onClick={() => setPage((value) => value + 1)}>صفحه بعد</button></div>}
-  </section></div></main>;
+    getCatalogQuery(request, controller.signal).then((data) => { if (id !== requestId.current) return; setProducts({ count: data.total_count, results: data.products }); setFacets(mapFacets(data.facets)); setHasMore(data.has_more); setNextCursor(data.next_cursor); }).catch((error) => { if (id === requestId.current && error?.name !== "AbortError") { setProducts(null); setProductsError(true); } }).finally(() => { if (id === requestId.current) setLoadingProducts(false); });
+    return () => controller.abort();
+  }, [category, categoryStatus, cursor, inStock, isBestDiscounts, isSearch, isShop, isSpecialListing, ordering, pageParam, queryString, searchQuery]);
+  const title = isShop ? (locale === "en" ? "All products" : "همه محصولات") : isNewest ? (locale === "en" ? "Newest products" : "جدیدترین‌ها") : isBestDiscounts ? (locale === "en" ? "Best discounts" : "بیشترین تخفیف") : isSearch ? (locale === "en" ? "Catalog search" : "جست‌وجوی کاتالوگ") : categoryStatus === "loading" ? (locale === "en" ? "Loading category…" : "در حال دریافت دسته‌بندی…") : categoryStatus === "error" ? (locale === "en" ? "Category error" : "خطا در دریافت دسته‌بندی") : category?.name_fa || (locale === "en" ? "Category not found" : "دسته‌بندی یافت نشد");
+  const resultCountLabel = locale === "en" ? `${(products?.count ?? 0).toLocaleString("en-US")} ${(products?.count ?? 0) === 1 ? "product" : "products"} found` : `${(products?.count ?? 0).toLocaleString("fa-IR")} محصول پیدا شد`;
+  const resultTitle = searchQuery ? (locale === "en" ? `Search results for “${searchQuery}”` : `نتایج جستجو برای «${searchQuery}»`) : title;
+  const totalPages = Math.max(1, Math.ceil((products?.count ?? 0) / pageSize)), activeTreeNode = findCategory(roots, slug), cursorMode = !pageParam;
+  const search = (value: string) => updateUrl({ q: value.trim() || null, page: null });
+  const facetOptionChange = (facet: CatalogFacet, value: string, selected: boolean) => { if (facet.type === "category") { updateUrl({ category: selected ? value : null, page: null }); return; } const key = facet.name === "brand" ? "brand" : `attr_${facet.name}`; const values = new Set((params.get(key) || "").split(",").filter(Boolean)); if (selected) values.add(value); else values.delete(value); updateUrl({ [key]: values.size ? Array.from(values).join(",") : null, page: null }); };
+  const facetRangeChange = (facet: CatalogFacet, value: { min?: string; max?: string }) => { const prefix = facet.name === "price" ? "price" : `attr_${facet.name}`; updateUrl({ [`${prefix}_min`]: value.min || null, [`${prefix}_max`]: value.max || null, page: null }); };
+  const activeFilters: ActiveCatalogFilter[] = [...(searchQuery ? [{ key: "q", label: `جست‌وجو: ${searchQuery}`, onRemove: () => search("") }] : []), ...(inStock ? [{ key: "in_stock", label: "فقط موجود", onRemove: () => updateUrl({ in_stock: null, page: null }) }] : [])];
+  facets.forEach((facet) => { facet.options?.filter((option) => option.selected).forEach((option) => activeFilters.push({ key: `${facet.name}:${option.value}`, label: `${facet.label || facet.name}: ${option.label}`, onRemove: () => facetOptionChange(facet, option.value, false) })); const selectedRange = facet.selected && typeof facet.selected === "object" ? facet.selected as { min?: string; max?: string } : null; if (selectedRange && (selectedRange.min || selectedRange.max)) { const prefix = facet.name === "price" ? "price" : `attr_${facet.name}`; activeFilters.push({ key: `${facet.name}:range`, label: `${facet.label || facet.name}: ${selectedRange.min || "…"}–${selectedRange.max || "…"}`, onRemove: () => updateUrl({ [`${prefix}_min`]: null, [`${prefix}_max`]: null, page: null }) }); } });
+  const clearAll = () => { const updates: Record<string, string | null> = { q: null, in_stock: null, brand: null, category: null, price_min: null, price_max: null, page: null }; facets.forEach((facet) => { updates[facet.type === "category" ? "category" : `attr_${facet.name}`] = null; if (facet.name !== "price") { updates[`attr_${facet.name}_min`] = null; updates[`attr_${facet.name}_max`] = null; } }); updateUrl(updates); };
+  if (cursorMode && nextCursor) { /* next cursor is rendered below; URL remains the source of truth */ }
+  const nextPage = () => { if (!nextCursor) return; cursorHistory.current.push(cursor || ""); setCursorDepth((value) => value + 1); updateUrl({ cursor: nextCursor, page: null }); };
+  const previousPage = () => { const previous = cursorHistory.current.pop(); setCursorDepth((value) => Math.max(0, value - 1)); updateUrl({ cursor: previous || null, page: null }); };
+  const paginationVisible = cursorMode ? hasMore || cursorDepth > 0 : (products?.count ?? 0) > pageSize;
+  return <main className="catalog-experience site-container"><div className="catalog-breadcrumb"><Link href={`/${locale}`}>{locale === "en" ? "Home" : "خانه"}</Link><span>‹</span><span>{title}</span></div><div className="catalog-heading-row"><div className="catalog-heading"><p>{locale === "en" ? "Industrial catalog" : "کاتالوگ صنعتی"}</p><h1>{resultTitle}</h1><span>{resultCountLabel}</span></div><CatalogToolbar resultCount={products?.count ?? 0} activeFilterCount={activeFilters.length} searchLoading={loadingProducts} query={searchQuery} ordering={ordering} inStock={inStock} onSearch={search} onOpenFilters={() => setMobileFiltersOpen(true)} onOrderingChange={(value) => updateUrl({ ordering: value, page: null })} onStockChange={(value) => updateUrl({ in_stock: value ? "1" : null, page: null })} /></div><div className="catalog-shell"><aside className="catalog-sidebar"><div className="catalog-side-title">{locale === "en" ? "Catalog filters" : "فیلترهای کاتالوگ"}</div>{roots.length > 0 && <div className="catalog-tree-section"><h2>{locale === "en" ? "Categories" : "دسته‌بندی‌ها"}</h2>{roots.map((root) => <TreeBranch key={root.id} node={root} activeSlug={slug} locale={locale} />)}</div>}<FacetSidebar facets={facets} onOptionChange={facetOptionChange} onRangeChange={facetRangeChange} /></aside><section className="catalog-content"><div className="catalog-results-tools"><ActiveFilterSummary filters={activeFilters} onClearAll={clearAll} /></div>{activeTreeNode && activeTreeNode.children.length > 0 && <div className="catalog-children">{activeTreeNode.children.map((child) => <Link key={child.id} href={getCategoryUrl(child, locale)}>{child.name_fa}</Link>)}</div>}{categoryStatus === "not_found" ? <CatalogEmptyState locale={locale} message={locale === "en" ? "This category is unavailable." : "نشانی این دسته‌بندی معتبر نیست یا دسته غیرفعال شده است."} /> : categoryStatus === "error" || productsError ? <CatalogErrorState /> : loadingProducts ? <ProductGrid products={products} loading locale={locale} /> : !products?.results.length ? <CatalogEmptyState locale={locale} query={searchQuery || undefined} onClear={searchQuery ? () => search("") : undefined} message={isBestDiscounts ? (locale === "en" ? "There are no discounted products right now." : "در حال حاضر محصول تخفیف‌داری وجود ندارد.") : isShop || isNewest || searchQuery ? (locale === "en" ? "Try another name, SKU, or part number." : "نام، SKU یا شماره فنی دیگری را امتحان کنید.") : (locale === "en" ? "No active products are listed in this category." : "در این دسته‌بندی محصول فعالی ثبت نشده است.")} /> : <ProductGrid products={products} loading={false} locale={locale} />}{paginationVisible && <CatalogPagination page={cursorDepth + 1} totalPages={totalPages} totalCount={products?.count ?? 0} visibleCount={products?.results.length ?? 0} cursorMode={cursorMode} hasMore={hasMore} canGoBack={cursorDepth > 0} onNextCursor={nextPage} onPreviousCursor={previousPage} onPageChange={(nextPageNumber) => updateUrl({ page: String(nextPageNumber) })} />}</section></div><MobileFilterDrawer open={mobileFiltersOpen} ordering={ordering} inStock={inStock} resultCount={products?.count ?? 0} activeFilterCount={activeFilters.length} facets={facets} onFacetOptionChange={facetOptionChange} onFacetRangeChange={facetRangeChange} onClose={() => setMobileFiltersOpen(false)} onReset={clearAll} onApply={(nextOrdering, nextInStock) => updateUrl({ ordering: nextOrdering, in_stock: nextInStock ? "1" : null, page: null })} /></main>;
 }

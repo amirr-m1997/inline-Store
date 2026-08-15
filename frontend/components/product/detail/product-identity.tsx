@@ -1,0 +1,2 @@
+import type { ProductDetail } from "../../../lib/product/types";
+export function ProductIdentity({ product }: { product: ProductDetail }) { return <div className="product-identity-block"><span className="product-eyebrow">{product.categories.at(-1)?.name || "محصول"}</span><h1>{product.name}</h1>{product.nameEn && <p className="product-en-name" dir="ltr">{product.nameEn}</p>}{product.brand && <p className="product-brand">{product.brand}</p>}<div className="product-code-row"><span>کد کالا:</span><b dir="ltr">{product.sku || product.code}</b></div></div>; }

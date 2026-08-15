@@ -1,12 +1,12 @@
 from rest_framework import serializers
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from django.db.models import Prefetch
 
 from apps.company.models import CompanyInfo
-from .models import ContactMessage, FooterLink, FooterSection, SiteNavigation, TrustBadge
+from .models import ContactMessage, CustomerFeedback, CustomerSupportRequest, FooterLink, FooterSection, SiteNavigation, TrustBadge, WarrantyPolicy, WarrantyRegistration
 
 
 class SiteNavigationSerializer(serializers.ModelSerializer):
@@ -26,6 +26,33 @@ class ContactMessageSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("شماره تماس معتبر نیست.")
         return value
 
+class WarrantyPolicySerializer(serializers.ModelSerializer):
+    class Meta: model = WarrantyPolicy; fields = ("id", "title_fa", "title_en", "body_fa", "body_en", "registration_enabled")
+
+class WarrantyRegistrationSerializer(serializers.ModelSerializer):
+    class Meta: model = WarrantyRegistration; fields = ("reference", "product", "order", "serial_number", "purchase_date", "full_name", "phone", "email", "notes", "status", "submitted_at"); read_only_fields = ("reference", "status", "submitted_at")
+    def validate_phone(self, value): return ContactMessageSerializer().validate_phone(value)
+    def validate_order(self, value):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated or value.customer_id != request.user.id:
+            raise serializers.ValidationError("سفارش انتخاب‌شده قابل استفاده نیست.")
+        return value
+
+class SupportRequestSerializer(serializers.ModelSerializer):
+    class Meta: model = CustomerSupportRequest; fields = ("reference", "request_type", "product", "order", "full_name", "phone", "email", "subject", "message", "status", "submitted_at"); read_only_fields = ("reference", "status", "submitted_at")
+    def validate_phone(self, value): return ContactMessageSerializer().validate_phone(value)
+    def validate_order(self, value):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated or value.customer_id != request.user.id:
+            raise serializers.ValidationError("سفارش انتخاب‌شده قابل استفاده نیست.")
+        return value
+
+class FeedbackSerializer(serializers.ModelSerializer):
+    class Meta: model = CustomerFeedback; fields = ("id", "order", "feedback_type", "rating", "message", "contact_permission", "submitted_at"); read_only_fields = ("id", "submitted_at")
+    def validate_rating(self, value):
+        if value is not None and not 1 <= value <= 5: raise serializers.ValidationError("Rating must be between 1 and 5.")
+        return value
+
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
@@ -41,6 +68,39 @@ def contact_message_create(request):
     serializer.is_valid(raise_exception=True)
     serializer.save()
     return Response({"detail": "پیام شما با موفقیت ثبت شد."}, status=201)
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def warranty_policy(request):
+    item = WarrantyPolicy.objects.filter(is_published=True).order_by("-id").first()
+    return Response(WarrantyPolicySerializer(item).data if item else None)
+
+@api_view(["POST", "GET"])
+@permission_classes([AllowAny])
+def warranty_registrations(request):
+    if request.method == "GET":
+        if not request.user.is_authenticated: return Response([], status=200)
+        return Response(WarrantyRegistrationSerializer(WarrantyRegistration.objects.filter(customer=request.user), many=True).data)
+    serializer = WarrantyRegistrationSerializer(data=request.data, context={"request": request}); serializer.is_valid(raise_exception=True)
+    item = serializer.save(customer=request.user if request.user.is_authenticated else None)
+    return Response(WarrantyRegistrationSerializer(item).data, status=201)
+
+@api_view(["POST", "GET"])
+@permission_classes([AllowAny])
+def support_requests(request):
+    if request.method == "GET":
+        if not request.user.is_authenticated: return Response([], status=200)
+        return Response(SupportRequestSerializer(CustomerSupportRequest.objects.filter(customer=request.user), many=True).data)
+    serializer = SupportRequestSerializer(data=request.data, context={"request": request}); serializer.is_valid(raise_exception=True)
+    item = serializer.save(customer=request.user if request.user.is_authenticated else None)
+    return Response(SupportRequestSerializer(item).data, status=201)
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def feedback_create(request):
+    serializer = FeedbackSerializer(data=request.data); serializer.is_valid(raise_exception=True)
+    item = serializer.save(customer=request.user if request.user.is_authenticated else None)
+    return Response(FeedbackSerializer(item).data, status=201)
 
 
 @api_view(["GET"])

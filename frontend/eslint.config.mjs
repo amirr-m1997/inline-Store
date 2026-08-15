@@ -8,5 +8,5 @@ export default defineConfig([
       "react-hooks/set-state-in-effect": "off",
     },
   },
-  globalIgnores([".next/**", "node_modules/**", "next-env.d.ts"]),
+  globalIgnores([".next/**", ".next-e2e/**", "node_modules/**", "next-env.d.ts"]),
 ]);

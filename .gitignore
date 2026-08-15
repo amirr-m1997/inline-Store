@@ -1,0 +1,40 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+env/
+
+# Django local data
+*.sqlite3
+db.sqlite3
+backend/media/
+backend/approval.csv
+
+# Node / Next
+node_modules/
+.next/
+.next-e2e/
+out/
+
+# Tests / coverage
+coverage/
+htmlcov/
+playwright-report/
+test-results/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Cache
+*.log
+.cache/
+*.tsbuildinfo
+.pytest_cache/

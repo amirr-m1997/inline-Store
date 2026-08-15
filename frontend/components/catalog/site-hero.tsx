@@ -1,12 +1,12 @@
-"use client";
-
 import Link from "next/link";
-import type { CSSProperties } from "react";
-import { useSiteHero } from "../../hooks/use-site-hero";
+import Image from "next/image";
+import type { SiteHero as SiteHeroData } from "../../types/api";
 
-export function SiteHero() {
-  const hero = useSiteHero();
+export function localizeHeroLink(link: string, locale: string) {
+  return link.replace(/^\/(?:fa|en)(?=\/|$)/, `/${locale}`);
+}
+
+export function SiteHero({ hero, locale }: { hero: SiteHeroData | null; locale: string }) {
   if (!hero) return <section className="site-hero site-hero-loading site-container" />;
-  const style = hero.hero_image ? { "--hero-desktop": `url(${hero.hero_image})`, "--hero-mobile": `url(${hero.mobile_hero_image || hero.hero_image})` } as CSSProperties : undefined;
-  return <section className="site-hero site-container" style={style}><div><h1>{hero.title}</h1><h2>{hero.slogan}</h2>{hero.description && <p>{hero.description}</p>}<div className="site-hero-actions">{hero.buttons.map((button) => <Link key={`${button.variant}-${button.link}`} className={button.variant} href={button.link}>{button.text}</Link>)}</div></div></section>;
+  return <section className="site-hero site-container">{hero.hero_image && <Image className="site-hero-media" alt="" fill priority sizes="(max-width: 767px) 0px, min(100vw - 2rem, 1180px)" src={hero.hero_image} />}{hero.mobile_hero_image && <Image className="site-hero-media site-hero-media-mobile" alt="" fill priority sizes="(max-width: 767px) min(100vw - 2rem, 1180px), 0px" src={hero.mobile_hero_image} />}<div className="site-hero-content"><h1>{hero.title}</h1><h2>{hero.slogan}</h2>{hero.description && <p>{hero.description}</p>}<div className="site-hero-actions">{hero.buttons.map((button, index) => <Link key={`${button.variant}-${button.link}`} className={`site-hero-button ${index === 0 ? "primary" : "secondary"}`} href={localizeHeroLink(button.link, locale)}>{button.text}</Link>)}</div></div></section>;
 }
