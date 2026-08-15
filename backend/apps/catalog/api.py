@@ -3,13 +3,14 @@ from django.core.exceptions import ValidationError
 from django.db.models import Case, CharField, Count, DecimalField, F, IntegerField, OuterRef, Q, Subquery, Value, When
 from django.db.models.functions import Coalesce
 from django.utils import timezone
+from django.core.paginator import Paginator
 from rest_framework import filters, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 
 from .models import Category, CategorySlugRedirect, Product, ProductBrand, ProductDocument, ProductImage, SupplyBrand
-from .serializers import CatalogProductSerializer, CategoryNavigationSerializer, CategorySerializer, ProductBrandSerializer, ProductDetailSerializer, ProductDocumentResourceSerializer, SupplyBrandSerializer
+from .serializers import CatalogProductSerializer, CategoryNavigationSerializer, CategorySerializer, ProductBrandSerializer, ProductDetailSerializer, ProductDocumentResourceSerializer, ProductSummarySerializer, SupplyBrandSerializer
 from .services import CatalogQueryService
 from .cursor import apply_keyset, decode_cursor, encode_cursor
 from apps.pricing.models import ProductPrice
@@ -205,6 +206,22 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             return Response({"detail": "Not found."}, status=404)
         return Response(ProductDetailSerializer(product, context={"request": request}).data)
 
+    @action(detail=True, methods=("get",), url_path="discovery")
+    def discovery(self, request, pk=None):
+        from apps.content.discovery import product_discovery
+        from apps.content.serializers import ContentArticleListSerializer, FAQEntrySerializer
+        product = self.get_queryset().filter(Q(slug=pk) | Q(pk=int(pk) if str(pk).isdigit() else -1)).first()
+        if not product:
+            return Response({"detail": "Not found."}, status=404)
+        result = product_discovery(product)
+        context = {"request": request}
+        return Response({
+            "articles": ContentArticleListSerializer(result["articles"], many=True, context=context).data,
+            "faqs": FAQEntrySerializer(result["faqs"], many=True, context=context).data,
+            "resources": ProductDocumentResourceSerializer(result["resources"], many=True, context=context).data,
+            "products": ProductSummarySerializer(result["products"], many=True, context=context).data,
+        })
+
 
 class SupplyBrandViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = SupplyBrandSerializer
@@ -242,4 +259,33 @@ def product_documents(request):
     brand = request.query_params.get("brand")
     if brand:
         documents = documents.filter(product__brand__slug=brand)
-    return Response(ProductDocumentResourceSerializer(documents, many=True, context={"request": request}).data)
+    language = request.query_params.get("language")
+    if language:
+        documents = documents.filter(language__icontains=language)
+    query = (request.query_params.get("q") or "").strip()
+    if query:
+        documents = documents.filter(
+            Q(title_fa__icontains=query) | Q(title_en__icontains=query) | Q(display_name__icontains=query)
+            | Q(product__name__icontains=query) | Q(product__code__icontains=query)
+        )
+    documents = documents.order_by("document_type", "display_order", "id")
+    if request.query_params.get("page") or request.query_params.get("page_size"):
+        try:
+            page_number = max(1, int(request.query_params.get("page", "1")))
+        except ValueError:
+            page_number = 1
+        try:
+            page_size = min(50, max(1, int(request.query_params.get("page_size", "24"))))
+        except ValueError:
+            page_size = 24
+        paginator = Paginator(documents, page_size)
+        page = paginator.get_page(page_number)
+        serializer = ProductDocumentResourceSerializer(page.object_list, many=True, context={"request": request})
+        return Response({
+            "count": paginator.count,
+            "next": page.has_next(),
+            "previous": page.has_previous(),
+            "results": serializer.data,
+        })
+    serializer = ProductDocumentResourceSerializer(documents[:100], many=True, context={"request": request})
+    return Response(serializer.data)

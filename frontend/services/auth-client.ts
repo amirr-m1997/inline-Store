@@ -6,7 +6,7 @@ export async function mergeGuestCart() {
   try { await getCart(); window.dispatchEvent(new Event("cart-updated")); } catch { /* Preserve the existing silent merge failure. */ }
 }
 
-export function authChanged() { window.dispatchEvent(new Event("auth-changed")); }
+export function authChanged(authenticated = true) { window.dispatchEvent(new CustomEvent("auth-changed", { detail: { authenticated } })); }
 
 export async function parseError(response: Response) {
   const data = await response.json().catch(() => ({}));

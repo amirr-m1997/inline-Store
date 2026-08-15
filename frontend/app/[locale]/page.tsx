@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { cache } from "react";
 import { EnterpriseHome, type HomepageInitialData } from "../../components/catalog/enterprise-home";
-import { getAdvantagesServer, getCapabilitiesServer, getCompanyServer, getHeroServer, getIndustriesServer, getSupplyBrandsServer } from "../../lib/api/content";
+import { getAdvantagesServer, getArticlesServer, getCapabilitiesServer, getCompanyServer, getHeroServer, getIndustriesServer, getSupplyBrandsServer, type EditorialArticlePage } from "../../lib/api/content";
 import { getCategoryRootsServer, getProductsServer } from "../../lib/api/products";
 import type { CompanyInfo, SiteHero } from "../../types/api";
 import type { CatalogProduct } from "../../components/catalog/product-card";
@@ -16,7 +16,7 @@ const getHomepageCompany = cache(() => getCompanyServer<CompanyInfo>().catch(() 
 const getHomepageHero = cache(() => getHeroServer<SiteHero>().catch(() => null));
 
 async function loadHomepageData(locale: string): Promise<HomepageData> {
-  const [company, hero, advantages, categories, featured, newest, discounted, brands, industries, capabilities] = await Promise.all([
+  const [company, hero, advantages, categories, featured, newest, discounted, brands, industries, capabilities, editorialPage] = await Promise.all([
     getHomepageCompany(),
     getHomepageHero(),
     getAdvantagesServer<Advantage[]>().catch(() => []),
@@ -27,8 +27,9 @@ async function loadHomepageData(locale: string): Promise<HomepageData> {
     getSupplyBrandsServer<HomepageInitialData["brands"]>().catch(() => []),
     getIndustriesServer<HomepageInitialData["industries"]>().catch(() => []),
     getCapabilitiesServer<HomepageInitialData["capabilities"]>().catch(() => []),
+    getArticlesServer<EditorialArticlePage>({ page_size: 3, ordering: "-published_at" }).catch(() => ({ count: 0, next: null, previous: null, results: [] })),
   ]);
-  return { locale, company, hero, advantages, categories, featured, newest, discounted, brands, industries, capabilities };
+  return { locale, company, hero, advantages, categories, featured, newest, discounted, brands, industries, capabilities, editorial: editorialPage.results };
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

@@ -36,4 +36,14 @@ describe("authenticated account support center", () => {
     expect(account).toContain("/${locale}/account/support");
     expect(account).toContain("locale === \"en\" ? \"Support\" : \"پشتیبانی\"");
   });
+
+  it("normalizes profile fields before binding them to controlled inputs", () => {
+    const account = read("app/[locale]/account/page.tsx");
+    expect(account).toContain("function normalizeProfile");
+    expect(account).toContain("setProfile(normalizeProfile(value))");
+    expect(account).toContain("setProfile(normalizeProfile(await updateProfile<Customer>(profile)))");
+    expect(account).toContain('email: value.email ?? ""');
+    expect(account).toContain('address: value.address ?? ""');
+    expect(account).toContain('customer_type: value.customer_type === "business" ? "business" : "personal"');
+  });
 });

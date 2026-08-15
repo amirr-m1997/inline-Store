@@ -32,6 +32,25 @@ class ProductDocumentTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual([item["id"] for item in response.json()], [manual.id])
 
+    def test_resource_metadata_search_and_bounded_pagination(self):
+        first = self.make_document(title_fa="پاسپورت فنی", display_name="pump-datasheet.pdf")
+        self.make_document(title_fa="راهنمای نصب", document_type="manual", file=SimpleUploadedFile("manual.pdf", b"pdf", content_type="application/pdf"))
+        response = self.client.get("/api/v1/catalog/documents/?q=پاسپورت&page=1&page_size=1")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["count"], 1)
+        self.assertEqual(response.json()["results"][0]["id"], first.id)
+        self.assertNotIn("storage", response.json()["results"][0])
+
+    def test_catalogue_document_type_is_supported(self):
+        document = self.make_document(document_type="catalogue", title_fa="کاتالوگ", file=SimpleUploadedFile("catalogue.pdf", b"pdf", content_type="application/pdf"))
+        self.assertEqual(document.document_type, "catalogue")
+
+    def test_private_document_is_not_visible_even_with_product_filter(self):
+        private = self.make_document(title_fa="Internal", is_published=False)
+        response = self.client.get("/api/v1/catalog/documents/?product=DOC-1")
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn(private.id, [item["id"] for item in response.json()])
+
     def test_product_detail_serializes_published_documents(self):
         document = self.make_document(display_name="datasheet.pdf", revision="A", language="en")
 

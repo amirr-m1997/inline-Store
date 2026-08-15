@@ -15,8 +15,13 @@ export type ApiRequestOptions = Omit<RequestInit, "body" | "headers"> & {
 
 function errorMessage(data: unknown) {
   if (data && typeof data === "object" && "detail" in data && typeof data.detail === "string") return data.detail;
-  if (data && typeof data === "object") return Object.values(data).flat().filter((value) => typeof value === "string").join(" ") || "درخواست ناموفق بود.";
-  return "درخواست ناموفق بود.";
+  const messages = (value: unknown): string[] => {
+    if (typeof value === "string") return [value];
+    if (Array.isArray(value)) return value.flatMap(messages);
+    if (value && typeof value === "object") return Object.values(value).flatMap(messages);
+    return [];
+  };
+  return messages(data).join(" ") || "درخواست ناموفق بود.";
 }
 
 function guestToken() {

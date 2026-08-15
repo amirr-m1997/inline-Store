@@ -30,12 +30,11 @@ describe("Phase 10.4 support request experience", () => {
     expect(source).not.toContain("customer.id");
   });
 
-  it("renders owned history fields and an intentional empty state", () => {
+  it("keeps private history out of the public submission form", () => {
     const source = read("components/content/support-request-form.tsx");
-    for (const field of ["reference", "request_type", "status", "subject", "submitted_at"]) expect(source).toContain(field);
-    expect(source).toContain("getSupportRequests");
-    expect(source).toContain("history?.length");
-    expect(source).toContain("catch(() => setHistory([]))");
+    for (const field of ["reference", "request_type", "subject", "message"]) expect(source).toContain(field);
+    expect(source).not.toContain("getSupportRequests");
+    expect(source).not.toContain("history?.length");
   });
 
   it("resolves product/order context only through backend APIs", () => {

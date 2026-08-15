@@ -1,6 +1,6 @@
 import type { ProductDetail, ProductDocument, DocumentType } from "../../../lib/product/types";
 
-const labels: Record<DocumentType, string> = { datasheet: "دیتاشیت", manual: "راهنما", cad: "فایل CAD", certificate: "گواهی‌نامه", other: "سند فنی" };
+const labels: Record<DocumentType, string> = { datasheet: "دیتاشیت", manual: "راهنما", cad: "فایل CAD", certificate: "گواهی‌نامه", catalogue: "کاتالوگ", other: "سند فنی" };
 
 function formatSize(size?: number) {
   if (size === undefined || size === null) return null;

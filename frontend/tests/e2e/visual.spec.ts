@@ -55,7 +55,7 @@ test.describe("stable visual QA captures", () => {
     await page.goto("/fa");
     await page.locator("#site-search").fill("DEMO-SKU-001");
     await page.locator("#site-search").press("Enter");
-    await expect(page).toHaveURL(/\/fa\/shop\?q=DEMO-SKU-001/);
+    await expect(page).toHaveURL(/\/fa\/search\?q=DEMO-SKU-001/);
     const resultScreenshot = await page.locator(".reference-header").screenshot({ animations: "disabled" });
     await testInfo.attach("header-search-result.png", { body: resultScreenshot, contentType: "image/png" });
     expect(resultScreenshot.byteLength).toBeGreaterThan(1000);

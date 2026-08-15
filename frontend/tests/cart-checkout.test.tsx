@@ -13,6 +13,8 @@ describe("cart and checkout UX", () => {
     expect(source).toContain("<details className=\"cart-discount-box\">");
     expect(source).toContain("className=\"checkout-primary-action");
     expect(source).toContain("role=\"alert\"");
+    expect(source).toContain("/rfq?source=cart");
+    expect(source).toContain("استعلام قیمت اقلام سبد");
   });
 
   it("exposes the real cart, order details, and payment progression", () => {

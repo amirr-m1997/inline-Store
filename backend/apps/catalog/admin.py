@@ -25,7 +25,7 @@ class ProductAdmin(admin.ModelAdmin):
 class ProductImageAdmin(admin.ModelAdmin): list_display = ("product", "is_primary", "sort_order"); list_filter = ("is_primary",); search_fields = ("product__code", "alt_text", "alt_fa", "alt_en")
 @admin.register(ProductDocument)
 class ProductDocumentAdmin(admin.ModelAdmin):
-    list_display = ("display_name", "product", "document_type", "language", "revision", "file_size", "is_active", "is_published", "display_order")
+    list_display = ("display_name", "product", "document_type", "language", "revision", "file_size", "is_active", "is_published", "updated_at", "display_order")
     list_filter = ("document_type", "language", "is_active", "is_published")
     search_fields = ("display_name", "title_fa", "title_en", "revision", "product__code", "product__name")
     ordering = ("product__code", "display_order", "id")

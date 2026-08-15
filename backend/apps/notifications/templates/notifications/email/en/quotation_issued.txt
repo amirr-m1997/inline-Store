@@ -1,0 +1,8 @@
+A company-issued quotation is available for you.
+
+Quotation reference: {{ quotation_reference }}
+Related RFQ reference: {{ rfq_reference }}
+Issued at: {{ issued_at }}
+{% if expires_at %}Expires at: {{ expires_at }}{% endif %}
+
+Sign in to your account to review the quotation details.

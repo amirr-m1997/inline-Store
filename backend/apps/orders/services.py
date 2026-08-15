@@ -1,5 +1,4 @@
 import io
-from pathlib import Path
 
 import arabic_reshaper
 from bidi.algorithm import get_display
@@ -11,11 +10,10 @@ from reportlab.lib.enums import TA_RIGHT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from .models import Invoice, InvoiceEmailLog
+from apps.common.document_typography import register_document_fonts
 
 
 def create_invoice(order):
@@ -48,12 +46,11 @@ def ensure_invoice_pdf(invoice):
     if invoice.pdf_file:
         return invoice
     buffer = io.BytesIO()
-    font_path = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
-    font_name = "DejaVu"
-    pdfmetrics.registerFont(TTFont(font_name, str(font_path)))
+    font_names = register_document_fonts()
+    font_name = font_names["persian"]
     styles = getSampleStyleSheet()
     rtl = ParagraphStyle("rtl", parent=styles["Normal"], fontName=font_name, fontSize=9, leading=15, alignment=TA_RIGHT)
-    title = ParagraphStyle("title-fa", parent=rtl, fontSize=16, leading=24)
+    title = ParagraphStyle("title-fa", parent=rtl, fontName=font_names["persian_bold"], fontSize=16, leading=24)
     document = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=14 * mm, leftMargin=14 * mm, topMargin=14 * mm, bottomMargin=14 * mm)
     story = [Paragraph(_rtl("فاکتور فروش"), title), Spacer(1, 5 * mm)]
     details = [

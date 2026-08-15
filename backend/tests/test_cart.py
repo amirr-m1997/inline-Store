@@ -31,6 +31,39 @@ class CartApiTests(TestCase):
         self.assertTrue(saved.json()["customer_complete"])
         self.assertEqual(saved.json()["items"][0]["quantity"], 2)
 
+    def test_authenticated_customer_save_keeps_cart_contact_when_phone_is_not_profile_mobile(self):
+        user = User.objects.create_user(username="international-buyer", email="international@example.test", password="safe-pass")
+        token = Token.objects.create(user=user)
+        added = self.client.post("/api/v1/cart/items/", {"product_id": self.product.id, "quantity": 1}, content_type="application/json", HTTP_AUTHORIZATION=f"Token {token.key}")
+        customer = {
+            "customer_first_name": "Test", "customer_last_name": "Buyer", "customer_phone": "+442071234567",
+            "customer_email": "international@example.test", "shipping_province": "London", "shipping_city": "London",
+            "shipping_postal_code": "1234567890", "shipping_address": "Business address",
+        }
+        response = self.client.patch("/api/v1/cart/", {"customer": customer}, content_type="application/json", HTTP_AUTHORIZATION=f"Token {token.key}", HTTP_X_GUEST_TOKEN=added.json()["guest_token"])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["customer"]["customer_phone"], customer["customer_phone"])
+        user.refresh_from_db()
+        self.assertEqual(user.phone, None)
+
+    def test_authenticated_customer_save_rejects_duplicate_profile_email_as_client_error(self):
+        existing = User.objects.create_user(username="existing-buyer", email="taken@example.test", password="safe-pass")
+        user = User.objects.create_user(username="another-buyer", email="another@example.test", password="safe-pass")
+        token = Token.objects.create(user=user)
+        added = self.client.post("/api/v1/cart/items/", {"product_id": self.product.id, "quantity": 1}, content_type="application/json", HTTP_AUTHORIZATION=f"Token {token.key}")
+        response = self.client.patch("/api/v1/cart/", {"customer": {"customer_email": existing.email}}, content_type="application/json", HTTP_AUTHORIZATION=f"Token {token.key}", HTTP_X_GUEST_TOKEN=added.json()["guest_token"])
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("ایمیل", response.json()["customer_email"][0])
+
+    def test_authenticated_customer_save_rejects_duplicate_profile_phone_as_client_error(self):
+        existing = User.objects.create_user(username="phone-owner", email="phone-owner@example.test", phone="09121234567", password="safe-pass")
+        user = User.objects.create_user(username="phone-buyer", email="phone-buyer@example.test", password="safe-pass")
+        token = Token.objects.create(user=user)
+        added = self.client.post("/api/v1/cart/items/", {"product_id": self.product.id, "quantity": 1}, content_type="application/json", HTTP_AUTHORIZATION=f"Token {token.key}")
+        response = self.client.patch("/api/v1/cart/", {"customer": {"customer_phone": "09121234567"}}, content_type="application/json", HTTP_AUTHORIZATION=f"Token {token.key}", HTTP_X_GUEST_TOKEN=added.json()["guest_token"])
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("شماره تماس", response.json()["customer_phone"][0])
+
     def test_guest_cart_merges_into_authenticated_cart(self):
         guest = self.client.post("/api/v1/cart/items/", {"product_id": self.product.id, "quantity": 2}, content_type="application/json")
         guest_token = guest.json()["guest_token"]

@@ -1,0 +1,11 @@
+Your response to the quotation has been recorded.
+
+Quotation reference: {{ quotation_reference }}
+Related RFQ reference: {{ rfq_reference }}
+Response: {{ response_label }}
+{% if note %}
+Submitted details:
+{{ note }}
+{% endif %}
+
+This confirms that your response was recorded. It does not create an order or payment.

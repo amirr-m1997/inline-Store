@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getProductServer, type ProductDetail } from "../../../../lib/api/products";
+import { getProductDiscoveryServer, getProductServer, type ProductDetail } from "../../../../lib/api/products";
 import { toProductDetail } from "../../../../lib/product/adapters";
 import { ProductDetailInteractive } from "../../../../components/product/detail/product-detail-interactive";
 import { ProductTabs } from "../../../../components/product/detail/product-tabs";
@@ -11,6 +11,8 @@ import { ProductRelationships } from "../../../../components/product/detail/prod
 import Link from "next/link";
 import { getCategoryUrl } from "../../../../lib/category-url";
 import { absoluteUrl, localizedAlternates, localizedPath } from "../../../../lib/locale-url";
+import { EditorialPreview, FAQList } from "../../../../components/content/editorial";
+import { DiscoveryResources } from "../../../../components/content/discovery";
 
 type RouteParams = { locale: string; slug: string };
 
@@ -40,13 +42,14 @@ function structuredData(product: ProductDetail, locale: string) {
 export default async function ProductPage({ params }: { params: Promise<RouteParams> }) {
   const { locale, slug } = await params;
   const product = await loadProduct(slug);
+  const discovery = await getProductDiscoveryServer(slug).catch(() => ({ articles: [], faqs: [], resources: [], products: [] }));
   const domainProduct = toProductDetail(product);
   const jsonLd = structuredData(product, locale);
   return <><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} /><main className="product-detail-page site-container" dir={locale === "fa" ? "rtl" : "ltr"}>
     <nav className="product-breadcrumb" aria-label="مسیر صفحه"><Link href={`/${locale}`}>خانه</Link>{product.category_tree.map((category) => <span className="breadcrumb-part" key={category.id}><span>/</span><Link href={getCategoryUrl(category, locale)}>{category.name_fa}</Link></span>)}<span>/</span><b>{product.name_fa}</b></nav>
     <section className="product-purchase-layout"><ProductDetailInteractive product={product} domainProduct={domainProduct} identity={<ProductIdentity product={domainProduct} />} /></section>
-    <nav className="product-support-actions" aria-label={locale === "en" ? "Product support" : "پشتیبانی محصول"}><span>{locale === "en" ? "Need help with this product?" : "برای این محصول به راهنمایی نیاز دارید؟"}</span><Link href={`/${locale}/support/request?product=${encodeURIComponent(product.slug)}`}>{locale === "en" ? "Product support" : "پشتیبانی محصول"}</Link><Link href={`/${locale}/support/warranty?product=${encodeURIComponent(product.slug)}`}>{locale === "en" ? "Warranty information" : "اطلاعات گارانتی"}</Link></nav>
+    <nav className="product-support-actions" aria-label={locale === "en" ? "Product support and quotation" : "پشتیبانی و استعلام محصول"}><span>{locale === "en" ? "Need help or a business quote?" : "برای این محصول به راهنمایی یا استعلام نیاز دارید؟"}</span><Link className="product-rfq-link" href={`/${locale}/rfq?product=${encodeURIComponent(product.slug)}`}>{locale === "en" ? "Request a Quote" : "استعلام قیمت"}</Link><Link href={`/${locale}/support/request?product=${encodeURIComponent(product.slug)}`}>{locale === "en" ? "Product support" : "پشتیبانی محصول"}</Link><Link href={`/${locale}/support/warranty?product=${encodeURIComponent(product.slug)}`}>{locale === "en" ? "Warranty information" : "اطلاعات گارانتی"}</Link></nav>
     <ProductTabs description={product.description} specifications={<ProductSpecifications product={domainProduct} />} />
-    <ProductDocuments product={domainProduct} /><ProductRelationships product={domainProduct} locale={locale} />
+    <ProductDocuments product={domainProduct} /><DiscoveryResources resources={discovery.resources} locale={locale} /><ProductRelationships product={domainProduct} locale={locale} /><FAQList faqs={discovery.faqs} locale={locale} compact title={locale === "en" ? "Product FAQs" : "سوالات متداول این محصول"} /><EditorialPreview articles={discovery.articles} locale={locale} title={locale === "en" ? "Related Articles" : "مطالب مرتبط"} />
   </main></>;
 }

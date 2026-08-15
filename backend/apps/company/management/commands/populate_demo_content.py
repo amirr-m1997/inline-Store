@@ -22,12 +22,17 @@ from apps.catalog.models import (
     normalize_identifier,
 )
 from apps.company.models import Capability, CompanyCertification, CompanyHonor, CompanyLocation, CompanyMilestone, CompanySection, Industry
+from apps.content.models import ContentArticle, ContentCategory, FAQEntry
 from apps.inventory.models import Inventory, Receipt
 from apps.website.models import CustomerFeedback, CustomerSupportRequest, WarrantyPolicy, WarrantyRegistration
+from apps.rfq.models import RequestForQuotation, RequestForQuotationItem, SalesQuotation, SalesQuotationItem
 
 
 MARKER = "demo-content:phase-9.10"
 CATALOG_MARKER = "demo-content:phase-9.13"
+EDITORIAL_MARKER = "demo-content:phase-11.1"
+RFQ_MARKER = "demo-content:phase-12.1"
+QUOTATION_MARKER = "demo-content:phase-12.3"
 DEMO_SOURCE = "https://example.invalid/demo/phase-9.10"
 
 
@@ -54,7 +59,7 @@ class Command(BaseCommand):
         if not settings.DEBUG and not options["allow_production"]:
             raise CommandError("Demo content is disabled when DEBUG=False. Use --allow-production only for an explicit non-production review.")
 
-        counts = {"sections": 0, "locations": 0, "milestones": 0, "industries": 0, "capabilities": 0, "certifications": 0, "honors": 0, "brands": 0, "documents": 0, "categories": 0, "products": 0, "attributes": 0, "category_attributes": 0, "identifiers": 0, "attribute_values": 0, "inventory": 0, "receipts": 0, "support": 0}
+        counts = {"sections": 0, "locations": 0, "milestones": 0, "industries": 0, "capabilities": 0, "certifications": 0, "honors": 0, "brands": 0, "documents": 0, "categories": 0, "products": 0, "attributes": 0, "category_attributes": 0, "identifiers": 0, "attribute_values": 0, "inventory": 0, "receipts": 0, "support": 0, "editorial_categories": 0, "editorial_articles": 0, "faqs": 0, "rfqs": 0, "rfq_items": 0, "quotations": 0, "quotation_items": 0}
         self._sections(counts)
         self._locations(counts)
         self._milestones(counts)
@@ -66,7 +71,116 @@ class Command(BaseCommand):
         self._catalog_inventory(counts)
         self._support(counts)
         document_note = self._documents(counts)
+        self._editorial(counts)
+        self._faqs(counts)
+        self._rfqs(counts)
+        self._quotations(counts)
         self.stdout.write(self.style.SUCCESS(f"Demo content populated safely: {counts}. {document_note}"))
+
+    def _rfqs(self, counts):
+        product = Product.objects.filter(code="DEMO-PRODUCT-001", is_active=True).first()
+        if not product:
+            return
+        defaults = {
+            "company_name": "[DEMO] شرکت نمونه",
+            "contact_name": "[DEMO] Contact",
+            "phone": "09120000009",
+            "email": "demo-rfq@example.invalid",
+            "subject": "[DEMO] Product pricing request",
+            "message": "Development-only RFQ fixture; this is not a real customer request or commercial commitment.",
+            "source": RFQ_MARKER,
+            "status": RequestForQuotation.Status.SUBMITTED,
+        }
+        rfq, created = RequestForQuotation.objects.get_or_create(
+            source=RFQ_MARKER, contact_name=defaults["contact_name"], defaults=defaults,
+        )
+        if created:
+            counts["rfqs"] += 1
+        item, item_created = RequestForQuotationItem.objects.get_or_create(
+            rfq=rfq, product=product,
+            defaults={"requested_quantity": 2, "customer_note": "Development fixture only.", "product_code_snapshot": product.code, "product_name_snapshot": product.name},
+        )
+        counts["rfq_items"] += int(item_created)
+
+    def _quotations(self, counts):
+        rfq = RequestForQuotation.objects.filter(source=RFQ_MARKER, contact_name="[DEMO] Contact").first()
+        if not rfq:
+            return
+        quotation, created = SalesQuotation.objects.get_or_create(
+            rfq=rfq,
+            defaults={"status": SalesQuotation.Status.ISSUED, "currency": SalesQuotation.Currency.IRR, "issued_at": timezone.now(), "public_note": "Development-only quotation fixture; not a real Mehrasl commercial offer.", "internal_notes": QUOTATION_MARKER, "source": QUOTATION_MARKER},
+        )
+        if created:
+            counts["quotations"] += 1
+        item, item_created = SalesQuotationItem.objects.get_or_create(
+            quotation=quotation,
+            source_rfq_item=rfq.items.first(),
+            defaults={"product": rfq.items.first().product, "product_name_snapshot": rfq.items.first().product_name_snapshot, "product_code_snapshot": rfq.items.first().product_code_snapshot, "quantity": rfq.items.first().requested_quantity, "unit_price": Decimal("125000000.00")},
+        )
+        counts["quotation_items"] += int(item_created)
+
+    def _editorial(self, counts):
+        categories = {}
+        for slug, name_fa, name_en in (
+            ("demo-company", "[DEMO] اخبار شرکت", "[DEMO] Company"),
+            ("demo-technical", "[DEMO] فنی و آموزشی", "[DEMO] Technical and educational"),
+            ("demo-buying", "[DEMO] راهنمای انتخاب", "[DEMO] Buying guidance"),
+        ):
+            category, created = ContentCategory.objects.get_or_create(
+                slug=slug,
+                defaults={"name_fa": name_fa, "name_en": name_en, "display_order": 20, "is_active": True, "is_published": True, "source_url": DEMO_SOURCE, "source_title": "Development demo editorial taxonomy", "migration_notes": f"{EDITORIAL_MARKER}:category:{slug}; development-only."},
+            )
+            categories[slug] = category
+            counts["editorial_categories"] += int(created)
+
+        product = Product.objects.filter(code="DEMO-PRODUCT-001").first()
+        second_product = Product.objects.filter(code="DEMO-PRODUCT-002").first()
+        catalog_category = Category.objects.filter(code="DEMO-TECHNICAL").first()
+        brand = ProductBrand.objects.filter(slug="demo-industrial-brand-a").first()
+        industry = Industry.objects.filter(slug="demo-mining").first()
+        capability = Capability.objects.filter(slug="demo-design").first()
+        records = (
+            ("demo-news-01", "news", "[DEMO] Company news example one", "[DEMO] نمونه خبر شرکت یک", "demo-company"),
+            ("demo-news-02", "news", "[DEMO] Company news example two", "[DEMO] نمونه خبر شرکت دو", "demo-company"),
+            ("demo-technical-01", "technical_article", "[DEMO] Technical article example one", "[DEMO] نمونه مقاله فنی یک", "demo-technical"),
+            ("demo-technical-02", "technical_article", "[DEMO] Technical article example two", "[DEMO] نمونه مقاله فنی دو", "demo-technical"),
+            ("demo-buying-guide-01", "buying_guide", "[DEMO] Buying guide example", "[DEMO] نمونه راهنمای خرید", "demo-buying"),
+            ("demo-product-guide-01", "product_guide", "[DEMO] Product guide example", "[DEMO] نمونه راهنمای محصول", "demo-technical"),
+            ("demo-event-01", "event", "[DEMO] Event example", "[DEMO] نمونه رویداد", "demo-company"),
+        )
+        for order, (slug, content_type, title_en, title_fa, category_slug) in enumerate(records, 20):
+            article, created = ContentArticle.objects.get_or_create(
+                slug=slug,
+                defaults={
+                    "content_type": content_type, "title_fa": title_fa, "title_en": title_en,
+                    "excerpt_fa": "این محتوای آزمایشی فقط برای محیط توسعه است و ادعای رسمی مهراصل نیست.",
+                    "excerpt_en": "Development-only editorial content; it is not an official Mehrasl claim.",
+                    "body_fa": "متن نمونه تحریریه برای بررسی گردش کار CMS و API.",
+                    "body_en": "Development sample copy for CMS and API workflow testing.",
+                    "category": categories[category_slug], "published_at": timezone.now(), "is_active": True,
+                    "is_published": True, "review_status": ContentArticle.ReviewStatus.READY, "is_featured": order == 20, "display_order": order,
+                    "seo_title_fa": title_fa, "seo_title_en": title_en,
+                    "seo_description_fa": "توضیح سئوی نمونه برای محیط توسعه.", "seo_description_en": "Development-only SEO description.",
+                    "source_url": DEMO_SOURCE, "source_title": "Development demo editorial content",
+                    "migration_notes": f"{EDITORIAL_MARKER}:{slug}; development-only; not official Mehrasl content.",
+                },
+            )
+            if created:
+                counts["editorial_articles"] += 1
+            if not created or not article:
+                continue
+            if content_type in {"technical_article", "product_guide"} and product:
+                article.products.add(product)
+            if content_type == "buying_guide" and catalog_category:
+                article.catalog_categories.add(catalog_category)
+            if content_type == "product_guide" and second_product:
+                article.products.add(second_product)
+            if content_type == "product_guide" and brand:
+                article.brands.add(brand)
+            if content_type == "technical_article" and industry:
+                article.industries.add(industry)
+            if content_type == "technical_article" and capability:
+                article.capabilities.add(capability)
 
     def _support(self, counts):
         policy, created = WarrantyPolicy.objects.get_or_create(title_fa="[DEMO] اطلاعات ثبت گارانتی", defaults={"title_en":"[DEMO] Warranty registration information", "body_fa":"محتوای نمونه محیط توسعه است و شرایط واقعی گارانتی محسوب نمی‌شود.", "body_en":"Development sample only; this is not a warranty term.", "registration_enabled":True, "is_published":True, "migration_notes":self._note("support-policy; demo only")})
@@ -74,6 +188,35 @@ class Command(BaseCommand):
         if not CustomerSupportRequest.objects.filter(subject="[DEMO] درخواست پشتیبانی").exists(): CustomerSupportRequest.objects.create(full_name="[DEMO] Customer", phone="09120000001", subject="[DEMO] درخواست پشتیبانی", message="Development fixture", request_type="other"); counts["support"]+=1
         if not WarrantyRegistration.objects.filter(full_name="[DEMO] Customer").exists(): WarrantyRegistration.objects.create(full_name="[DEMO] Customer", phone="09120000001", notes="Development fixture"); counts["support"]+=1
         if not CustomerFeedback.objects.filter(message="[DEMO] Development feedback").exists(): CustomerFeedback.objects.create(feedback_type="other", rating=5, message="[DEMO] Development feedback"); counts["support"]+=1
+
+    def _faqs(self, counts):
+        product = Product.objects.filter(code="DEMO-PRODUCT-001").first()
+        category = Category.objects.filter(code="DEMO-TECHNICAL").first()
+        industry = Industry.objects.filter(slug="demo-mining").first()
+        capability = Capability.objects.filter(slug="demo-maintenance").first()
+        article = ContentArticle.objects.filter(slug="demo-technical-01").first()
+        records = (
+            ("demo-faq-general", "general", "[DEMO] What information should I prepare before asking a product question?", "[DEMO] پیش از پرسش درباره محصول چه اطلاعاتی آماده کنم؟", "Development sample only. A product code or identifier is useful for a precise review.", "این پاسخ فقط نمونه محیط توسعه است. کد یا شناسه محصول برای بررسی دقیق مفید است.", None),
+            ("demo-faq-product", "product", "[DEMO] How can I identify this demo product?", "[DEMO] چگونه این محصول نمونه را شناسایی کنم؟", "Development sample only. Use the product code shown in the catalog fixture.", "این پاسخ فقط نمونه محیط توسعه است. از کد محصول نمایش‌داده‌شده در داده آزمایشی استفاده کنید.", "product"),
+            ("demo-faq-technical", "technical", "[DEMO] Which technical details should be checked before selection?", "[DEMO] پیش از انتخاب چه مشخصات فنی بررسی شود؟", "Development sample only. Compare the published specification fields with the intended application.", "این پاسخ فقط نمونه محیط توسعه است. مشخصات منتشرشده را با کاربرد موردنظر مقایسه کنید.", "technical"),
+            ("demo-faq-warranty", "warranty", "[DEMO] Where can I review warranty-related information?", "[DEMO] اطلاعات مرتبط با گارانتی را از کجا ببینم؟", "Development sample only; it is not a warranty term. Use the customer-service route for an official review.", "این متن فقط نمونه محیط توسعه است و شرط گارانتی محسوب نمی‌شود. برای بررسی رسمی از مسیر امور مشتریان استفاده کنید.", "warranty"),
+            ("demo-faq-support", "support", "[DEMO] How should I submit a technical support question?", "[DEMO] پرسش فنی را چگونه برای پشتیبانی ارسال کنم؟", "Development sample only. Include the product context and a concise description through the support request form.", "این پاسخ فقط نمونه محیط توسعه است. زمینه محصول و شرح کوتاه مسئله را از طریق فرم درخواست پشتیبانی ارسال کنید.", "support"),
+        )
+        for order, (slug, faq_type, question_en, question_fa, answer_en, answer_fa, relation) in enumerate(records, 20):
+            faq, created = FAQEntry.objects.get_or_create(slug=slug, defaults={
+                "faq_type": faq_type, "question_fa": question_fa, "question_en": question_en,
+                "answer_fa": answer_fa, "answer_en": answer_en, "display_order": order,
+                "is_active": True, "is_published": True, "review_status": FAQEntry.ReviewStatus.READY, "source_url": DEMO_SOURCE,
+                "source_title": "Development demo FAQ", "migration_notes": f"{EDITORIAL_MARKER}:faq:{slug}; development-only; not official Mehrasl guidance.",
+            })
+            if created:
+                counts["faqs"] += 1
+            if relation == "product" and product: faq.products.set([product])
+            if relation == "technical":
+                if category: faq.categories.set([category])
+                if industry: faq.industries.set([industry])
+                if article: faq.articles.set([article])
+            if relation == "support" and capability: faq.capabilities.set([capability])
 
     def _sections(self, counts):
         records = (

@@ -4,7 +4,9 @@ from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.test import Client, TestCase, override_settings
 
+from apps.carts.models import Cart, CartItem
 from apps.catalog.models import AttributeDefinition, Category, CategoryAttribute, Product, ProductAttributeValue, ProductIdentifier
+from apps.content.models import ContentArticle
 from apps.inventory.models import Inventory, Receipt
 
 
@@ -51,3 +53,14 @@ class CatalogDemoInventoryTests(TestCase):
         self.assertTrue(client.login(username="admin", password="password"))
         response = client.get("/admin/inventory/inventory/")
         self.assertEqual(response.status_code, 200)
+
+    def test_cleanup_preserves_demo_product_referenced_by_protected_cart_item(self):
+        self.populate()
+        demo_product = Product.objects.get(code="DEMO-PRODUCT-001")
+        cart = Cart.objects.create(guest_token="00000000-0000-0000-0000-000000000001")
+        CartItem.objects.create(cart=cart, product=demo_product, quantity=1)
+
+        call_command("remove_demo_content", stdout=StringIO())
+
+        self.assertTrue(Product.objects.filter(pk=demo_product.pk).exists())
+        self.assertFalse(ContentArticle.objects.filter(migration_notes__contains="demo-content:phase-11.1").exists())

@@ -1,14 +1,16 @@
 import os
 from pathlib import Path
 
+from apps.notifications.config import parse_env_bool
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("SECRET_KEY", "unsafe-development-key-change-me")
-DEBUG = os.environ.get("DEBUG", "True").lower() == "true"
+DEBUG = parse_env_bool(os.environ.get("DEBUG"), default=True)
 ALLOWED_HOSTS = [host.strip() for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if host.strip()]
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes", "django.contrib.sessions",
     "django.contrib.messages", "django.contrib.staticfiles", "corsheaders", "rest_framework", "rest_framework.authtoken",
-    "apps.accounts", "apps.catalog", "apps.inventory", "apps.pricing", "apps.carts", "apps.orders", "apps.dashboard", "apps.company", "apps.website", "apps.common",
+    "apps.accounts", "apps.catalog", "apps.inventory", "apps.pricing", "apps.carts", "apps.orders", "apps.dashboard", "apps.company", "apps.website", "apps.content", "apps.search", "apps.rfq", "apps.common", "apps.notifications",
 ]
 MIDDLEWARE = ["corsheaders.middleware.CorsMiddleware", "django.middleware.security.SecurityMiddleware", "django.contrib.sessions.middleware.SessionMiddleware", "django.middleware.common.CommonMiddleware", "django.middleware.csrf.CsrfViewMiddleware", "django.contrib.auth.middleware.AuthenticationMiddleware", "django.contrib.messages.middleware.MessageMiddleware", "django.middleware.clickjacking.XFrameOptionsMiddleware"]
 ROOT_URLCONF = "config.urls"
@@ -39,7 +41,7 @@ SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = False
-SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "False").lower() == "true"
+SECURE_SSL_REDIRECT = parse_env_bool(os.environ.get("SECURE_SSL_REDIRECT"), default=False)
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 CACHES = {
     "default": {
@@ -70,4 +72,15 @@ EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() == "true"
+EMAIL_USE_TLS = parse_env_bool(os.environ.get("EMAIL_USE_TLS"), default=False)
+EMAIL_USE_SSL = parse_env_bool(os.environ.get("EMAIL_USE_SSL"), default=False)
+NOTIFICATIONS_REAL_DELIVERY_ENABLED = parse_env_bool(os.environ.get("NOTIFICATIONS_REAL_DELIVERY_ENABLED"), default=False)
+NOTIFICATIONS_EMAIL_ENABLED = parse_env_bool(os.environ.get("NOTIFICATIONS_EMAIL_ENABLED"), default=False)
+NOTIFICATIONS_SMS_ENABLED = parse_env_bool(os.environ.get("NOTIFICATIONS_SMS_ENABLED"), default=False)
+NOTIFICATIONS_MAX_ATTEMPTS = int(os.environ.get("NOTIFICATIONS_MAX_ATTEMPTS", "3"))
+SMS_USERNAME = os.environ.get("SMS_USERNAME", "")
+SMS_PASSWORD = os.environ.get("SMS_PASSWORD", "")
+SMS_PORTAL = os.environ.get("SMS_PORTAL", "")
+SMS_BACKEND = os.environ.get("SMS_BACKEND", "")
+SALES_NOTIFICATION_EMAIL = os.environ.get("SALES_NOTIFICATION_EMAIL", "")
+SALES_NOTIFICATION_SMS = os.environ.get("SALES_NOTIFICATION_SMS", "")

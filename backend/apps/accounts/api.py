@@ -239,6 +239,14 @@ def profile(request):
     return Response(profile_data(request.user))
 
 
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def session_status(request):
+    if not request.user.is_authenticated:
+        return Response({"authenticated": False, "customer": None})
+    return Response({"authenticated": True, "customer": profile_data(request.user)})
+
+
 @api_view(["GET", "POST"])
 @permission_classes([permissions.IsAuthenticated])
 def addresses(request):

@@ -22,9 +22,24 @@ type Cart = { id: number; guest_token: string | null; items: CartItem[]; subtota
 const emptyCustomer: Customer = { customer_first_name: "", customer_last_name: "", customer_email: "", customer_phone: "", customer_company_name: "", customer_national_id: "", shipping_province: "", shipping_city: "", shipping_postal_code: "", shipping_address: "" };
 
 const money = (value: string | null | undefined) => value == null ? "—" : `${Number(value).toLocaleString("fa-IR")} ریال`;
+const customerFieldLabels: Partial<Record<keyof Customer, string>> = {
+  customer_first_name: "نام", customer_last_name: "نام خانوادگی", customer_email: "ایمیل",
+  customer_phone: "شماره تماس", shipping_province: "استان", shipping_city: "شهر",
+  shipping_postal_code: "کد پستی", shipping_address: "نشانی کامل",
+};
+function customerFieldErrors(reason: unknown) {
+  if (!(reason instanceof ApiError) || !reason.data || typeof reason.data !== "object") return [];
+  return Object.entries(reason.data as Record<string, unknown>).flatMap(([key, value]) => {
+    const label = customerFieldLabels[key as keyof Customer];
+    if (!label) return [];
+    const messages = Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : typeof value === "string" ? [value] : [];
+    return messages.map((message) => ({ label, message }));
+  });
+}
 
 export default function CartPage() {
   const { locale = "fa" } = useParams<{ locale: string }>();
+  const english = locale === "en";
   const [cart, setCart] = useState<Cart | null>(null);
   const [customer, setCustomer] = useState<Customer>(emptyCustomer);
   const [loading, setLoading] = useState(true);
@@ -33,12 +48,13 @@ export default function CartPage() {
   const [orderReference, setOrderReference] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [customerErrors, setCustomerErrors] = useState<{ label: string; message: string }[]>([]);
   const [discountCode, setDiscountCode] = useState("");
   const [applyingDiscount, setApplyingDiscount] = useState(false);
   const [updatingItem, setUpdatingItem] = useState<number | null>(null);
 
   const acceptCart = useCallback((data: Cart) => {
-    setCart(data); setCustomer(data.customer ?? emptyCustomer);
+    setCart(data); setCustomer({ ...emptyCustomer, ...(data.customer ?? {}) });
     if (data.guest_token) localStorage.setItem("guestCartToken", data.guest_token);
   }, []);
   const load = useCallback(async () => {
@@ -57,11 +73,11 @@ export default function CartPage() {
     try { if (quantity < 1) { await removeItem(item.id); await load(); } else acceptCart(await updateItem(item.id, quantity) as Cart); } catch (reason) { setError(reason instanceof Error ? reason.message : "تغییر تعداد ناموفق بود."); } finally { setUpdatingItem(null); }
   };
   const saveCustomerData = async () => {
-    setMessage(""); setError("");
+    setMessage(""); setError(""); setCustomerErrors([]);
     try {
       const data = await saveCheckoutCustomer<Cart>(customer);
       acceptCart(data); return data as Cart;
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "خطایی رخ داد."); return null; }
+    } catch (reason) { setCustomerErrors(customerFieldErrors(reason)); setError(reason instanceof Error ? reason.message : "خطایی رخ داد."); return null; }
   };
   const saveCustomer = async (event: React.FormEvent) => {
     event.preventDefault(); setSaving(true);
@@ -90,7 +106,7 @@ export default function CartPage() {
   return <main className="cart-page container-page py-8">
     <h1 className="mb-4 text-2xl font-black">سبد خرید و ثبت سفارش</h1>
     <CheckoutProgress hasItems={cart.items.length > 0} customerComplete={localCustomerComplete} />
-    {error && <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700" role="alert" aria-live="assertive">{error}</p>}
+    {error && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700" role="alert" aria-live="assertive"><p>{customerErrors.length > 0 ? "لطفاً موارد زیر را اصلاح کنید:" : error}</p>{customerErrors.length > 0 && <ul className="mt-2 list-disc space-y-1 ps-5">{customerErrors.map(({ label, message: fieldMessage }) => <li key={`${label}-${fieldMessage}`}><b>{label}:</b> {fieldMessage}</li>)}</ul>}</div>}
     <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
       <section className="card">
         <h2 className="text-lg font-black">کالاهای انتخاب‌شده <span className="cart-item-count">({cart.items.length.toLocaleString("fa-IR")} کالا)</span></h2>
@@ -101,6 +117,7 @@ export default function CartPage() {
         </article>; })}
         <details className="cart-discount-box"><summary>کد تخفیف <small>اختیاری</small></summary>{cart.discount ? <div className="cart-applied-discount"><div><b dir="ltr">{cart.discount.code}</b><span role="status">٪{Number(cart.discount.percentage).toLocaleString("fa-IR")} تخفیف اعمال شد</span></div><button type="button" onClick={() => void removeDiscountCode()} aria-label={`حذف کد تخفیف ${cart.discount.code}`}>حذف</button></div> : <form onSubmit={applyDiscountCode}><label htmlFor="discount-code" className="sr-only">کد تخفیف</label><input id="discount-code" dir="ltr" value={discountCode} onChange={(event) => setDiscountCode(event.target.value)} placeholder="کد تخفیف را وارد کنید" required /><button disabled={applyingDiscount}>{applyingDiscount ? "در حال بررسی…" : "اعمال کد"}</button></form>}</details>
         <CartSummary cart={cart} />
+        {cart.items.length > 0 && <Link className="cart-rfq-link" href={`/${locale}/rfq?source=cart`} aria-label={english ? "Request a quote for cart items" : "استعلام قیمت اقلام سبد"}>{english ? "Request a Quote for Cart Items" : "استعلام قیمت اقلام سبد"}</Link>}
       </section>
 
       <form className="card h-max" onSubmit={saveCustomer}>

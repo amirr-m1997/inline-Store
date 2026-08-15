@@ -115,6 +115,7 @@ DOCUMENT_EXTENSIONS = {
     "manual": {"pdf", "doc", "docx"},
     "cad": {"dwg", "dxf", "step", "stp", "iges", "igs"},
     "certificate": {"pdf"},
+    "catalogue": {"pdf", "doc", "docx", "zip"},
     "other": {"pdf", "doc", "docx", "xls", "xlsx", "zip"},
 }
 DOCUMENT_MIME_TYPES = {
@@ -143,6 +144,7 @@ class ProductDocument(TimestampedModel):
         MANUAL = "manual", "راهنما"
         CAD = "cad", "CAD"
         CERTIFICATE = "certificate", "گواهی‌نامه"
+        CATALOGUE = "catalogue", "کاتالوگ"
         OTHER = "other", "سایر"
 
     product = models.ForeignKey(Product, related_name="documents", on_delete=models.CASCADE)

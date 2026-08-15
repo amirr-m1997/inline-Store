@@ -3,6 +3,7 @@ from datetime import timedelta
 
 import csv
 
+from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import F
 from django.http import HttpResponse
@@ -14,7 +15,8 @@ from rest_framework.response import Response
 from apps.catalog.serializers import ProductSerializer
 from apps.catalog.models import Product
 from apps.inventory.models import Inventory, Reservation
-from apps.accounts.models import CustomerAddress
+from apps.accounts.models import CustomerAddress, normalize_iranian_phone
+from django.core.exceptions import ValidationError as DjangoValidationError
 from apps.orders.models import Order, OrderItem, Payment
 from .models import Cart, CartItem, DiscountCode
 
@@ -32,6 +34,23 @@ class CartCustomerSerializer(serializers.ModelSerializer):
         compact = value.replace(" ", "").replace("-", "")
         if value and (not compact.lstrip("+").isdigit() or len(compact) < 10):
             raise serializers.ValidationError("شماره تماس معتبر نیست.")
+        request = self.context.get("request")
+        if value and request and request.user.is_authenticated:
+            try:
+                normalized = normalize_iranian_phone(value)
+            except DjangoValidationError:
+                normalized = None
+            if normalized and get_user_model().objects.exclude(pk=request.user.pk).filter(phone=normalized).exists():
+                raise serializers.ValidationError("این شماره تماس قبلاً برای حساب دیگری ثبت شده است.")
+        return value
+
+    def validate_customer_email(self, value):
+        value = value.strip().lower() if value else value
+        request = self.context.get("request")
+        if value and request and request.user.is_authenticated:
+            user_model = get_user_model()
+            if user_model.objects.exclude(pk=request.user.pk).filter(email=value).exists():
+                raise serializers.ValidationError("این ایمیل قبلاً ثبت شده است.")
         return value
 
     def validate_shipping_postal_code(self, value):
@@ -55,6 +74,29 @@ def _fill_customer_from_user(cart, user):
             changed.append(cart_field)
     if changed:
         cart.save(update_fields=changed + ["updated_at"])
+
+
+def _save_customer_to_profile(cart, user):
+    """Copy cart contact data without violating the stricter User phone field."""
+    reverse_mapping = {
+        "customer_first_name": "first_name", "customer_last_name": "last_name",
+        "customer_email": "email", "customer_company_name": "company_name",
+        "customer_national_id": "national_id", "shipping_province": "province",
+        "shipping_city": "city", "shipping_postal_code": "postal_code",
+        "shipping_address": "address",
+    }
+    update_fields = []
+    for cart_field, user_field in reverse_mapping.items():
+        setattr(user, user_field, getattr(cart, cart_field))
+        update_fields.append(user_field)
+    try:
+        normalized_phone = normalize_iranian_phone(cart.customer_phone)
+    except DjangoValidationError:
+        normalized_phone = None
+    if normalized_phone:
+        user.phone = normalized_phone
+        update_fields.append("phone")
+    user.save(update_fields=update_fields + ["updated_at"])
 
 
 def _merge_guest_cart(user_cart, guest_cart):
@@ -119,25 +161,21 @@ def cart_payload(cart):
 def cart_detail(request):
     cart = current_cart(request)
     if request.method == "PATCH":
-        serializer = CartCustomerSerializer(cart, data=request.data.get("customer", request.data), partial=True)
+        serializer = CartCustomerSerializer(cart, data=request.data.get("customer", request.data), partial=True, context={"request": request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
         if request.user.is_authenticated and request.data.get("save_to_profile", True):
-            reverse_mapping = {
-                "customer_first_name": "first_name", "customer_last_name": "last_name",
-                "customer_email": "email", "customer_phone": "phone", "customer_company_name": "company_name",
-                "customer_national_id": "national_id", "shipping_province": "province", "shipping_city": "city",
-                "shipping_postal_code": "postal_code", "shipping_address": "address",
-            }
-            for cart_field, user_field in reverse_mapping.items():
-                setattr(request.user, user_field, getattr(cart, cart_field))
-            request.user.save(update_fields=list(reverse_mapping.values()) + ["updated_at"])
+            _save_customer_to_profile(cart, request.user)
             address_fields = {
                 "recipient_name": f"{cart.customer_first_name} {cart.customer_last_name}".strip(),
-                "recipient_phone": cart.customer_phone,
+                "recipient_phone": None,
                 "province": cart.shipping_province, "city": cart.shipping_city,
                 "postal_code": cart.shipping_postal_code, "address": cart.shipping_address,
             }
+            try:
+                address_fields["recipient_phone"] = normalize_iranian_phone(cart.customer_phone)
+            except DjangoValidationError:
+                pass
             if all(address_fields.values()):
                 CustomerAddress.objects.update_or_create(
                     user=request.user, is_default=True,

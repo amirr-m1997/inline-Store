@@ -8,12 +8,109 @@ import { authChanged, mergeGuestCart } from "../../../services/auth-client";
 import { login, requestOtp, verifyOtp } from "../../../lib/api/auth";
 
 export default function LoginPage() {
-  const router = useRouter(); const { locale = "fa" } = useParams<{ locale: string }>(); const [mode, setMode] = useState<"password" | "otp">("password"); const [step, setStep] = useState<"phone" | "code">("phone"); const [phone, setPhone] = useState(""); const [error, setError] = useState(""); const [loading, setLoading] = useState(false);
-  const finish = async () => { await mergeGuestCart(); authChanged(); router.replace(`/${locale}/account`); router.refresh(); };
-  const passwordLogin = async (event: React.FormEvent<HTMLFormElement>) => { event.preventDefault(); setLoading(true); setError(""); try { await login(Object.fromEntries(new FormData(event.currentTarget))); await finish(); } catch (reason) { setError(reason instanceof Error ? reason.message : "درخواست ناموفق بود."); } finally { setLoading(false); } };
-  const requestOTP = async (event: React.FormEvent<HTMLFormElement>) => { event.preventDefault(); setLoading(true); setError(""); try { await requestOtp({ phone_number: phone, purpose: "login" }); setStep("code"); } catch (reason) { setError(reason instanceof Error ? reason.message : "درخواست ناموفق بود."); } finally { setLoading(false); } };
-  const verifyOTP = async (event: React.FormEvent<HTMLFormElement>) => { event.preventDefault(); setLoading(true); try { await verifyOtp({ phone_number: phone, code: new FormData(event.currentTarget).get("code"), purpose: "login" }); await finish(); } catch (reason) { setError(reason instanceof Error ? reason.message : "درخواست ناموفق بود."); } finally { setLoading(false); } };
-  return <main className="auth-page"><section className="auth-panel"><header><span>حساب مشتریان مهر اصل</span><h1>ورود به حساب کاربری</h1><p>برای مشاهده سبد، پروفایل و خدمات سازمانی وارد شوید.</p></header><div className="auth-tabs"><button className={mode === "password" ? "active" : ""} onClick={() => setMode("password")}>ورود با رمز عبور</button><button className={mode === "otp" ? "active" : ""} onClick={() => setMode("otp")}>کد یکبار مصرف</button></div>
-    {mode === "password" ? <form className="auth-form" onSubmit={passwordLogin}><label>ایمیل یا شماره موبایل<input name="identifier" dir="ltr" autoComplete="username" required /></label><label>رمز عبور<input name="password" type="password" dir="ltr" autoComplete="current-password" required /></label><Link className="auth-sub-link" href="/fa/forgot-password">فراموشی رمز عبور</Link><button className="auth-primary" disabled={loading}>{loading ? "در حال ورود…" : "ورود"}</button></form> : step === "phone" ? <form className="auth-form" onSubmit={requestOTP}><label>شماره موبایل<input value={phone} onChange={(e) => setPhone(e.target.value)} dir="ltr" inputMode="tel" placeholder="09123456789" required /></label><button className="auth-primary" disabled={loading}>{loading ? "در حال ارسال…" : "ارسال کد"}</button></form> : <form className="auth-form" onSubmit={verifyOTP}><p className="auth-hint">کد ارسال‌شده به {phone}</p><label>کد شش رقمی<input name="code" dir="ltr" inputMode="numeric" maxLength={6} required /></label><button className="auth-primary" disabled={loading}>{loading ? "در حال بررسی…" : "تأیید و ورود"}</button><button type="button" className="auth-text-button" onClick={() => setStep("phone")}>تغییر شماره</button></form>}
-    {error && <p className="auth-error" role="alert">{error}</p>}<div className="auth-divider"><span>یا</span></div><GoogleSignIn onSuccess={() => void finish()} /><p className="auth-switch">حساب کاربری ندارید؟ <Link href="/fa/register">ثبت‌نام کنید</Link></p></section></main>;
+  const router = useRouter();
+  const { locale = "fa" } = useParams<{ locale: string }>();
+  const [mode, setMode] = useState<"password" | "otp">("password");
+  const [step, setStep] = useState<"phone" | "code">("phone");
+  const [phone, setPhone] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const finish = async () => {
+    await mergeGuestCart();
+    authChanged();
+    router.replace(`/${locale}/account`);
+    router.refresh();
+  };
+
+  const passwordLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      await login(Object.fromEntries(new FormData(event.currentTarget)));
+      await finish();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "درخواست ناموفق بود.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const requestOTP = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      await requestOtp({ phone_number: phone, purpose: "login" });
+      setStep("code");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "درخواست ناموفق بود.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyOTP = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      await verifyOtp({ phone_number: phone, code: new FormData(event.currentTarget).get("code"), purpose: "login" });
+      await finish();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "درخواست ناموفق بود.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  let loginForm: React.ReactNode;
+  if (mode === "password") {
+    loginForm = (
+      <form className="auth-form" onSubmit={passwordLogin}>
+        <label>ایمیل یا شماره موبایل<input name="identifier" dir="ltr" autoComplete="username" required /></label>
+        <label>رمز عبور<input name="password" type="password" dir="ltr" autoComplete="current-password" required /></label>
+        <Link className="auth-sub-link" href={`/${locale}/forgot-password`}>فراموشی رمز عبور</Link>
+        <button className="auth-primary" disabled={loading}>{loading ? "در حال ورود…" : "ورود"}</button>
+      </form>
+    );
+  } else if (step === "phone") {
+    loginForm = (
+      <form className="auth-form" onSubmit={requestOTP}>
+        <label>شماره موبایل<input value={phone} onChange={(event) => setPhone(event.target.value)} dir="ltr" inputMode="tel" placeholder="09123456789" required /></label>
+        <button className="auth-primary" disabled={loading}>{loading ? "در حال ارسال…" : "ارسال کد"}</button>
+      </form>
+    );
+  } else {
+    loginForm = (
+      <form className="auth-form" onSubmit={verifyOTP}>
+        <p className="auth-hint">کد ارسال‌شده به {phone}</p>
+        <label>کد شش رقمی<input name="code" dir="ltr" inputMode="numeric" maxLength={6} required /></label>
+        <button className="auth-primary" disabled={loading}>{loading ? "در حال بررسی…" : "تأیید و ورود"}</button>
+        <button type="button" className="auth-text-button" onClick={() => setStep("phone")}>تغییر شماره</button>
+      </form>
+    );
+  }
+
+  return (
+    <main className="auth-page">
+      <section className="auth-panel">
+        <header>
+          <span>حساب مشتریان مهر اصل</span>
+          <h1>ورود به حساب کاربری</h1>
+          <p>برای مشاهده سبد، پروفایل و خدمات سازمانی وارد شوید.</p>
+        </header>
+        <div className="auth-tabs">
+          <button type="button" className={mode === "password" ? "active" : ""} onClick={() => setMode("password")}>ورود با رمز عبور</button>
+          <button type="button" className={mode === "otp" ? "active" : ""} onClick={() => setMode("otp")}>کد یکبار مصرف</button>
+        </div>
+        {loginForm}
+        {error && <p className="auth-error" role="alert">{error}</p>}
+        <div className="auth-divider"><span>یا</span></div>
+        <GoogleSignIn onSuccess={() => void finish()} />
+        <p className="auth-switch">حساب کاربری ندارید؟ <Link href={`/${locale}/register`}>ثبت‌نام کنید</Link></p>
+      </section>
+    </main>
+  );
 }

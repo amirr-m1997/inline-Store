@@ -1,6 +1,11 @@
 import { apiRequest } from "./client";
 
 export type CurrentUser = { id: number; first_name: string; last_name: string; email: string | null; phone_number: string | null };
+export type SessionStatus = { authenticated: boolean; customer: CurrentUser | null };
+
+export function sessionStatus(signal?: AbortSignal) {
+  return apiRequest<SessionStatus>("/api/v1/auth/session/", { cache: "no-store", signal });
+}
 
 export function currentUser(signal?: AbortSignal) {
   return apiRequest<CurrentUser>("/api/v1/auth/profile/", { cache: "no-store", signal });

@@ -1,0 +1,7 @@
+Your request for quotation has been submitted.
+
+Request reference: {{ reference }}
+Status: Submitted
+Items: {{ item_count }}
+
+This message confirms receipt for review only. It is not a quotation, price confirmation, or stock reservation.
