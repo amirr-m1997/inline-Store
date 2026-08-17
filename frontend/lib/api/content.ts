@@ -25,7 +25,7 @@ export function getWarrantyRegistrations<T>() { return apiRequest<T[]>("/api/v1/
 export function submitFeedback<T>(body: unknown) { return apiRequest<T>("/api/v1/site/support/feedback/", { method: "POST", body }); }
 
 export const getCompanyServer = <T,>() => getServer<T>("/api/v1/company/");
-export const getHeroServer = <T,>() => getServer<T>("/api/v1/site/hero/");
+export const getHeroServer = <T,>(locale = "fa") => getServer<T>(`/api/v1/site/hero/?locale=${locale}`);
 export const getAdvantagesServer = <T,>() => getServer<T>("/api/v1/site/advantages/");
 export const getSupplyBrandsServer = <T,>() => getServer<T>("/api/v1/supply-brands/");
 export const getFooterServer = <T,>() => getServer<T>("/api/v1/site/footer/");

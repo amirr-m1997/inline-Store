@@ -3,20 +3,20 @@ from django.db import models
 
 class NotificationDelivery(models.Model):
     class EventType(models.TextChoices):
-        RFQ_SUBMITTED = "rfq_submitted", "RFQ submitted"
-        QUOTATION_ISSUED = "quotation_issued", "Quotation issued"
-        QUOTATION_ACCEPTED = "quotation_accepted", "Quotation accepted"
-        QUOTATION_REJECTED = "quotation_rejected", "Quotation rejected"
-        QUOTATION_REVISION_REQUESTED = "quotation_revision_requested", "Quotation revision requested"
+        RFQ_SUBMITTED = "rfq_submitted", "ثبت استعلام قیمت"
+        QUOTATION_ISSUED = "quotation_issued", "صدور پیشنهاد قیمت"
+        QUOTATION_ACCEPTED = "quotation_accepted", "تأیید پیشنهاد قیمت"
+        QUOTATION_REJECTED = "quotation_rejected", "رد پیشنهاد قیمت"
+        QUOTATION_REVISION_REQUESTED = "quotation_revision_requested", "درخواست اصلاح پیشنهاد قیمت"
 
     class Channel(models.TextChoices):
-        EMAIL = "email", "Email"
-        SMS = "sms", "SMS"
+        EMAIL = "email", "ایمیل"
+        SMS = "sms", "پیامک"
 
     class Status(models.TextChoices):
-        PENDING = "pending", "Pending"
-        SENT = "sent", "Sent"
-        FAILED = "failed", "Failed"
+        PENDING = "pending", "در انتظار ارسال"
+        SENT = "sent", "ارسال‌شده"
+        FAILED = "failed", "ناموفق"
 
     event_type = models.CharField(max_length=48, choices=EventType.choices)
     channel = models.CharField(max_length=16, choices=Channel.choices)

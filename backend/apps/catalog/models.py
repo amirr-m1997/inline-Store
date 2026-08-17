@@ -49,7 +49,14 @@ class Category(TimestampedModel):
             frontier = list(Category.objects.filter(parent_id__in=frontier, is_active=True).values_list("id", flat=True))
             ids.extend(frontier)
         return ids
-    def __str__(self): return self.name_fa
+    def __str__(self):
+        """Keep admin/autocomplete labels understandable in a large catalog."""
+        parts = []
+        current = self
+        while current is not None:
+            parts.append(current.name_fa)
+            current = current.parent
+        return " / ".join(reversed(parts))
 
 class CategorySlugRedirect(TimestampedModel):
     old_slug = models.SlugField(max_length=255, unique=True)
@@ -194,11 +201,11 @@ def normalize_identifier(value):
 
 class ProductIdentifier(TimestampedModel):
     class Type(models.TextChoices):
-        INTERNAL_CODE = "internal_code", "Internal product code"
-        SKU = "sku", "SKU"
-        MANUFACTURER_PART_NUMBER = "mpn", "Manufacturer part number"
-        BARCODE = "barcode", "Barcode"
-        ALIAS = "alias", "Alias"
+        INTERNAL_CODE = "internal_code", "کد داخلی محصول"
+        SKU = "sku", "شناسه SKU"
+        MANUFACTURER_PART_NUMBER = "mpn", "شماره قطعه سازنده"
+        BARCODE = "barcode", "بارکد"
+        ALIAS = "alias", "نام مستعار"
 
     product = models.ForeignKey(Product, related_name="identifiers", on_delete=models.CASCADE)
     identifier_type = models.CharField(max_length=24, choices=Type.choices)

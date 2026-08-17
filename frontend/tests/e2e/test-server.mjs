@@ -28,6 +28,10 @@ backend.emit = (event, ...args) => {
   if (event === "request") {
     const [request, response] = args;
     const requestUrl = new URL(request.url, `http://localhost:${backendPort}`);
+    if (requestUrl.pathname === "/api/v1/site/hero/") {
+      const english = requestUrl.searchParams.get("locale") === "en";
+      return json(response, { title: english ? "Test homepage" : "صفحه اصلی تست", slogan: english ? "Industrial supply" : "تأمین صنعتی", description: english ? "Test content" : "محتوای تست", hero_image: null, mobile_hero_image: null, buttons: [], banners: [{ id: 1, desktop_image: "", mobile_image: "", title: english ? "First banner" : "بنر اول", description: english ? "First description" : "توضیح اول", button: { text: english ? "Shop" : "فروشگاه", link: "/fa/shop" } }, { id: 2, desktop_image: "", mobile_image: "", title: english ? "Second banner" : "بنر دوم", description: english ? "Second description" : "توضیح دوم", button: null }] });
+    }
     if (requestUrl.pathname === "/api/v1/auth/session/") {
       return json(response, { authenticated: false, customer: null });
     }

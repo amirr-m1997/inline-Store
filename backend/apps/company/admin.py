@@ -1,7 +1,13 @@
 from django.contrib import admin
 
-from .models import Capability, CompanyAdvantage, CompanyCertification, CompanyHonor, CompanyInfo, CompanyLocation, CompanyMilestone, CompanySection, Industry
+from .models import Capability, CompanyAdvantage, CompanyBanner, CompanyCertification, CompanyHonor, CompanyInfo, CompanyLocation, CompanyMilestone, CompanySection, Industry
 from .review import review_record
+
+
+class CompanyBannerInline(admin.StackedInline):
+    model = CompanyBanner
+    extra = 0
+    fields = ("desktop_image", "mobile_image", "title_fa", "title_en", "description_fa", "description_en", "button_text_fa", "button_text_en", "button_url", "order", "is_active")
 
 
 class TranslationMissingFilter(admin.SimpleListFilter):
@@ -54,14 +60,25 @@ class ReviewStatusFilter(admin.SimpleListFilter):
 @admin.register(CompanyInfo)
 class CompanyInfoAdmin(admin.ModelAdmin):
     list_display = ("name_fa", "phone", "mobile", "email")
+    search_fields = ("name_fa", "email", "phone")
     fieldsets = (
         ("اطلاعات شرکت", {"fields": ("name_fa", "logo", "description", "address", "phone", "mobile", "email", "website", "working_hours")} ),
         ("تنظیمات فوتر", {"fields": ("footer_copyright_fa", "footer_copyright_en")} ),
         ("تنظیمات هیرو", {"fields": ("hero_is_active", "hero_title_fa", "hero_title_en", "hero_slogan_fa", "hero_slogan_en", "hero_description_fa", "hero_description_en", "hero_image", "mobile_hero_image", "primary_button_text", "primary_button_link", "secondary_button_text", "secondary_button_link")} ),
     )
+    inlines = (CompanyBannerInline,)
 
     def has_add_permission(self, request):
         return not CompanyInfo.objects.exists()
+
+
+@admin.register(CompanyBanner)
+class CompanyBannerAdmin(admin.ModelAdmin):
+    list_display = ("__str__", "company_info", "order", "is_active", "desktop_image", "mobile_image")
+    list_filter = ("is_active", "company_info")
+    list_editable = ("order", "is_active")
+    search_fields = ("title_fa", "title_en", "button_url")
+    autocomplete_fields = ("company_info",)
 
 
 @admin.register(CompanyAdvantage)

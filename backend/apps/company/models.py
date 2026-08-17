@@ -46,6 +46,29 @@ class CompanyInfo(models.Model):
         return self.name_fa
 
 
+class CompanyBanner(models.Model):
+    company_info = models.ForeignKey(CompanyInfo, related_name="banners", on_delete=models.CASCADE, verbose_name="اطلاعات شرکت")
+    desktop_image = models.ImageField("تصویر دسکتاپ", upload_to="company/hero/banners/")
+    mobile_image = models.ImageField("تصویر موبایل", upload_to="company/hero/banners/", blank=True, null=True)
+    title_fa = models.CharField("عنوان فارسی", max_length=255, blank=True)
+    title_en = models.CharField("عنوان انگلیسی", max_length=255, blank=True)
+    description_fa = models.TextField("توضیحات فارسی", blank=True)
+    description_en = models.TextField("توضیحات انگلیسی", blank=True)
+    button_text_fa = models.CharField("متن دکمه فارسی", max_length=100, blank=True)
+    button_text_en = models.CharField("متن دکمه انگلیسی", max_length=100, blank=True)
+    button_url = models.CharField("نشانی دکمه", max_length=255, blank=True)
+    order = models.PositiveSmallIntegerField("ترتیب", default=0)
+    is_active = models.BooleanField("فعال", default=True)
+
+    class Meta:
+        ordering = ("order", "id")
+        verbose_name = "بنر صفحه اصلی"
+        verbose_name_plural = "بنرهای صفحه اصلی"
+
+    def __str__(self):
+        return self.title_fa or f"بنر {self.pk}"
+
+
 class CompanyAdvantage(models.Model):
     title_fa = models.CharField("عنوان فارسی", max_length=255)
     title_en = models.CharField("عنوان انگلیسی", max_length=255, blank=True)

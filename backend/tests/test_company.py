@@ -1,9 +1,21 @@
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
+from apps.company.models import CompanyBanner, CompanyInfo
 from apps.website.models import ContactMessage, FooterLink, FooterSection, SiteNavigation, TrustBadge
 
 
 class CompanyApiTests(TestCase):
+    def test_hero_returns_active_banners_in_order(self):
+        company = CompanyInfo.objects.order_by("id").first() or CompanyInfo.objects.create(name_fa="شرکت آزمایشی")
+        image = SimpleUploadedFile("hero.jpg", b"image", content_type="image/jpeg")
+        CompanyBanner.objects.create(company_info=company, desktop_image=image, title_fa="دوم", order=2)
+        CompanyBanner.objects.create(company_info=company, desktop_image=SimpleUploadedFile("hero-1.jpg", b"image", content_type="image/jpeg"), title_fa="اول", order=1)
+        CompanyBanner.objects.create(company_info=company, desktop_image=SimpleUploadedFile("hero-off.jpg", b"image", content_type="image/jpeg"), title_fa="خاموش", order=0, is_active=False)
+        response = self.client.get("/api/v1/site/hero/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([item["title"] for item in response.json()["banners"]], ["اول", "دوم"])
+
     def test_contact_navigation_links_point_to_the_real_page(self):
         SiteNavigation.objects.create(title_fa="تماس با ما", url="/fa/contact")
         section = FooterSection.objects.create(title_fa="شرکت")

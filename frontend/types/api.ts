@@ -13,7 +13,8 @@ export type CompanyInfo = {
   working_hours: string;
 };
 
-export type SiteHero = { title: string; slogan: string; description: string; hero_image: string | null; mobile_hero_image: string | null; buttons: { text: string; link: string; variant: "primary" | "secondary" }[] };
+export type SiteHeroBanner = { id: number; desktop_image: string; mobile_image: string; title: string; description: string; button: { text: string; link: string } | null };
+export type SiteHero = { title: string; slogan: string; description: string; hero_image: string | null; mobile_hero_image: string | null; buttons: { text: string; link: string; variant: "primary" | "secondary" }[]; banners?: SiteHeroBanner[] };
 
 export type EditorialCategory = { id: number; slug: string; name_fa: string; name_en: string; description_fa?: string; description_en?: string; display_order?: number };
 export type EditorialContextProduct = { id: number; code: string; name: string; slug: string };

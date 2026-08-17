@@ -29,7 +29,7 @@ class DiscountCode(models.Model):
 
 
 class Cart(models.Model):
-    class Status(models.TextChoices): ACTIVE = "active", "Active"; CHECKED_OUT = "checked_out", "Checked out"; ABANDONED = "abandoned", "Abandoned"
+    class Status(models.TextChoices): ACTIVE = "active", "فعال"; CHECKED_OUT = "checked_out", "تسویه‌شده"; ABANDONED = "abandoned", "رهاشده"
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, related_name="carts", on_delete=models.CASCADE)
     guest_token = models.UUIDField(default=uuid.uuid4, null=True, blank=True, unique=True)
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.ACTIVE)

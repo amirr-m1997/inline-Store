@@ -10,13 +10,16 @@ describe("homepage final UX safeguards", () => {
     expect(localizeHeroLink("/fa/shop", "en")).toBe("/en/shop");
     expect(localizeHeroLink("/contact", "fa")).toBe("/contact");
     const source = read("components/catalog/site-hero.tsx");
-    expect(source).toContain('index === 0 ? "primary" : "secondary"');
+    expect(source).toContain("aria-label={english ? \"Next banner\" : \"بنر بعدی\"}");
+    expect(source).toContain("prefers-reduced-motion");
+    expect(source).toContain("), 3000);");
   });
 
   it("preserves one H1 and clean fallbacks for missing homepage data", () => {
     const source = read("components/catalog/enterprise-home.tsx");
     const hero = read("components/catalog/site-hero.tsx");
-    expect(hero).toContain("<h1>{hero.title}</h1>");
+    expect(hero).toContain("<h1>{banner.title}</h1>");
+    expect(hero).toContain("return legacyBanner ? [legacyBanner, ...hero.banners] : hero.banners");
     expect(source).toContain("دسته‌بندی‌های محصولات در دسترس نیست.");
     expect(source).toContain("home-section-empty");
   });

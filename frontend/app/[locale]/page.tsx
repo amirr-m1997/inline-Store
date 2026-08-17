@@ -13,12 +13,12 @@ type HomepageData = HomepageInitialData & { company: CompanyInfo | null };
 type PageProps = { params: Promise<{ locale: string }> };
 const origin = () => process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 const getHomepageCompany = cache(() => getCompanyServer<CompanyInfo>().catch(() => null));
-const getHomepageHero = cache(() => getHeroServer<SiteHero>().catch(() => null));
+const getHomepageHero = cache((locale: string) => getHeroServer<SiteHero>(locale).catch(() => null));
 
 async function loadHomepageData(locale: string): Promise<HomepageData> {
   const [company, hero, advantages, categories, featured, newest, discounted, brands, industries, capabilities, editorialPage] = await Promise.all([
     getHomepageCompany(),
-    getHomepageHero(),
+    getHomepageHero(locale),
     getAdvantagesServer<Advantage[]>().catch(() => []),
     getCategoryRootsServer<NavCategory[]>().catch(() => []),
     getProductsServer({ featured: true, page_size: 8 }).then((data) => data.results).catch(() => []),
@@ -34,7 +34,7 @@ async function loadHomepageData(locale: string): Promise<HomepageData> {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale } = await params;
-  const [company, hero] = await Promise.all([getHomepageCompany(), getHomepageHero()]);
+  const [company, hero] = await Promise.all([getHomepageCompany(), getHomepageHero(locale)]);
   const name = company?.name_fa || hero?.title || (locale === "en" ? "Industrial Store" : "فروشگاه صنعتی");
   const description = company?.description || undefined;
   const url = `${origin()}/${locale}`;

@@ -6,6 +6,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.core.validators import validate_email
 from django.db import transaction
 from django.template.loader import render_to_string
+from apps.common.jalali import format_document_date
 from django.utils import timezone
 from django.utils.module_loading import import_string
 
@@ -175,7 +176,7 @@ def notify_quotation_issued(quotation):
     rfq = quotation.rfq
     return queue_notification(
         event_type=EVENTS.QUOTATION_ISSUED, related_reference=quotation.reference, locale="fa",
-        payload={"quotation_reference": quotation.reference, "rfq_reference": rfq.reference, "issued_at": quotation.issued_at.strftime("%Y-%m-%d") if quotation.issued_at else "", "expires_at": quotation.expires_at.strftime("%Y-%m-%d") if quotation.expires_at else ""},
+        payload={"quotation_reference": quotation.reference, "rfq_reference": rfq.reference, "issued_at": format_document_date(quotation.issued_at, "fa") if quotation.issued_at else "", "expires_at": format_document_date(quotation.expires_at, "fa") if quotation.expires_at else ""},
         **_contact(rfq),
     )
 

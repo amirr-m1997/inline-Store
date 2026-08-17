@@ -13,6 +13,7 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 
 from apps.company.models import CompanyInfo
 from apps.common.document_typography import register_document_fonts
+from apps.common.jalali import format_document_date
 
 from .models import SalesQuotation
 
@@ -72,10 +73,10 @@ def generate_quotation_pdf(quotation, locale="fa"):
     detail_rows = [
         [label("شناسه پیشنهاد", "Quotation reference"), ltr(quotation.reference)],
         [label("استعلام مرتبط", "Related RFQ"), ltr(quotation.rfq.reference)],
-        [label("تاریخ صدور", "Issued"), text(quotation.issued_at.strftime("%Y-%m-%d") if quotation.issued_at else "")],
+        [label("تاریخ صدور", "Issued"), text(format_document_date(quotation.issued_at, locale) if quotation.issued_at else "")],
     ]
     if quotation.expires_at:
-        detail_rows.append([label("تاریخ انقضا", "Expires"), text(quotation.expires_at.strftime("%Y-%m-%d"))])
+        detail_rows.append([label("تاریخ انقضا", "Expires"), text(format_document_date(quotation.expires_at, locale))])
     if company_rows:
         company_table = Table(company_rows, colWidths=[35 * mm, 135 * mm])
         company_table.setStyle(TableStyle([("FONTNAME", (0, 0), (-1, -1), font_name), ("VALIGN", (0, 0), (-1, -1), "TOP"), ("GRID", (0, 0), (-1, -1), .25, colors.HexColor("#d1d5db")), ("PADDING", (0, 0), (-1, -1), 5)]))

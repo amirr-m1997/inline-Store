@@ -759,3 +759,6 @@ html.dark .rfq-form,html.dark .rfq-success,html.dark .rfq-history-card,html.dark
 
 /* Required address fields keep their visual marker in sync with native validation. */
 .address-layout form label:has(> :required)::after{content:" *";color:var(--color-danger);font-weight:900}
+
+.site-hero-control{position:absolute;z-index:2;top:50%;width:42px;height:42px;border:1px solid rgba(255,255,255,.68);border-radius:50%;background:rgba(3,20,35,.42);color:#fff;font-size:28px;line-height:1;transform:translateY(-50%);cursor:pointer}.site-hero-control:focus-visible,.site-hero-indicators button:focus-visible{outline:2px solid var(--color-brand-gold);outline-offset:3px}.site-hero-control-prev{inset-inline-start:18px}.site-hero-control-next{inset-inline-end:18px}.site-hero-indicators{position:absolute;z-index:2;bottom:18px;inset-inline:0;display:flex;justify-content:center;gap:8px}.site-hero-indicators button{width:10px;height:10px;padding:0;border:1px solid #fff;border-radius:50%;background:transparent;cursor:pointer}.site-hero-indicators button.is-active{background:var(--color-brand-gold);border-color:var(--color-brand-gold)}
+@media(max-width:767px){.site-hero-control{width:36px;height:36px;font-size:24px}.site-hero-control-prev{inset-inline-start:10px}.site-hero-control-next{inset-inline-end:10px}.site-hero-indicators{bottom:12px}}

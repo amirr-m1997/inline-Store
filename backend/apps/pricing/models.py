@@ -1,6 +1,6 @@
 from django.db import models
 from apps.catalog.models import Product
-class Currency(models.TextChoices): IRR = "IRR", "Iranian Rial"; USD = "USD", "US Dollar"
+class Currency(models.TextChoices): IRR = "IRR", "ریال ایران"; USD = "USD", "دلار آمریکا"
 class ProductPrice(models.Model):
     product = models.ForeignKey(Product, related_name="prices", on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=18, decimal_places=2)

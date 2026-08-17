@@ -2,7 +2,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-from .models import Capability, CompanyAdvantage, CompanyCertification, CompanyHonor, CompanyInfo, CompanyLocation, CompanyMilestone, CompanySection, Industry
+from .models import Capability, CompanyAdvantage, CompanyBanner, CompanyCertification, CompanyHonor, CompanyInfo, CompanyLocation, CompanyMilestone, CompanySection, Industry
 from rest_framework import serializers
 
 
@@ -13,10 +13,11 @@ class HeroSerializer(serializers.ModelSerializer):
     hero_image = serializers.SerializerMethodField()
     mobile_hero_image = serializers.SerializerMethodField()
     buttons = serializers.SerializerMethodField()
+    banners = serializers.SerializerMethodField()
 
     class Meta:
         model = CompanyInfo
-        fields = ("title", "slogan", "description", "hero_image", "mobile_hero_image", "buttons")
+        fields = ("title", "slogan", "description", "hero_image", "mobile_hero_image", "buttons", "banners")
 
     def image_url(self, value):
         return value.url if value else None
@@ -30,6 +31,21 @@ class HeroSerializer(serializers.ModelSerializer):
     def get_buttons(self, obj):
         pairs = ((obj.primary_button_text, obj.primary_button_link, "primary"), (obj.secondary_button_text, obj.secondary_button_link, "secondary"))
         return [{"text": text, "link": link, "variant": variant} for text, link, variant in pairs if text and link]
+
+    def get_banners(self, obj):
+        locale = self.context.get("request").query_params.get("locale", "fa") if self.context.get("request") else "fa"
+        english = locale == "en"
+        result = []
+        for banner in (item for item in obj.banners.all() if item.is_active):
+            result.append({
+                "id": banner.id,
+                "desktop_image": self.image_url(banner.desktop_image),
+                "mobile_image": self.image_url(banner.mobile_image) or self.image_url(banner.desktop_image),
+                "title": banner.title_en if english and banner.title_en else banner.title_fa,
+                "description": banner.description_en if english and banner.description_en else banner.description_fa,
+                "button": ({"text": banner.button_text_en if english and banner.button_text_en else banner.button_text_fa, "link": banner.button_url} if banner.button_url and (banner.button_text_fa or banner.button_text_en) else None),
+            })
+        return result
 
 
 class CompanyAdvantageSerializer(serializers.ModelSerializer):
@@ -159,7 +175,7 @@ def company_detail(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def hero_detail(request):
-    company = CompanyInfo.objects.filter(hero_is_active=True).first()
+    company = CompanyInfo.objects.filter(hero_is_active=True).prefetch_related("banners").first()
     if company is None:
         return Response({"detail": "Hero settings are not available."}, status=404)
     return Response(HeroSerializer(company, context={"request": request}).data)

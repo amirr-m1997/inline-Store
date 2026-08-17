@@ -106,14 +106,14 @@ class ContactMessage(models.Model):
 
 
 class WarrantyPolicy(models.Model):
-    title_fa = models.CharField(max_length=255)
-    title_en = models.CharField(max_length=255, blank=True)
-    body_fa = models.TextField(blank=True)
-    body_en = models.TextField(blank=True)
-    registration_enabled = models.BooleanField(default=False)
-    is_published = models.BooleanField(default=False)
-    migration_notes = models.TextField(blank=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    title_fa = models.CharField("عنوان فارسی", max_length=255)
+    title_en = models.CharField("عنوان انگلیسی", max_length=255, blank=True)
+    body_fa = models.TextField("متن فارسی", blank=True)
+    body_en = models.TextField("متن انگلیسی", blank=True)
+    registration_enabled = models.BooleanField("فعال بودن ثبت گارانتی", default=False)
+    is_published = models.BooleanField("منتشرشده", default=False)
+    migration_notes = models.TextField("یادداشت مهاجرت", blank=True)
+    updated_at = models.DateTimeField("آخرین تغییر", auto_now=True)
 
     class Meta:
         verbose_name = "سیاست گارانتی"
@@ -121,41 +121,56 @@ class WarrantyPolicy(models.Model):
 
 
 class WarrantyRegistration(models.Model):
-    reference = models.CharField(max_length=24, unique=True, default=warranty_reference, editable=False)
-    customer = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, related_name="warranty_registrations", on_delete=models.SET_NULL)
-    product = models.ForeignKey("catalog.Product", null=True, blank=True, on_delete=models.SET_NULL)
-    order = models.ForeignKey("orders.Order", null=True, blank=True, on_delete=models.SET_NULL)
-    serial_number = models.CharField(max_length=128, blank=True)
-    purchase_date = models.DateField(null=True, blank=True)
-    full_name = models.CharField(max_length=255)
-    phone = models.CharField(max_length=64)
-    email = models.EmailField(blank=True)
-    notes = models.TextField(blank=True)
-    status = models.CharField(max_length=24, default="submitted")
-    submitted_at = models.DateTimeField(auto_now_add=True)
+    reference = models.CharField("شناسه گارانتی", max_length=24, unique=True, default=warranty_reference, editable=False)
+    customer = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="مشتری", null=True, blank=True, related_name="warranty_registrations", on_delete=models.SET_NULL)
+    product = models.ForeignKey("catalog.Product", verbose_name="محصول", null=True, blank=True, on_delete=models.SET_NULL)
+    order = models.ForeignKey("orders.Order", verbose_name="سفارش", null=True, blank=True, on_delete=models.SET_NULL)
+    serial_number = models.CharField("شماره سریال", max_length=128, blank=True)
+    purchase_date = models.DateField("تاریخ خرید", null=True, blank=True)
+    full_name = models.CharField("نام و نام خانوادگی", max_length=255)
+    phone = models.CharField("شماره تماس", max_length=64)
+    email = models.EmailField("ایمیل", blank=True)
+    notes = models.TextField("توضیحات", blank=True)
+    status = models.CharField("وضعیت", max_length=24, default="submitted")
+    submitted_at = models.DateTimeField("زمان ثبت", auto_now_add=True)
+
+    class Meta:
+        ordering = ("-submitted_at",)
+        verbose_name = "ثبت گارانتی"
+        verbose_name_plural = "ثبت‌های گارانتی"
 
 
 class CustomerSupportRequest(models.Model):
-    reference = models.CharField(max_length=24, unique=True, default=request_reference, editable=False)
-    request_type = models.CharField(max_length=32, default="other")
-    customer = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, related_name="support_requests", on_delete=models.SET_NULL)
-    product = models.ForeignKey("catalog.Product", null=True, blank=True, on_delete=models.SET_NULL)
-    order = models.ForeignKey("orders.Order", null=True, blank=True, on_delete=models.SET_NULL)
-    full_name = models.CharField(max_length=255)
-    phone = models.CharField(max_length=64)
-    email = models.EmailField(blank=True)
-    subject = models.CharField(max_length=255)
-    message = models.TextField(max_length=5000)
-    status = models.CharField(max_length=24, default="submitted")
-    submitted_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    reference = models.CharField("شناسه درخواست", max_length=24, unique=True, default=request_reference, editable=False)
+    request_type = models.CharField("نوع درخواست", max_length=32, default="other")
+    customer = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="مشتری", null=True, blank=True, related_name="support_requests", on_delete=models.SET_NULL)
+    product = models.ForeignKey("catalog.Product", verbose_name="محصول", null=True, blank=True, on_delete=models.SET_NULL)
+    order = models.ForeignKey("orders.Order", verbose_name="سفارش", null=True, blank=True, on_delete=models.SET_NULL)
+    full_name = models.CharField("نام و نام خانوادگی", max_length=255)
+    phone = models.CharField("شماره تماس", max_length=64)
+    email = models.EmailField("ایمیل", blank=True)
+    subject = models.CharField("موضوع", max_length=255)
+    message = models.TextField("پیام", max_length=5000)
+    status = models.CharField("وضعیت", max_length=24, default="submitted")
+    submitted_at = models.DateTimeField("زمان ثبت", auto_now_add=True)
+    updated_at = models.DateTimeField("آخرین تغییر", auto_now=True)
+
+    class Meta:
+        ordering = ("-submitted_at",)
+        verbose_name = "درخواست پشتیبانی مشتری"
+        verbose_name_plural = "درخواست‌های پشتیبانی مشتریان"
 
 
 class CustomerFeedback(models.Model):
-    customer = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, related_name="customer_feedback", on_delete=models.SET_NULL)
-    order = models.ForeignKey("orders.Order", null=True, blank=True, on_delete=models.SET_NULL)
-    feedback_type = models.CharField(max_length=32, default="other")
-    rating = models.PositiveSmallIntegerField(null=True, blank=True)
-    message = models.TextField(max_length=5000)
-    contact_permission = models.BooleanField(default=False)
-    submitted_at = models.DateTimeField(auto_now_add=True)
+    customer = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="مشتری", null=True, blank=True, related_name="customer_feedback", on_delete=models.SET_NULL)
+    order = models.ForeignKey("orders.Order", verbose_name="سفارش", null=True, blank=True, on_delete=models.SET_NULL)
+    feedback_type = models.CharField("نوع بازخورد", max_length=32, default="other")
+    rating = models.PositiveSmallIntegerField("امتیاز", null=True, blank=True)
+    message = models.TextField("متن بازخورد", max_length=5000)
+    contact_permission = models.BooleanField("اجازه تماس", default=False)
+    submitted_at = models.DateTimeField("زمان ثبت", auto_now_add=True)
+
+    class Meta:
+        ordering = ("-submitted_at",)
+        verbose_name = "بازخورد مشتری"
+        verbose_name_plural = "بازخوردهای مشتریان"

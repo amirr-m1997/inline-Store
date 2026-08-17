@@ -14,3 +14,12 @@ class SupportAdminTests(TestCase):
   CustomerSupportRequest.objects.create(full_name='Anonymous',phone='09120000001',subject='Subject',message='Message')
   self.assertEqual(self.client.get('/admin/website/warrantyregistration/').status_code,200)
   self.assertEqual(self.client.get('/admin/website/customersupportrequest/').status_code,200)
+ def test_customer_service_model_labels_are_persian(self):
+  expected = {
+   CustomerFeedback: {"feedback_type": "نوع بازخورد", "rating": "امتیاز", "customer": "مشتری", "order": "سفارش"},
+   CustomerSupportRequest: {"request_type": "نوع درخواست", "customer": "مشتری", "order": "سفارش"},
+   WarrantyRegistration: {"customer": "مشتری", "order": "سفارش", "purchase_date": "تاریخ خرید"},
+  }
+  for model, fields in expected.items():
+   for name, label in fields.items():
+    self.assertEqual(model._meta.get_field(name).verbose_name, label)

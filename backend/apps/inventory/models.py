@@ -59,7 +59,7 @@ class Issue(models.Model):
         verbose_name_plural = "حواله‌های خروج"
 
 class Reservation(models.Model):
-    class Status(models.TextChoices): ACTIVE = "active", "Active"; RELEASED = "released", "Released"; CONVERTED = "converted", "Converted"; EXPIRED = "expired", "Expired"
+    class Status(models.TextChoices): ACTIVE = "active", "فعال"; RELEASED = "released", "آزادشده"; CONVERTED = "converted", "تبدیل‌شده"; EXPIRED = "expired", "منقضی‌شده"
     product = models.ForeignKey(Product, related_name="reservations", on_delete=models.PROTECT)
     cart_item = models.ForeignKey("carts.CartItem", null=True, blank=True, related_name="reservations", on_delete=models.SET_NULL)
     order_item = models.ForeignKey("orders.OrderItem", null=True, blank=True, related_name="reservations", on_delete=models.SET_NULL)
