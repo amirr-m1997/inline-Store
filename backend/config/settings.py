@@ -24,7 +24,23 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates", "DIRS": [], "APP_DIRS": True, "OPTIONS": {"context_processors": ["django.template.context_processors.request", "django.contrib.auth.context_processors.auth", "django.contrib.messages.context_processors.messages"]}}]
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
-DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}
+# Database selection:
+#  - SQLite (default, zero-config) for local development: backend/db.sqlite3.
+#  - SQLite in-memory for isolated verification runs: SQLITE_PATH=:memory:.
+#  - PostgreSQL whenever the POSTGRES_* variables from docker-compose are present.
+if os.environ.get("POSTGRES_HOST") or os.environ.get("POSTGRES_DB"):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("POSTGRES_DB", "company_store"),
+            "USER": os.environ.get("POSTGRES_USER", "store"),
+            "PASSWORD": os.environ.get("POSTGRES_PASSWORD", ""),
+            "HOST": os.environ.get("POSTGRES_HOST", "db"),
+            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+        }
+    }
+else:
+    DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": os.environ.get("SQLITE_PATH") or (BASE_DIR / "db.sqlite3")}}
 AUTH_USER_MODEL = "accounts.User"
 LANGUAGE_CODE = "fa-ir"
 TIME_ZONE = "Asia/Tehran"
@@ -39,7 +55,7 @@ CORS_ALLOWED_ORIGINS = [
     value.strip()
     for value in os.environ.get(
         "CORS_ALLOWED_ORIGINS",
-        "http://localhost:3005,http://localhost:3006,http://127.0.0.1:3005,http://127.0.0.1:3006,https://circuits-temporary-using-number.trycloudflare.com"
+        "http://localhost:3000,http://localhost:3001,http://localhost:3005,http://localhost:3006,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3005,http://127.0.0.1:3006"
     ).split(",")
     if value.strip()
 ]

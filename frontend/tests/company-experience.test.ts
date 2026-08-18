@@ -34,7 +34,7 @@ describe("Mehrasl company experience", () => {
 
   it("keeps homepage company sections as bounded previews and marks demo content", () => {
     const source = read("components/catalog/enterprise-home.tsx");
-    expect(source).toContain("industries.slice(0, 4)");
+    expect(source).toContain("industries.slice(0, 3)");
     expect(source).toContain("capabilities.slice(0, 3)");
     expect(source).toContain("content-demo-indicator");
     expect(source.indexOf("Featured products")).toBeLessThan(source.indexOf("Industries and applications"));

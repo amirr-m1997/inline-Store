@@ -12,7 +12,9 @@ describe("mobile catalog controls", () => {
   it("exposes result count and active filter count on the filter trigger", () => {
     render(<CatalogToolbar query="پیچ" ordering="code" inStock resultCount={24} searchLoading={false} activeFilterCount={3} onSearch={vi.fn()} onOrderingChange={vi.fn()} onStockChange={vi.fn()} onOpenFilters={vi.fn()} />);
     expect(screen.getByRole("button", { name: /۳ فیلتر فعال/ })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "مرتب‌سازی" })).toBeInTheDocument();
+    const sortTrigger = screen.getByRole("button", { name: "مرتب‌سازی" });
+    expect(sortTrigger).toBeInTheDocument();
+    expect(sortTrigger).toHaveAttribute("aria-haspopup", "listbox");
     expect(screen.getByRole("checkbox", { name: "فقط موجود", checked: true })).toBeInTheDocument();
   });
 
@@ -28,7 +30,9 @@ describe("mobile catalog controls", () => {
     render(<MobileFilterDrawer open ordering="code" inStock={false} resultCount={24} activeFilterCount={2} facets={[facet]} onClose={vi.fn()} onApply={vi.fn()} onReset={vi.fn()} />);
     expect(screen.getByRole("dialog")).toHaveAccessibleName("فیلترهای کاتالوگ (۲ فعال)");
     expect(screen.getByText("۲۴ محصول با این فیلترها")).toBeInTheDocument();
-    expect(within(screen.getByRole("dialog")).getByRole("combobox", { name: "مرتب‌سازی" })).toBeInTheDocument();
+    const drawerSortTrigger = within(screen.getByRole("dialog")).getByRole("button", { name: "مرتب‌سازی" });
+    expect(drawerSortTrigger).toBeInTheDocument();
+    expect(drawerSortTrigger).toHaveAttribute("aria-haspopup", "listbox");
     expect(screen.getByRole("button", { name: "پاک‌سازی فیلترها" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /نمایش نتایج/ })).toBeInTheDocument();
   });
