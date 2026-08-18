@@ -1,5 +1,6 @@
 import secrets
 
+from django.conf import settings
 from django.db import transaction
 from django.db.models import F
 from django.http import FileResponse
@@ -45,6 +46,8 @@ def payment_detail(request, payment_id):
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 def mock_complete(request, payment_id):
+    if not settings.PAYMENTS_MOCK_ENABLED:
+        return Response({"detail": "پرداخت آزمایشی غیرفعال است."}, status=404)
     visible = accessible_payment(request, payment_id)
     if not visible: return Response({"detail": "پرداخت یافت نشد."}, status=404)
     outcome = request.data.get("outcome", "success")

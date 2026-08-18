@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 from apps.notifications.config import parse_env_bool
@@ -13,13 +14,27 @@ for _dotenv_path in (BASE_DIR / ".env", BASE_DIR.parent / ".env"):
         break
 SECRET_KEY = os.environ.get("SECRET_KEY", "unsafe-development-key-change-me")
 DEBUG = parse_env_bool(os.environ.get("DEBUG"), default=True)
+if not DEBUG and SECRET_KEY == "unsafe-development-key-change-me":
+    raise ImproperlyConfigured("SECRET_KEY must be set to a secure value when DEBUG is disabled.")
 ALLOWED_HOSTS = [host.strip() for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if host.strip()]
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get(
+        "CSRF_TRUSTED_ORIGINS",
+        "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001",
+    ).split(",")
+    if origin.strip()
+]
+# Mock payments exist only for development. When disabled, checkout refuses to
+# create mock gateway payments and the mock-complete endpoint is turned off,
+# so orders can never be "verified" without a real gateway.
+PAYMENTS_MOCK_ENABLED = parse_env_bool(os.environ.get("PAYMENTS_MOCK_ENABLED"), default=DEBUG)
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes", "django.contrib.sessions",
     "django.contrib.messages", "django.contrib.staticfiles", "corsheaders", "rest_framework", "rest_framework.authtoken",
     "apps.accounts", "apps.catalog", "apps.inventory", "apps.pricing", "apps.carts", "apps.orders", "apps.dashboard", "apps.company", "apps.website", "apps.content", "apps.search", "apps.rfq", "apps.common", "apps.notifications",
 ]
-MIDDLEWARE = ["corsheaders.middleware.CorsMiddleware", "django.middleware.security.SecurityMiddleware", "django.contrib.sessions.middleware.SessionMiddleware", "django.middleware.common.CommonMiddleware", "django.middleware.csrf.CsrfViewMiddleware", "django.contrib.auth.middleware.AuthenticationMiddleware", "django.contrib.messages.middleware.MessageMiddleware", "django.middleware.clickjacking.XFrameOptionsMiddleware"]
+MIDDLEWARE = ["corsheaders.middleware.CorsMiddleware", "django.middleware.security.SecurityMiddleware", "config.csrf.CookieAuthOriginCheckMiddleware", "django.contrib.sessions.middleware.SessionMiddleware", "django.middleware.common.CommonMiddleware", "django.middleware.csrf.CsrfViewMiddleware", "django.contrib.auth.middleware.AuthenticationMiddleware", "django.contrib.messages.middleware.MessageMiddleware", "django.middleware.clickjacking.XFrameOptionsMiddleware"]
 ROOT_URLCONF = "config.urls"
 TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates", "DIRS": [], "APP_DIRS": True, "OPTIONS": {"context_processors": ["django.template.context_processors.request", "django.contrib.auth.context_processors.auth", "django.contrib.messages.context_processors.messages"]}}]
 WSGI_APPLICATION = "config.wsgi.application"
@@ -81,7 +96,7 @@ CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_TASK_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
-REST_FRAMEWORK = {"DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"], "DEFAULT_AUTHENTICATION_CLASSES": ["apps.accounts.authentication.CookieTokenAuthentication"], "DEFAULT_PAGINATION_CLASS": "apps.common.pagination.StandardResultsSetPagination", "PAGE_SIZE": 20, "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.openapi.AutoSchema", "DEFAULT_FILTER_BACKENDS": ["rest_framework.filters.OrderingFilter"], "DEFAULT_THROTTLE_RATES": {"auth": "10/min", "otp": "5/hour"}}
+REST_FRAMEWORK = {"DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"], "DEFAULT_AUTHENTICATION_CLASSES": ["apps.accounts.authentication.CookieTokenAuthentication"], "DEFAULT_PAGINATION_CLASS": "apps.common.pagination.StandardResultsSetPagination", "PAGE_SIZE": 20, "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.openapi.AutoSchema", "DEFAULT_FILTER_BACKENDS": ["rest_framework.filters.OrderingFilter"], "DEFAULT_THROTTLE_RATES": {"auth": "10/min", "otp": "5/hour", "discount": "30/min"}}
 AUTH_COOKIE_NAME = "mehrasl_auth"
 AUTH_COOKIE_SECURE = not DEBUG
 AUTH_COOKIE_SAMESITE = "Lax"

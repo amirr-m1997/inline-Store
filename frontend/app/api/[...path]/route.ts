@@ -14,7 +14,7 @@ async function proxy(request: NextRequest, { params }: RouteContext) {
   target.search = request.nextUrl.search;
 
   const headers = new Headers({ Accept: "application/json" });
-  for (const name of ["Authorization", "X-Guest-Token", "Content-Type", "Cookie", "X-CSRFToken"]) {
+  for (const name of ["Authorization", "X-Guest-Token", "Content-Type", "Cookie", "X-CSRFToken", "Origin", "Referer"]) {
     const value = request.headers.get(name);
     if (value) headers.set(name, value);
   }

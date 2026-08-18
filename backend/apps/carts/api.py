@@ -3,13 +3,15 @@ from datetime import timedelta
 
 import csv
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import F
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import permissions, serializers
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework.response import Response
 
 from apps.catalog.serializers import ProductSerializer
@@ -19,6 +21,12 @@ from apps.accounts.models import CustomerAddress, normalize_iranian_phone
 from django.core.exceptions import ValidationError as DjangoValidationError
 from apps.orders.models import Order, OrderItem, Payment
 from .models import Cart, CartItem, DiscountCode
+
+
+class DiscountThrottle(AnonRateThrottle):
+    """Limit unauthenticated discount-code guessing."""
+
+    scope = "discount"
 
 
 class CartCustomerSerializer(serializers.ModelSerializer):
@@ -230,6 +238,8 @@ def checkout(request):
     items = list(cart.items.select_related("product"))
     if not items:
         return Response({"detail": "سبد خرید خالی است."}, status=400)
+    if not settings.PAYMENTS_MOCK_ENABLED:
+        return Response({"detail": "درگاه پرداخت هنوز فعال نشده است؛ سفارش شما ثبت نشد."}, status=503)
     with transaction.atomic():
         locked_cart = Cart.objects.select_for_update().get(pk=cart.pk)
         if locked_cart.status != Cart.Status.ACTIVE:
@@ -307,6 +317,7 @@ def orders(request):
 
 @api_view(["POST", "DELETE"])
 @permission_classes([permissions.AllowAny])
+@throttle_classes([DiscountThrottle])
 def discount(request):
     cart = current_cart(request)
     if request.method == "DELETE":
@@ -331,6 +342,14 @@ def discount(request):
 
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
+def _csv_safe(value):
+    """Neutralize spreadsheet formula injection (CSV injection) in exported cells."""
+    text = "" if value is None else str(value)
+    if text.startswith(("=", "+", "-", "@", "\t", "\r")):
+        return "'" + text
+    return text
+
+
 def cart_export_csv(request):
     cart = current_cart(request)
     items = list(cart.items.select_related("product", "product__category", "product__inventory").prefetch_related("product__images"))
@@ -347,7 +366,7 @@ def cart_export_csv(request):
         if line_total is not None:
             total += line_total
         writer.writerow([
-            data["code"], data["name"], data["unit"], item.quantity,
+            _csv_safe(data["code"]), _csv_safe(data["name"]), _csv_safe(data["unit"]), item.quantity,
             data.get("on_hand_quantity") if data.get("on_hand_quantity") is not None else "",
             data.get("reserved_quantity") if data.get("reserved_quantity") is not None else "",
             data.get("available_quantity") if data.get("available_quantity") is not None else "",
