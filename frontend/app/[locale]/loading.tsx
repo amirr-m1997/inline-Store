@@ -1,1 +1,4 @@
-export default function CatalogLoading() { return <main className="catalog-experience site-container"><div className="empty-state">در حال دریافت کاتالوگ…</div></main>; }
+// Catalog pages receive their first dataset from the server. Rendering a
+// route-level skeleton here would briefly replace the current page during
+// client navigation, producing a visible two-step color jump.
+export default function CatalogLoading() { return null; }

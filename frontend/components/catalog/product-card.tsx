@@ -21,7 +21,7 @@ export function ProductCard({ product, priority = false, locale = "fa" }: { prod
 }
 
 export function ProductCardSkeleton() {
-  return <div className="industrial-product-card animate-pulse bg-slate-50/50 p-4 rounded-xl border border-slate-200/60 shadow-sm">
+  return <div className="industrial-product-card catalog-loading-card animate-pulse p-4 rounded-xl border shadow-sm">
     <Skeleton className="h-48 w-full rounded-lg" />
     <Skeleton className="mt-4 h-3 w-1/4 rounded" />
     <Skeleton className="mt-2 h-5 w-4/5 rounded" />

@@ -16,7 +16,7 @@ export async function SiteFooter({ locale = "fa" }: { locale?: string }) {
   if (!footer) return <footer className="database-footer footer-loading" aria-hidden="true" />;
   const company = footer.company;
   return <footer className="database-footer">
-    <div className="footer-main site-container">
+    <div className="footer-main responsive-container">
       {company && <section className="footer-company" aria-label={company.name_fa}>
         <div className="footer-brand">{company.logo && <Image src={company.logo} alt={company.name_fa} width={92} height={92} sizes="92px" />}<h2>{company.name_fa}</h2></div>
         {company.description && <p>{company.description}</p>}
@@ -27,6 +27,6 @@ export async function SiteFooter({ locale = "fa" }: { locale?: string }) {
 
       {footer.trust_badges.length > 0 && <section className="footer-trust" aria-label="نشان‌های اعتماد">{footer.trust_badges.map((badge) => { const image = <Image src={badge.image} alt={badge.alt} width={110} height={110} sizes="110px" />; return <div key={badge.id}>{badge.url ? <a href={badge.url} target="_blank" rel="noreferrer" title={badge.title}>{image}</a> : image}</div>; })}</section>}
     </div>
-    {footer.copyright && <div className="footer-bottom"><p className="site-container">{footer.copyright}</p></div>}
+    {footer.copyright && <div className="footer-bottom"><p className="responsive-container">{footer.copyright}</p></div>}
   </footer>;
 }
