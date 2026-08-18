@@ -1,3 +1,4 @@
+import logging
 import secrets
 import uuid
 from datetime import timedelta
@@ -21,6 +22,8 @@ from rest_framework.throttling import AnonRateThrottle
 from .google_auth import verify_google_credential
 from .models import CustomerAddress, GoogleIdentity, PhoneOTP, User, normalize_iranian_phone
 from .sms import send_otp
+
+logger = logging.getLogger("accounts")
 
 
 class AuthThrottle(AnonRateThrottle): scope = "auth"
@@ -197,7 +200,10 @@ def password_forgot(request):
     if kind == "email" and user:
         uid = urlsafe_base64_encode(force_bytes(user.pk)); token = default_token_generator.make_token(user)
         link = f"{settings.FRONTEND_URL}/fa/reset-password?uid={uid}&token={token}"
-        send_mail("بازیابی رمز عبور", link, settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=True)
+        try:
+            send_mail("بازیابی رمز عبور", link, settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=False)
+        except Exception as exc:
+            logger.warning("password reset email failed user=%s error=%s", user.email, str(exc))
     return Response({"detail": "اگر حسابی با این مشخصات وجود داشته باشد، راهنمای بازیابی ارسال می‌شود.", "method": "otp" if kind == "phone" else "email"})
 
 

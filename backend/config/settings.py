@@ -1,9 +1,16 @@
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 from apps.notifications.config import parse_env_bool
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+for _dotenv_path in (BASE_DIR / ".env", BASE_DIR.parent / ".env"):
+    if _dotenv_path.is_file():
+        load_dotenv(_dotenv_path, override=False)
+        break
 SECRET_KEY = os.environ.get("SECRET_KEY", "unsafe-development-key-change-me")
 DEBUG = parse_env_bool(os.environ.get("DEBUG"), default=True)
 ALLOWED_HOSTS = [host.strip() for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if host.strip()]
