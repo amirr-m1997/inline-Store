@@ -16,12 +16,12 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "unsafe-development-key-change-me")
 DEBUG = parse_env_bool(os.environ.get("DEBUG"), default=True)
 if not DEBUG and SECRET_KEY == "unsafe-development-key-change-me":
     raise ImproperlyConfigured("SECRET_KEY must be set to a secure value when DEBUG is disabled.")
-ALLOWED_HOSTS = [host.strip() for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if host.strip()]
+ALLOWED_HOSTS = [host.strip() for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0,192.168.3.140").split(",") if host.strip()]
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.environ.get(
         "CSRF_TRUSTED_ORIGINS",
-        "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001",
+    "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001,http://192.168.3.140:3000,http://192.168.3.140:3001",
     ).split(",")
     if origin.strip()
 ]
@@ -70,7 +70,7 @@ CORS_ALLOWED_ORIGINS = [
     value.strip()
     for value in os.environ.get(
         "CORS_ALLOWED_ORIGINS",
-        "http://localhost:3000,http://localhost:3001,http://localhost:3005,http://localhost:3006,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3005,http://127.0.0.1:3006"
+    "http://localhost:3000,http://localhost:3001,http://localhost:3005,http://localhost:3006,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3005,http://127.0.0.1:3006,http://192.168.3.140:3000,http://192.168.3.140:3001"
     ).split(",")
     if value.strip()
 ]
