@@ -2,7 +2,7 @@ from django.core.exceptions import ValidationError
 from django.db import connection
 from django.db.models import Case, Count, Exists, F, IntegerField, Max, Min, OuterRef, Q, Value, When
 
-from .models import AttributeDefinition, Category, CategoryAttribute, Product, ProductAttributeValue, ProductBrand
+from .models import AttributeDefinition, Category, CategoryAttribute, Product, ProductAttributeValue, ProductBrand, ProductImage
 from .search_normalization import normalize_search_text
 
 
@@ -103,6 +103,10 @@ class CatalogQueryService:
         if availability and availability.lower() in ("1", "true", "yes", "in_stock"):
             queryset = queryset.filter(on_hand_quantity__gt=F("reserved_quantity"))
             self.applied["availability"] = "in_stock"
+        has_image = self.params.get("has_image")
+        if has_image and has_image.lower() in ("1", "true", "yes"):
+            queryset = queryset.filter(Exists(ProductImage.objects.filter(product=OuterRef("pk"))))
+            self.applied["has_image"] = True
         price_min = self.params.get("price_min")
         price_max = self.params.get("price_max")
         if price_min or price_max:

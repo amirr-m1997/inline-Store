@@ -13,7 +13,7 @@ export async function loadCatalogInitial(slug: string, searchParams: CatalogRout
   const parameters: Record<string, string | number | boolean | undefined> = { page_size: 12 };
   for (const [key, value] of Object.entries(searchParams)) {
     const normalized = first(value);
-    if (normalized !== undefined && (key === "q" || key === "brand" || key === "availability" || key === "ordering" || key === "sort" || key === "page" || key === "cursor" || key === "in_stock" || key === "discounted" || key === "price_min" || key === "price_max" || key.startsWith("attr_"))) parameters[key] = normalized;
+    if (normalized !== undefined && (key === "q" || key === "brand" || key === "availability" || key === "ordering" || key === "sort" || key === "page" || key === "cursor" || key === "in_stock" || key === "has_image" || key === "discounted" || key === "price_min" || key === "price_max" || key.startsWith("attr_"))) parameters[key] = normalized;
   }
   if (!parameters.category && category) parameters.category = category.id;
   if (slug === "newest") parameters.ordering = parameters.ordering || "-created_at";
@@ -42,3 +42,4 @@ export function catalogStructuredData(slug: string, locale: string, category: Ca
   const breadcrumb = [{ "@type": "ListItem", position: 1, name: "خانه", item: absoluteUrl(localizedPath(locale)) }, ...(category ? [{ "@type": "ListItem", position: 2, name: category.name_fa, item: absoluteUrl(localizedPath(locale, `/category/${category.slug}`)) }] : [])];
   return [{ "@context": "https://schema.org", "@type": "ItemList", name: title, numberOfItems: items.length, itemListElement: items }, { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: breadcrumb }];
 }
+

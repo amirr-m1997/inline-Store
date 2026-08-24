@@ -1,0 +1,77 @@
+{% extends "admin/base_site.html" %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+  .category-browser { max-width: 1120px; }
+  .category-browser__header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+  .category-browser__header h1 { margin: 0; }
+  .category-browser__hint { color: var(--body-quiet-color); margin: 6px 0 0; }
+  .category-browser__back { white-space: nowrap; }
+  .category-browser__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .category-browser__card { display: flex; flex-direction: column; min-height: 130px; padding: 16px; border: 1px solid var(--hairline-color); border-radius: 7px; background: var(--body-bg); box-shadow: 0 1px 2px rgba(0, 0, 0, .04); }
+  .category-browser__card--branch { text-decoration: none; color: var(--body-fg); cursor: pointer; }
+  .category-browser__card--branch:hover { border-color: var(--link-fg); box-shadow: 0 3px 9px rgba(0, 0, 0, .1); }
+  .category-browser__name { font-size: 16px; font-weight: 700; }
+  .category-browser__code { margin-top: 7px; color: var(--body-quiet-color); direction: ltr; font-size: 12px; }
+  .category-browser__footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 14px; }
+  .category-browser__state { color: var(--body-quiet-color); font-size: 12px; }
+  .category-browser__edit { font-size: 12px; }
+  .category-browser__empty { padding: 28px; text-align: center; border: 1px dashed var(--hairline-color); border-radius: 7px; color: var(--body-quiet-color); }
+  @media (max-width: 640px) { .category-browser__header { align-items: flex-start; flex-direction: column; } .category-browser__grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">خانه</a>
+  › <a href="{% url 'admin:app_list' app_label='catalog' %}">کاتالوگ</a>
+  › <a href="{% url 'admin:catalog_category_browse' %}">دسته‌بندی‌ها</a>
+  {% for ancestor in ancestors %} › <a href="{% url 'admin:catalog_category_browse' %}?parent={{ ancestor.pk }}">{{ ancestor.name_fa }}</a>{% endfor %}
+</div>
+{% endblock %}
+
+{% block content %}
+<main class="category-browser">
+  <header class="category-browser__header">
+    <div>
+      <h1>{% if current_parent %}{{ current_parent.name_fa }}{% else %}دسته‌بندی‌های اصلی{% endif %}</h1>
+      <p class="category-browser__hint">برای مشاهدهٔ سطح بعد، روی دسته‌ای که زیرمجموعه دارد کلیک کنید.</p>
+    </div>
+    <div>
+      <a class="button" href="{% url 'admin:catalog_category_add' %}">افزودن دسته</a>
+      {% if current_parent %}
+        {% if current_parent.parent_id %}
+          <a class="button category-browser__back" href="{% url 'admin:catalog_category_browse' %}?parent={{ current_parent.parent_id }}">بازگشت به سطح قبل</a>
+        {% else %}
+          <a class="button category-browser__back" href="{% url 'admin:catalog_category_browse' %}">بازگشت به دسته‌های اصلی</a>
+        {% endif %}
+      {% endif %}
+    </div>
+  </header>
+
+  {% if children %}
+    <section class="category-browser__grid" aria-label="دسته‌بندی‌های این سطح">
+      {% for category in children %}
+        {% if category.has_children %}
+          <article class="category-browser__card">
+            <a class="category-browser__card--branch" href="{% url 'admin:catalog_category_browse' %}?parent={{ category.pk }}">
+              <span class="category-browser__name">{{ category.name_fa }}</span>
+              <span class="category-browser__code">{{ category.code }}</span>
+            </a>
+            <span class="category-browser__footer"><a class="category-browser__state" href="{% url 'admin:catalog_category_browse' %}?parent={{ category.pk }}">مشاهدهٔ زیرمجموعه‌ها ←</a><a class="category-browser__edit" href="{% url 'admin:catalog_category_change' category.pk %}">ویرایش</a></span>
+          </article>
+        {% else %}
+          <article class="category-browser__card">
+            <span class="category-browser__name">{{ category.name_fa }}</span>
+            <span class="category-browser__code">{{ category.code }}</span>
+            <span class="category-browser__footer"><span class="category-browser__state">دستهٔ نهایی</span><a class="category-browser__edit" href="{% url 'admin:catalog_category_change' category.pk %}">ویرایش</a></span>
+          </article>
+        {% endif %}
+      {% endfor %}
+    </section>
+  {% else %}
+    <p class="category-browser__empty">در این دسته زیرمجموعه‌ای وجود ندارد.</p>
+  {% endif %}
+</main>
+{% endblock %}

@@ -1,6 +1,6 @@
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
-from django.db.models import Case, CharField, Count, DecimalField, F, IntegerField, OuterRef, Q, Subquery, Value, When
+from django.db.models import Case, CharField, Count, DecimalField, ExpressionWrapper, F, IntegerField, OuterRef, Q, Subquery, Value, When
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.core.paginator import Paginator
@@ -120,7 +120,11 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         )
         queryset = queryset.annotate(
             catalog_price_sort=Coalesce(F("catalog_price_amount"), Value(0), output_field=DecimalField(max_digits=18, decimal_places=2)),
-            catalog_availability_sort=Coalesce(F("on_hand_quantity"), Value(0), output_field=IntegerField()) - Coalesce(F("reserved_quantity"), Value(0), output_field=IntegerField()),
+            catalog_availability_sort=ExpressionWrapper(
+                Coalesce(F("on_hand_quantity"), Value(0), output_field=DecimalField(max_digits=18, decimal_places=6))
+                - Coalesce(F("reserved_quantity"), Value(0), output_field=DecimalField(max_digits=18, decimal_places=6)),
+                output_field=DecimalField(max_digits=18, decimal_places=6),
+            ),
         )
         if self.action not in ("list", "catalog_query"):
             queryset = queryset.prefetch_related("images", "documents")

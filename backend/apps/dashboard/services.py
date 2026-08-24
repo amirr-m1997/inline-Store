@@ -1,4 +1,4 @@
-from django.db.models import Count, F, IntegerField, Min, Q, ExpressionWrapper
+from django.db.models import Count, DecimalField, F, Min, Q, ExpressionWrapper
 from django.utils import timezone
 
 from apps.catalog.models import Category, Product
@@ -25,7 +25,7 @@ def _annotated_products():
             reserved_quantity=F("inventory__reserved_quantity"),
             available_quantity=ExpressionWrapper(
                 F("inventory__on_hand_quantity") - F("inventory__reserved_quantity"),
-                output_field=IntegerField(),
+                output_field=DecimalField(max_digits=18, decimal_places=6),
             ),
         )
     )

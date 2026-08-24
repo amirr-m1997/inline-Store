@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models, transaction
@@ -5,8 +7,8 @@ from apps.catalog.models import Product
 
 class Inventory(models.Model):
     product = models.OneToOneField(Product, related_name="inventory", on_delete=models.CASCADE)
-    on_hand_quantity = models.PositiveIntegerField(default=0)
-    reserved_quantity = models.PositiveIntegerField(default=0)
+    on_hand_quantity = models.DecimalField(max_digits=18, decimal_places=6, default=0, validators=[MinValueValidator(Decimal("0"))])
+    reserved_quantity = models.DecimalField(max_digits=18, decimal_places=6, default=0, validators=[MinValueValidator(Decimal("0"))])
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         constraints = [models.CheckConstraint(check=models.Q(on_hand_quantity__gte=0), name="inventory_on_hand_nonnegative"), models.CheckConstraint(check=models.Q(reserved_quantity__gte=0), name="inventory_reserved_nonnegative"), models.CheckConstraint(check=models.Q(reserved_quantity__lte=models.F("on_hand_quantity")), name="inventory_reserved_lte_on_hand")]
