@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 
+# Business data (never commit product/pricing workbooks)
+*.xlsx
+
 # Python
 __pycache__/
 *.py[cod]
