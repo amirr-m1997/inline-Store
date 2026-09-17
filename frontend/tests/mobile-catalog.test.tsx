@@ -1,5 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+
+vi.mock("next/navigation", () => ({ usePathname: () => "/", useRouter: () => ({ push: vi.fn(), replace: vi.fn() }), useSearchParams: () => new URLSearchParams() }));
 import { CatalogToolbar } from "../components/catalog/catalog-toolbar";
 import { FacetGroup } from "../components/catalog/facet-group";
 import { MobileFilterDrawer } from "../components/catalog/mobile-filter-drawer";

@@ -1,6 +1,6 @@
 from django.core.cache import cache
 from rest_framework import serializers, viewsets
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
 from .models import CurrencyRate, ProductPrice
@@ -24,7 +24,9 @@ class ProductPriceSerializer(serializers.ModelSerializer):
 class CurrencyRateViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = CurrencyRate.objects.all()
     serializer_class = CurrencyRateSerializer
-    permission_classes = (AllowAny,)
+    # Full rate history with sources is back-office data; the storefront only
+    # needs the selling price served by the public catalog serializer.
+    permission_classes = (IsAdminUser,)
     ordering_fields = ("rate_date", "currency")
     ordering = ("-rate_date",)
 
@@ -41,7 +43,8 @@ class CurrencyRateViewSet(viewsets.ReadOnlyModelViewSet):
 class ProductPriceViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ProductPrice.objects.select_related("product")
     serializer_class = ProductPriceSerializer
-    permission_classes = (AllowAny,)
+    # Full price history with sources is back-office data.
+    permission_classes = (IsAdminUser,)
     ordering_fields = ("effective_from", "amount")
     ordering = ("-effective_from",)
 

@@ -2,7 +2,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-from .models import Capability, CompanyAdvantage, CompanyBanner, CompanyCertification, CompanyHonor, CompanyInfo, CompanyLocation, CompanyMilestone, CompanySection, Industry
+from .models import Capability, CompanyAdvantage, CompanyBanner, CompanyCertification, CompanyHonor, CompanyInfo, CompanyLocation, CompanyMilestone, CompanyPromotion, CompanySection, HomepageCategorySpotlight, Industry
 from rest_framework import serializers
 
 
@@ -14,10 +14,13 @@ class HeroSerializer(serializers.ModelSerializer):
     mobile_hero_image = serializers.SerializerMethodField()
     buttons = serializers.SerializerMethodField()
     banners = serializers.SerializerMethodField()
+    featured_promotion = serializers.SerializerMethodField()
+    home_promotions = serializers.SerializerMethodField()
+    category_spotlights = serializers.SerializerMethodField()
 
     class Meta:
         model = CompanyInfo
-        fields = ("title", "slogan", "description", "hero_image", "mobile_hero_image", "buttons", "banners")
+        fields = ("title", "slogan", "description", "hero_image", "mobile_hero_image", "buttons", "banners", "featured_promotion", "home_promotions", "category_spotlights")
 
     def image_url(self, value):
         return value.url if value else None
@@ -46,6 +49,47 @@ class HeroSerializer(serializers.ModelSerializer):
                 "button": ({"text": banner.button_text_en if english and banner.button_text_en else banner.button_text_fa, "link": banner.button_url} if banner.button_url and (banner.button_text_fa or banner.button_text_en) else None),
             })
         return result
+
+    def get_featured_promotion(self, obj):
+        promotion = next((item for item in obj.promotions.all() if item.is_active and item.placement == CompanyPromotion.Placement.FEATURED), None)
+        if promotion is None:
+            return None
+        return self.serialize_promotion(promotion)
+
+    def get_home_promotions(self, obj):
+        placements = {CompanyPromotion.Placement.HOME_MIDDLE, CompanyPromotion.Placement.HOME_BOTTOM}
+        return [self.serialize_promotion(item) for item in obj.promotions.all() if item.is_active and item.placement in placements]
+
+    def get_category_spotlights(self, obj):
+        locale = self.context.get("request").query_params.get("locale", "fa") if self.context.get("request") else "fa"
+        english = locale == "en"
+        return [
+            {
+                "id": item.id,
+                "title": (item.title_en if english and item.title_en else item.title_fa) or (item.category.name_en if english and item.category.name_en else item.category.name_fa),
+                "description": item.description_en if english and item.description_en else item.description_fa,
+                "image": self.image_url(item.image),
+                "button_text": (item.button_text_en if english and item.button_text_en else item.button_text_fa) or ("Browse category" if english else "مشاهده این دسته"),
+                "category_slug": item.category.slug,
+                "category_name": item.category.name_en if english and item.category.name_en else item.category.name_fa,
+                "placement": item.placement,
+            }
+            for item in obj.category_spotlights.select_related("category").filter(is_active=True)
+        ]
+
+    def serialize_promotion(self, promotion):
+        locale = self.context.get("request").query_params.get("locale", "fa") if self.context.get("request") else "fa"
+        english = locale == "en"
+        return {
+            "id": promotion.id,
+            "title": promotion.title_en if english and promotion.title_en else promotion.title_fa,
+            "description": promotion.description_en if english and promotion.description_en else promotion.description_fa,
+            "discount_percentage": promotion.discount_percentage,
+            "image": self.image_url(promotion.image),
+            "button": ({"text": promotion.button_text_en if english and promotion.button_text_en else promotion.button_text_fa, "link": promotion.button_url} if promotion.button_url and (promotion.button_text_fa or promotion.button_text_en) else None),
+            "placement": promotion.placement,
+            "promotion_type": promotion.promotion_type,
+        }
 
 
 class CompanyAdvantageSerializer(serializers.ModelSerializer):
@@ -175,7 +219,7 @@ def company_detail(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def hero_detail(request):
-    company = CompanyInfo.objects.filter(hero_is_active=True).prefetch_related("banners").first()
+    company = CompanyInfo.objects.filter(hero_is_active=True).prefetch_related("banners", "promotions", "category_spotlights__category").first()
     if company is None:
         return Response({"detail": "Hero settings are not available."}, status=404)
     return Response(HeroSerializer(company, context={"request": request}).data)

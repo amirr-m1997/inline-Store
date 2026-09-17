@@ -1,15 +1,15 @@
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
-from django.db.models import Case, CharField, Count, DecimalField, ExpressionWrapper, F, IntegerField, OuterRef, Q, Subquery, Value, When
+from django.db.models import Avg, Case, CharField, Count, DecimalField, ExpressionWrapper, F, IntegerField, OuterRef, Q, Subquery, Sum, Value, When
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.core.paginator import Paginator
 from rest_framework import filters, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from .models import Category, CategorySlugRedirect, Product, ProductBrand, ProductDocument, ProductImage, SupplyBrand
+from .models import Category, CategorySlugRedirect, Product, ProductBrand, ProductDocument, ProductFavorite, ProductImage, ProductQuestion, ProductReview, SupplyBrand
 from .serializers import CatalogProductSerializer, CategoryNavigationSerializer, CategorySerializer, ProductBrandSerializer, ProductDetailSerializer, ProductDocumentResourceSerializer, ProductSummarySerializer, SupplyBrandSerializer
 from .services import CatalogQueryService
 from .cursor import apply_keyset, decode_cursor, encode_cursor
@@ -87,7 +87,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (AllowAny,)
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
     search_fields = ("code", "name", "unit")
-    ordering_fields = ("code", "name", "created_at", "on_hand_quantity", "reserved_quantity", "discount_percentage")
+    ordering_fields = ("code", "name", "created_at", "on_hand_quantity", "reserved_quantity", "discount_percentage", "sales_count", "catalog_availability_sort")
     ordering = ("code",)
 
     def get_serializer_class(self):
@@ -125,6 +125,16 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
                 - Coalesce(F("reserved_quantity"), Value(0), output_field=DecimalField(max_digits=18, decimal_places=6)),
                 output_field=DecimalField(max_digits=18, decimal_places=6),
             ),
+            # Only completed or operational orders contribute to the public
+            # bestseller ranking; unpaid, cancelled and returned orders do not.
+            sales_count=Coalesce(
+                Sum(
+                    "order_items__quantity",
+                    filter=Q(order_items__order__status__in=("confirmed", "preparing", "shipped", "delivered")),
+                ),
+                Value(0),
+                output_field=IntegerField(),
+            ),
         )
         if self.action not in ("list", "catalog_query"):
             queryset = queryset.prefetch_related("images", "documents")
@@ -141,6 +151,17 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(discount_percentage__gt=0)
         if self.request.query_params.get("featured", "").lower() in ("1", "true", "yes"):
             queryset = queryset.filter(is_featured=True)
+        if self.request.query_params.get("best_sellers", "").lower() in ("1", "true", "yes"):
+            ranked = queryset.filter(sales_count__gt=0).order_by("-sales_count", "-created_at")
+            # A new store has no completed order yet. Show the products the
+            # manager already selected as featured until real sales exist.
+            queryset = ranked if ranked.exists() else queryset.filter(is_featured=True).order_by("-created_at")
+            self.ordering = ("-sales_count", "-created_at")
+        if self.request.query_params.get("low_stock", "").lower() in ("1", "true", "yes"):
+            queryset = queryset.filter(catalog_availability_sort__gt=0).order_by("catalog_availability_sort", "created_at")
+            self.ordering = ("catalog_availability_sort", "created_at")
+        if self.request.query_params.get("condition") in (Product.Condition.NEW, Product.Condition.USED):
+            queryset = queryset.filter(condition=self.request.query_params["condition"])
         return queryset
 
     @action(detail=False, methods=("get",), url_path="catalog-query")
@@ -202,6 +223,77 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         if not product:
             return Response({"detail": "Not found."}, status=404)
         return Response(ProductDetailSerializer(product, context={"request": request}).data)
+
+    @action(detail=True, methods=("get", "post", "delete"), permission_classes=(IsAuthenticated,), url_path="favorite")
+    def favorite(self, request, pk=None):
+        product = self.get_object()
+        if request.method == "GET":
+            active = ProductFavorite.objects.filter(product=product, user=request.user).exists()
+            return Response({"is_favorited": active, "favorite_count": ProductFavorite.objects.filter(product=product).count()})
+        if request.method == "POST":
+            _, created = ProductFavorite.objects.get_or_create(product=product, user=request.user)
+            return Response({"is_favorited": True, "favorite_count": ProductFavorite.objects.filter(product=product).count(), "created": created}, status=201 if created else 200)
+        ProductFavorite.objects.filter(product=product, user=request.user).delete()
+        return Response({"is_favorited": False, "favorite_count": ProductFavorite.objects.filter(product=product).count()})
+
+    @action(detail=True, methods=("get", "post"), url_path="reviews")
+    def reviews(self, request, pk=None):
+        product = self.get_object()
+        user = request.user if request.user.is_authenticated else None
+        from apps.orders.models import Order, OrderItem
+
+        purchased = bool(user and OrderItem.objects.filter(
+            product=product, order__customer=user, order__status__in=(Order.Status.CONFIRMED, Order.Status.PREPARING, Order.Status.SHIPPED, Order.Status.DELIVERED),
+        ).exists())
+        if request.method == "POST":
+            if not user:
+                return Response({"detail": "برای ثبت نظر وارد حساب کاربری شوید."}, status=401)
+            if not purchased:
+                return Response({"detail": "فقط مشتریانی که این محصول را خریده‌اند می‌توانند نظر ثبت کنند."}, status=403)
+            try:
+                rating = int(request.data.get("rating"))
+            except (TypeError, ValueError):
+                rating = 0
+            comment = str(request.data.get("comment") or "").strip()
+            if not 1 <= rating <= 5:
+                return Response({"rating": ["امتیاز باید بین ۱ تا ۵ باشد."]}, status=400)
+            if not comment:
+                return Response({"comment": ["متن نظر را وارد کنید."]}, status=400)
+            review, created = ProductReview.objects.update_or_create(
+                product=product, user=user, defaults={"rating": rating, "comment": comment, "is_published": False},
+            )
+            return Response({"review": self._review_payload(review, own=True), "created": created, "detail": "نظر شما برای بررسی ثبت شد."}, status=201 if created else 200)
+        reviews = ProductReview.objects.filter(product=product, is_published=True).select_related("user")
+        own = ProductReview.objects.filter(product=product, user=user).first() if user else None
+        stats = reviews.aggregate(count=Count("id"), average_rating=Avg("rating"))
+        return Response({
+            "summary": {"count": stats["count"], "average_rating": round(float(stats["average_rating"]), 1) if stats["average_rating"] is not None else None},
+            "reviews": [self._review_payload(review) for review in reviews[:20]],
+            "can_review": purchased,
+            "viewer_review": self._review_payload(own, own=True) if own else None,
+        })
+
+    @action(detail=True, methods=("get", "post"), url_path="questions")
+    def questions(self, request, pk=None):
+        product = self.get_object()
+        if request.method == "POST":
+            if not request.user.is_authenticated:
+                return Response({"detail": "برای ثبت پرسش وارد حساب کاربری شوید."}, status=401)
+            question = str(request.data.get("question") or "").strip()
+            if not question:
+                return Response({"question": ["متن پرسش را وارد کنید."]}, status=400)
+            ProductQuestion.objects.create(product=product, user=request.user, question=question)
+            return Response({"detail": "پرسش شما برای بررسی مدیر ثبت شد."}, status=201)
+        questions = ProductQuestion.objects.filter(product=product, is_published=True).select_related("user")[:30]
+        return Response({"questions": [{"id": item.id, "question": item.question, "answer": item.answer, "asked_at": item.created_at, "answered_at": item.updated_at, "customer_name": item.user.get_full_name() or item.user.username} for item in questions]})
+
+    @staticmethod
+    def _review_payload(review, own=False):
+        return {
+            "id": review.id, "rating": review.rating, "comment": review.comment, "created_at": review.created_at,
+            "updated_at": review.updated_at, "is_published": review.is_published if own else True,
+            "customer_name": (review.user.get_full_name() or review.user.username) if review.user_id else "مشتری",
+        }
 
     @action(detail=False, methods=("get",), url_path=r"by-slug/(?P<slug>[^/.]+)")
     def by_slug(self, request, slug=None):

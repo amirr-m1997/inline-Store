@@ -5,7 +5,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from apps.inventory.models import Issue, Receipt
-from apps.pricing.models import Currency, CurrencyRate, ProductPrice
+from apps.pricing.models import ProductPrice
 from apps.company.models import CompanyAdvantage
 
 from .models import Category, Product, ProductBrand, ProductDocument, ProductImage, SupplyBrand
@@ -20,8 +20,11 @@ class CategorySerializer(serializers.ModelSerializer):
         read_only_fields = ("level",)
 
     def get_children(self, obj):
+        # Shallow on purpose: deep trees are served by the dedicated `tree`
+        # action (single bounded query). Recursing here caused N+1 queries and
+        # unbounded payloads on large catalogs.
         children = obj.children.filter(is_active=True)
-        return CategorySerializer(children, many=True, context=self.context).data
+        return CategoryNavigationSerializer(children, many=True, context=self.context).data
 
 
 class CategoryNavigationSerializer(serializers.ModelSerializer):
@@ -157,6 +160,11 @@ class ProductSerializer(serializers.ModelSerializer):
         return list(reversed(nodes))
 
     def get_price(self, obj):
+        # Bulk path: cart/checkout/export call sites preload one price map for
+        # all items (context["price_map"]) instead of one query per product.
+        price_map = (self.context or {}).get("price_map")
+        if price_map is not None:
+            return price_map.get(obj.pk)
         now = timezone.now()
         price = ProductPrice.objects.filter(product=obj, effective_from__lte=now).filter(Q(effective_to__isnull=True) | Q(effective_to__gte=now)).order_by("-effective_from").first()
         if not price:
@@ -255,24 +263,15 @@ class ProductDetailSerializer(ProductSerializer):
         }
 
     def get_pricing(self, obj):
+        # Public storefront price only. Purchase cost (last_purchase_irr,
+        # receipt rates) is back-office data and must never leak to anonymous
+        # clients — it discloses margins.
         selling = self.get_price(obj)
-        receipt = Receipt.objects.filter(product=obj, unit_purchase_price_irr__isnull=False).order_by("-occurred_at").first()
-        purchase_usd = None
-        today_equivalent = None
-        latest_usd_rate = CurrencyRate.objects.filter(currency=Currency.USD).order_by("-rate_date").first()
-        if receipt and receipt.usd_rate and receipt.usd_rate != 0:
-            purchase_usd = (receipt.unit_purchase_price_irr / receipt.usd_rate).quantize(Decimal("0.000001"))
-            if latest_usd_rate:
-                today_equivalent = (purchase_usd * latest_usd_rate.rate_to_irr).quantize(Decimal("0.01"))
         return {
             "price": selling["original_amount"] if selling else None,
             "currency": selling["currency"] if selling else None,
             "discount_percentage": selling["discount_percentage"] if selling else None,
             "final_price": selling["final_amount"] if selling else None,
-            "last_purchase_irr": str(receipt.unit_purchase_price_irr) if receipt else None,
-            "receipt_usd_rate": str(receipt.usd_rate) if receipt and receipt.usd_rate is not None else None,
-            "last_purchase_usd": str(purchase_usd) if purchase_usd is not None else None,
-            "today_irr_equivalent": str(today_equivalent) if today_equivalent is not None else None,
         }
 
     def get_technical_specifications(self, obj):

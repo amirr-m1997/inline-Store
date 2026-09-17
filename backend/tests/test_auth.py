@@ -51,11 +51,29 @@ class CustomerAuthenticationTests(TestCase):
         self.assertEqual(logout.status_code, 204)
         self.assertEqual(self.client.get("/api/v1/auth/profile/").status_code, 401)
 
+    def test_password_login_accepts_email_and_persian_phone_digits(self):
+        self.register(phone_number="09121234567")
+        self.client.cookies.clear()
+        by_email = self.client.post(
+            "/api/v1/auth/login/",
+            {"email": " USER@example.com ", "password": self.password},
+            content_type="application/json",
+        )
+        self.assertEqual(by_email.status_code, 200)
+        self.client.cookies.clear()
+        by_persian_phone = self.client.post(
+            "/api/v1/auth/login/",
+            {"identifier": "۰۹۱۲۱۲۳۴۵۶۷", "password": self.password},
+            content_type="application/json",
+        )
+        self.assertEqual(by_persian_phone.status_code, 200)
+
     def test_customer_can_update_extended_profile(self):
         self.register(phone_number="09121234567")
-        response = self.client.patch("/api/v1/auth/profile/", {"customer_type": "business", "company_name": "صنایع نمونه", "economic_code": "411111", "job_title": "مدیر خرید", "landline": "02112345678"}, content_type="application/json")
+        response = self.client.patch("/api/v1/auth/profile/", {"customer_type": "business", "company_name": "صنایع نمونه", "economic_code": "411111", "job_title": "مدیر خرید", "landline": "02112345678", "phone_number": "۰۹۱۲۱۲۳۴۵۶۷"}, content_type="application/json")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["economic_code"], "411111")
+        self.assertEqual(response.json()["phone_number"], "+989121234567")
 
     def test_customer_address_is_scoped_to_authenticated_user(self):
         self.register(phone_number="09121234567")
@@ -76,9 +94,11 @@ class CustomerAuthenticationTests(TestCase):
 
     @patch("apps.accounts.api.send_otp")
     @patch("apps.accounts.api.secrets.randbelow", return_value=12345)
+    @override_settings(DEBUG=True, OTP_DEBUG_CODE_ENABLED=True)
     def test_otp_request_incorrect_attempt_expiry_and_success(self, random_mock, send_mock):
         requested = self.client.post("/api/v1/auth/otp/request/", {"phone_number": "09121234567"}, content_type="application/json")
         self.assertEqual(requested.status_code, 200)
+        self.assertEqual(requested.json()["debug_code"], "012345")
         send_mock.assert_called_once_with("+989121234567", "012345")
         incorrect = self.client.post("/api/v1/auth/otp/verify/", {"phone_number": "09121234567", "code": "000000"}, content_type="application/json")
         self.assertEqual(incorrect.status_code, 400)
@@ -89,6 +109,15 @@ class CustomerAuthenticationTests(TestCase):
         PhoneOTP.objects.create(phone="+989131234567", purpose="login", code_hash=PhoneOTP.objects.get().code_hash, expires_at=timezone.now() - timedelta(seconds=1))
         expired = self.client.post("/api/v1/auth/otp/verify/", {"phone_number": "09131234567", "code": "012345"}, content_type="application/json")
         self.assertEqual(expired.status_code, 400)
+
+    @patch("apps.accounts.api.send_otp")
+    @patch("apps.accounts.api.secrets.randbelow", return_value=12345)
+    @override_settings(DEBUG=True, OTP_DEBUG_CODE_ENABLED=False)
+    def test_otp_debug_code_is_never_leaked_without_explicit_flag(self, random_mock, send_mock):
+        requested = self.client.post("/api/v1/auth/otp/request/", {"phone_number": "09121234567"}, content_type="application/json")
+        self.assertEqual(requested.status_code, 200)
+        self.assertNotIn("debug_code", requested.json())
+        send_mock.assert_called_once_with("+989121234567", "012345")
 
     @patch("apps.accounts.api.send_otp")
     @patch("apps.accounts.api.secrets.randbelow", return_value=12345)

@@ -6,5 +6,5 @@ export function getCategoryUrl(category: CategoryUrlSource, locale: string) {
 
 export function getCategorySearchUrl(locale: string, query = "") {
   const suffix = query ? `?q=${encodeURIComponent(query)}` : "";
-  return `/${locale}/category/search${suffix}`;
+  return `/${locale}/search${suffix}`;
 }

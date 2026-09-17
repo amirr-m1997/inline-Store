@@ -2,7 +2,7 @@
 
 ## Environment
 
-Copy `.env.example` to `.env`. Django uses `backend/db.sqlite3` as the sole local development database. Never commit `.env`.
+Copy `.env.example` to `.env`. Local development uses SQLite (`backend/db.sqlite3`, or `SQLITE_PATH=:memory:` for isolated runs) unless the `POSTGRES_*` variables are set — docker-compose sets them and the backend then uses PostgreSQL. Never commit `.env`.
 
 ## Backend
 
@@ -30,4 +30,4 @@ Keep API access in `services/`, types in `types/`, and reusable display componen
 
 ## Docker
 
-After supplying `.env`, run `docker compose up --build`. The compose stack starts PostgreSQL, Redis, Django, and Next.js. Run migrations in the backend container after initial startup.
+After supplying `.env`, run `docker compose up --build`. The compose stack starts PostgreSQL, Redis, Django, and Next.js. The backend container runs migrations automatically on boot (`migrate --noinput`).

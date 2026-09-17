@@ -5,7 +5,7 @@ import { getAdvantagesServer, getArticlesServer, getCapabilitiesServer, getCompa
 import { getCategoryRootsServer, getProductsServer } from "../../lib/api/products";
 import type { CompanyInfo, SiteHero } from "../../types/api";
 import type { CatalogProduct } from "../../components/catalog/product-card";
-import type { NavCategory } from "../../components/catalog/mega-menu";
+import type { NavCategory } from "../../lib/nav-category";
 import type { Advantage } from "../../components/catalog/company-advantages";
 import { absoluteUrl, localizedAlternates, localizedPath } from "../../lib/locale-url";
 
@@ -16,20 +16,22 @@ const getHomepageCompany = cache(() => getCompanyServer<CompanyInfo>().catch(() 
 const getHomepageHero = cache((locale: string) => getHeroServer<SiteHero>(locale).catch(() => null));
 
 async function loadHomepageData(locale: string): Promise<HomepageData> {
-  const [company, hero, advantages, categories, featured, newest, discounted, brands, industries, capabilities, editorialPage] = await Promise.all([
+  const [company, hero, advantages, categories, featured, bestSelling, newest, discounted, lowStock, brands, industries, capabilities, editorialPage] = await Promise.all([
     getHomepageCompany(),
     getHomepageHero(locale),
     getAdvantagesServer<Advantage[]>().catch(() => []),
     getCategoryRootsServer<NavCategory[]>().catch(() => []),
-    getProductsServer({ featured: true, page_size: 3 }).then((data) => data.results).catch(() => []),
-    getProductsServer({ ordering: "-created_at", page_size: 3 }).then((data) => data.results).catch(() => []),
-    getProductsServer({ discounted: true, ordering: "-discount_percentage", page_size: 3 }).then((data) => data.results).catch(() => []),
+    getProductsServer({ featured: true, page_size: 4 }).then((data) => data.results).catch(() => []),
+    getProductsServer({ best_sellers: true, page_size: 4 }).then((data) => data.results).catch(() => []),
+    getProductsServer({ ordering: "-created_at", page_size: 4 }).then((data) => data.results).catch(() => []),
+    getProductsServer({ discounted: true, ordering: "-discount_percentage", page_size: 4 }).then((data) => data.results).catch(() => []),
+    getProductsServer({ low_stock: true, page_size: 4 }).then((data) => data.results).catch(() => []),
     getSupplyBrandsServer<HomepageInitialData["brands"]>().catch(() => []),
     getIndustriesServer<HomepageInitialData["industries"]>().catch(() => []),
     getCapabilitiesServer<HomepageInitialData["capabilities"]>().catch(() => []),
     getArticlesServer<EditorialArticlePage>({ page_size: 3, ordering: "-published_at" }).catch(() => ({ count: 0, next: null, previous: null, results: [] })),
   ]);
-  return { locale, company, hero, advantages, categories, featured, newest, discounted, brands, industries, capabilities, editorial: editorialPage.results };
+  return { locale, company, hero, advantages, categories, featured, bestSelling, newest, discounted, lowStock, brands, industries, capabilities, editorial: editorialPage.results };
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

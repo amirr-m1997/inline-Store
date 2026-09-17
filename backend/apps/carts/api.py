@@ -1,12 +1,14 @@
 from decimal import Decimal
 from datetime import timedelta
+import re
+import secrets
 
 import csv
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Q
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import permissions, serializers
@@ -16,6 +18,7 @@ from rest_framework.response import Response
 
 from apps.catalog.serializers import ProductSerializer
 from apps.catalog.models import Product
+from apps.pricing.models import ProductPrice
 from apps.inventory.models import Inventory, Reservation
 from apps.accounts.models import CustomerAddress, normalize_iranian_phone
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -29,6 +32,34 @@ class DiscountThrottle(AnonRateThrottle):
     scope = "discount"
 
 
+class CartExportThrottle(AnonRateThrottle):
+    """Limit anonymous CSV export generation."""
+
+    scope = "cart_export"
+
+
+def normalize_contact_phone(value):
+    """Single contact-phone rule for cart and website forms.
+
+    Iranian mobiles are normalized to +98… (so profile duplicate checks work);
+    other international numbers are kept as compact digits instead of being
+    rejected — the store serves non-Iranian buyers too.
+    """
+    if not value:
+        return value
+    try:
+        return normalize_iranian_phone(value)
+    except DjangoValidationError:
+        pass
+    compact = re.sub(r"[\s\-()]", "", str(value))
+    if compact.startswith("00"):
+        compact = "+" + compact[2:]
+    digits = compact.lstrip("+")
+    if not digits.isdigit() or not 7 <= len(digits) <= 15:
+        raise serializers.ValidationError("شماره تماس معتبر نیست.")
+    return compact
+
+
 class CartCustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cart
@@ -39,18 +70,14 @@ class CartCustomerSerializer(serializers.ModelSerializer):
         )
 
     def validate_customer_phone(self, value):
-        compact = value.replace(" ", "").replace("-", "")
-        if value and (not compact.lstrip("+").isdigit() or len(compact) < 10):
-            raise serializers.ValidationError("شماره تماس معتبر نیست.")
+        normalized = normalize_contact_phone(value)
+        if not normalized:
+            return normalized
         request = self.context.get("request")
-        if value and request and request.user.is_authenticated:
-            try:
-                normalized = normalize_iranian_phone(value)
-            except DjangoValidationError:
-                normalized = None
-            if normalized and get_user_model().objects.exclude(pk=request.user.pk).filter(phone=normalized).exists():
+        if normalized.startswith("+989") and request and request.user.is_authenticated:
+            if get_user_model().objects.exclude(pk=request.user.pk).filter(phone=normalized).exists():
                 raise serializers.ValidationError("این شماره تماس قبلاً برای حساب دیگری ثبت شده است.")
-        return value
+        return normalized
 
     def validate_customer_email(self, value):
         value = value.strip().lower() if value else value
@@ -95,8 +122,10 @@ def _save_customer_to_profile(cart, user):
     }
     update_fields = []
     for cart_field, user_field in reverse_mapping.items():
-        setattr(user, user_field, getattr(cart, cart_field))
-        update_fields.append(user_field)
+        # Never overwrite saved profile data with an empty cart value.
+        if getattr(cart, cart_field):
+            setattr(user, user_field, getattr(cart, cart_field))
+            update_fields.append(user_field)
     try:
         normalized_phone = normalize_iranian_phone(cart.customer_phone)
     except DjangoValidationError:
@@ -140,11 +169,42 @@ def current_cart(request, create=True):
     return Cart.objects.create() if create else None
 
 
+def bulk_price_map(product_ids):
+    """Latest effective selling price per product in ONE query.
+
+    Mirrors ProductSerializer.get_price so cart, checkout, and CSV export can
+    serialize many items without one query per product (works on SQLite and
+    PostgreSQL — no DISTINCT ON).
+    """
+    ids = list({pid for pid in product_ids if pid is not None})
+    if not ids:
+        return {}
+    now = timezone.now()
+    rows = (
+        ProductPrice.objects.filter(product_id__in=ids, effective_from__lte=now)
+        .filter(Q(effective_to__isnull=True) | Q(effective_to__gte=now))
+        .order_by("product_id", "-effective_from")
+    )
+    prices = {}
+    for row in rows:
+        if row.product_id in prices:
+            continue
+        final = row.amount * (Decimal("1") - row.discount_percentage / Decimal("100"))
+        prices[row.product_id] = {
+            "original_amount": str(row.amount),
+            "currency": row.currency,
+            "discount_percentage": str(row.discount_percentage),
+            "final_amount": str(final.quantize(Decimal("0.01"))),
+        }
+    return prices
+
+
 def cart_payload(cart):
     items = list(cart.items.select_related("product", "product__category", "product__inventory").prefetch_related("product__images"))
+    price_map = bulk_price_map(item.product_id for item in items)
     rows, total = [], Decimal("0")
     for item in items:
-        product = ProductSerializer(item.product).data
+        product = ProductSerializer(item.product, context={"price_map": price_map}).data
         price = product.get("price")
         if price:
             line_total = Decimal(item.quantity) * Decimal(price["final_amount"]).quantize(Decimal("0.01"))
@@ -219,10 +279,12 @@ def cart_item(request, item_id):
     except (TypeError, ValueError): return Response({"detail": "Quantity must be an integer."}, status=400)
     if quantity < 1: item.delete()
     else:
-        inventory = Inventory.objects.filter(product=item.product).first()
-        if not inventory or quantity > inventory.available_quantity:
-            return Response({"detail": "Insufficient inventory."}, status=400)
-        item.quantity = quantity; item.save()
+        # Lock the row so the availability check and the write are atomic.
+        with transaction.atomic():
+            inventory = Inventory.objects.select_for_update().filter(product=item.product).first()
+            if not inventory or quantity > inventory.available_quantity:
+                return Response({"detail": "Insufficient inventory."}, status=400)
+            item.quantity = quantity; item.save()
     return Response(cart_payload(cart))
 
 
@@ -245,6 +307,7 @@ def checkout(request):
         if locked_cart.status != Cart.Status.ACTIVE:
             return Response({"detail": "این سبد قبلاً ثبت شده است."}, status=409)
         inventories = {inventory.product_id: inventory for inventory in Inventory.objects.select_for_update().filter(product_id__in=[item.product_id for item in items])}
+        price_map = bulk_price_map(item.product_id for item in items)
         totals = cart_payload(locked_cart)
         coupon = None
         if locked_cart.discount_code_id:
@@ -257,8 +320,14 @@ def checkout(request):
             if not inventory or inventory.available_quantity < item.quantity:
                 return Response({"detail": f"موجودی «{item.product.name}» برای ثبت سفارش کافی نیست."}, status=400)
         expires_at = timezone.now() + timedelta(hours=24)
+        # Unpredictable reference: sequential numbers would disclose order
+        # volume and allow reference enumeration.
+        for _ in range(5):
+            order_number = f"MEHR-{secrets.token_hex(8).upper()}"
+            if not Order.objects.filter(order_number=order_number).exists():
+                break
         order = Order.objects.create(
-            order_number=f"MEHR-{locked_cart.id:08d}", customer=locked_cart.user,
+            order_number=order_number, customer=locked_cart.user,
             source_cart=locked_cart, status=Order.Status.PENDING_PAYMENT,
             subtotal=Decimal(totals["subtotal"]),
             discount_code=totals["discount"]["code"] if totals["discount"] else "",
@@ -272,7 +341,7 @@ def checkout(request):
         )
         for item in items:
             inventory = inventories[item.product_id]
-            product_data = ProductSerializer(item.product).data
+            product_data = ProductSerializer(item.product, context={"price_map": price_map}).data
             price = product_data.get("price") or {}
             original_price = Decimal(price.get("original_amount") or 0)
             final_price = Decimal(price.get("final_amount") or 0)
@@ -301,11 +370,12 @@ def checkout(request):
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated])
 def orders(request):
-    carts = Cart.objects.filter(user=request.user, status=Cart.Status.CHECKED_OUT).prefetch_related("items__product").order_by("-updated_at")
+    carts = Cart.objects.filter(user=request.user, status=Cart.Status.CHECKED_OUT).select_related("order").prefetch_related("items__product").order_by("-updated_at")
     payload = []
     for cart in carts:
+        order = getattr(cart, "order", None)
         payload.append({
-            "id": cart.id, "reference": f"MEHR-{cart.id:08d}", "status": cart.status,
+            "id": cart.id, "reference": order.order_number if order else f"MEHR-{cart.id:08d}", "status": cart.status,
             "created_at": cart.created_at, "submitted_at": cart.updated_at,
             "shipping_address": cart.shipping_address, "subtotal": str(cart.final_total + cart.discount_amount),
             "discount_code": cart.discount_code.code if cart.discount_code else None, "discount_percentage": str(cart.discount_percentage),
@@ -325,13 +395,13 @@ def discount(request):
         return Response(cart_payload(cart))
     code = str(request.data.get("code", "")).strip().upper()
     coupon = DiscountCode.objects.filter(code__iexact=code).first()
-    if not coupon:
-        return Response({"detail": "کد تخفیف معتبر نیست."}, status=400)
     now = timezone.now()
-    if not coupon.is_active or coupon.valid_from > now or (coupon.valid_until and coupon.valid_until < now):
-        return Response({"detail": "زمان استفاده از این کد تخفیف به پایان رسیده است."}, status=400)
+    # One generic message for unknown/expired/exhausted codes so the endpoint
+    # cannot be used as an oracle to enumerate or probe real coupon codes.
+    if not coupon or not coupon.is_active or coupon.valid_from > now or (coupon.valid_until and coupon.valid_until < now):
+        return Response({"detail": "کد تخفیف معتبر نیست."}, status=400)
     if coupon.max_uses is not None and coupon.usage_count >= coupon.max_uses:
-        return Response({"detail": "ظرفیت استفاده از این کد تخفیف تکمیل شده است."}, status=400)
+        return Response({"detail": "کد تخفیف معتبر نیست."}, status=400)
     cart.discount_code = coupon; cart.save(update_fields=("discount_code", "updated_at"))
     payload = cart_payload(cart)
     if Decimal(payload["subtotal"]) < coupon.minimum_order_amount:
@@ -340,8 +410,6 @@ def discount(request):
     return Response(payload)
 
 
-@api_view(["GET"])
-@permission_classes([permissions.AllowAny])
 def _csv_safe(value):
     """Neutralize spreadsheet formula injection (CSV injection) in exported cells."""
     text = "" if value is None else str(value)
@@ -350,9 +418,14 @@ def _csv_safe(value):
     return text
 
 
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+@throttle_classes([CartExportThrottle])
 def cart_export_csv(request):
+    # Public by design (guest carts via X-Guest-Token); throttled export generation.
     cart = current_cart(request)
     items = list(cart.items.select_related("product", "product__category", "product__inventory").prefetch_related("product__images"))
+    price_map = bulk_price_map(item.product_id for item in items)
     response = HttpResponse(content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = 'attachment; filename="cart.csv"'
     response.write("\ufeff")
@@ -360,7 +433,7 @@ def cart_export_csv(request):
     writer.writerow(["code", "name", "unit", "quantity", "on_hand", "reserved", "available", "line_total_irr"])
     total = Decimal("0")
     for item in items:
-        data = ProductSerializer(item.product).data
+        data = ProductSerializer(item.product, context={"price_map": price_map}).data
         price = data.get("price")
         line_total = Decimal(item.quantity) * Decimal(price["final_amount"]).quantize(Decimal("0.01")) if price else None
         if line_total is not None:

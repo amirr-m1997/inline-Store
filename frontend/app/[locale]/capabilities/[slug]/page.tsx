@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+/* eslint-disable @next/next/no-img-element -- external CMS content image, not covered by next/image remotePatterns */
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getArticlesServer, getCapabilityServer, getFAQsServer, type EditorialArticlePage } from "../../../../lib/api/content";

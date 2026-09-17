@@ -39,6 +39,9 @@ def _unpack(value):
     return raw
 
 
+CURSOR_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
+
+
 def encode_cursor(params, ordering, row):
     fields = [{"field": field, "descending": descending, "value": _pack(getattr(row, field))} for field, descending in ordering]
     payload = {"version": 1, "context": _context(params), "ordering": [[field, descending] for field, descending in ordering], "fields": fields}
@@ -47,7 +50,8 @@ def encode_cursor(params, ordering, row):
 
 def decode_cursor(token, params, ordering):
     try:
-        payload = signing.loads(token, salt="catalog-query-cursor")
+        # max_age bounds replay of signed cursors; expired ones fail closed.
+        payload = signing.loads(token, salt="catalog-query-cursor", max_age=CURSOR_MAX_AGE_SECONDS)
     except (signing.BadSignature, signing.SignatureExpired, ValueError, TypeError):
         raise ValidationError({"cursor": "نشانگر صفحه‌بندی معتبر نیست."})
     expected_ordering = [[field, descending] for field, descending in ordering]

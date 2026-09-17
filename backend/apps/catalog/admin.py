@@ -10,7 +10,7 @@ from django.utils.html import format_html
 from apps.inventory.models import Inventory
 from apps.pricing.models import ProductPrice
 from .admin_widgets import CategoryPickerWidget
-from .models import AttributeDefinition, Category, CategoryAttribute, CategorySlugRedirect, Product, ProductAttributeValue, ProductBrand, ProductDocument, ProductIdentifier, ProductImage, SupplyBrand
+from .models import AttributeDefinition, Category, CategoryAttribute, CategorySlugRedirect, Product, ProductAttributeValue, ProductBrand, ProductDocument, ProductFavorite, ProductIdentifier, ProductImage, ProductQuestion, ProductReview, SupplyBrand
 
 def category_path(category):
     """Return a compact, unambiguous admin label for a catalog category."""
@@ -47,6 +47,8 @@ class ProductIdentifierInline(admin.TabularInline): model = ProductIdentifier; e
 class ProductAttributeValueInline(admin.TabularInline): model = ProductAttributeValue; extra = 0; autocomplete_fields = ("attribute",)
 class ProductDocumentInline(admin.TabularInline): model = ProductDocument; extra = 0; fields = ("document_type", "title_fa", "title_en", "file", "display_name", "language", "revision", "display_order", "is_active", "is_published")
 class CategoryAttributeInline(admin.TabularInline): model = CategoryAttribute; extra = 0; autocomplete_fields = ("attribute",)
+class ProductReviewInline(admin.TabularInline): model = ProductReview; extra = 0; fields = ("user", "rating", "comment", "is_published", "updated_at"); readonly_fields = ("user", "rating", "comment", "updated_at"); can_delete = False
+class ProductQuestionInline(admin.TabularInline): model = ProductQuestion; extra = 0; fields = ("user", "question", "answer", "is_published", "updated_at"); readonly_fields = ("user", "question", "updated_at")
 @admin.register(Category)
 class CategoryAdmin(HierarchicalCategoryAdminMixin, admin.ModelAdmin):
     list_display = ("tree_name", "code", "slug", "parent_path", "level", "is_active")
@@ -149,7 +151,7 @@ class ProductAdmin(HierarchicalCategoryAdminMixin, admin.ModelAdmin):
     list_filter = ("is_featured", "is_active", "brand", "category")
     search_fields = ("code", "name", "slug", "identifiers__normalized_value", "documents__display_name")
     ordering = ("code",)
-    inlines = (ProductImageInline, ProductDocumentInline, InventoryInline, ProductPriceInline, ProductIdentifierInline, ProductAttributeValueInline)
+    inlines = (ProductImageInline, ProductDocumentInline, InventoryInline, ProductPriceInline, ProductIdentifierInline, ProductAttributeValueInline, ProductReviewInline, ProductQuestionInline)
     list_editable = ("is_featured",)
     autocomplete_fields = ("brand",)
 
@@ -163,6 +165,20 @@ class ProductAdmin(HierarchicalCategoryAdminMixin, admin.ModelAdmin):
         return form
 @admin.register(ProductImage)
 class ProductImageAdmin(admin.ModelAdmin): list_display = ("product", "is_primary", "sort_order"); list_filter = ("is_primary",); search_fields = ("product__code", "alt_text", "alt_fa", "alt_en")
+@admin.register(ProductFavorite)
+class ProductFavoriteAdmin(admin.ModelAdmin): list_display = ("product", "user", "created_at"); search_fields = ("product__code", "product__name", "user__username"); autocomplete_fields = ("product", "user")
+@admin.register(ProductReview)
+class ProductReviewAdmin(admin.ModelAdmin): list_display = ("product", "user", "rating", "is_published", "updated_at"); list_filter = ("rating", "is_published"); list_editable = ("is_published",); search_fields = ("product__code", "product__name", "user__username", "comment"); autocomplete_fields = ("product", "user")
+@admin.register(ProductQuestion)
+class ProductQuestionAdmin(admin.ModelAdmin):
+    list_display = ("product", "user", "short_question", "is_published", "updated_at")
+    list_filter = ("is_published",)
+    list_editable = ("is_published",)
+    search_fields = ("product__code", "product__name", "user__username", "question", "answer")
+    autocomplete_fields = ("product", "user")
+
+    @admin.display(description="پرسش")
+    def short_question(self, obj): return obj.question[:70]
 @admin.register(ProductDocument)
 class ProductDocumentAdmin(admin.ModelAdmin):
     list_display = ("display_name", "product", "document_type", "language", "revision", "file_size", "is_active", "is_published", "updated_at", "display_order")

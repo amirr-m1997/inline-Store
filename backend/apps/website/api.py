@@ -1,7 +1,8 @@
 from rest_framework import serializers
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 
 from django.db.models import Prefetch
 
@@ -15,16 +16,20 @@ class SiteNavigationSerializer(serializers.ModelSerializer):
         fields = ("id", "title_fa", "title_en", "url", "order", "icon")
 
 
+class PublicFormThrottle(AnonRateThrottle):
+    """Limit anonymous form spam (contact, warranty, support, feedback)."""
+
+    scope = "public_form"
+
+
 class ContactMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactMessage
         fields = ("full_name", "phone", "email", "subject", "message")
 
     def validate_phone(self, value):
-        compact = value.replace(" ", "").replace("-", "")
-        if not compact.lstrip("+").isdigit() or len(compact) < 10:
-            raise serializers.ValidationError("شماره تماس معتبر نیست.")
-        return value
+        from apps.carts.api import normalize_contact_phone
+        return normalize_contact_phone(value)
 
 class WarrantyPolicySerializer(serializers.ModelSerializer):
     class Meta: model = WarrantyPolicy; fields = ("id", "title_fa", "title_en", "body_fa", "body_en", "registration_enabled")
@@ -63,6 +68,7 @@ def navigation_list(request):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([PublicFormThrottle])
 def contact_message_create(request):
     serializer = ContactMessageSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -77,6 +83,7 @@ def warranty_policy(request):
 
 @api_view(["POST", "GET"])
 @permission_classes([AllowAny])
+@throttle_classes([PublicFormThrottle])
 def warranty_registrations(request):
     if request.method == "GET":
         if not request.user.is_authenticated: return Response([], status=200)
@@ -87,6 +94,7 @@ def warranty_registrations(request):
 
 @api_view(["POST", "GET"])
 @permission_classes([AllowAny])
+@throttle_classes([PublicFormThrottle])
 def support_requests(request):
     if request.method == "GET":
         if not request.user.is_authenticated: return Response([], status=200)
@@ -97,6 +105,7 @@ def support_requests(request):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([PublicFormThrottle])
 def feedback_create(request):
     serializer = FeedbackSerializer(data=request.data); serializer.is_valid(raise_exception=True)
     item = serializer.save(customer=request.user if request.user.is_authenticated else None)

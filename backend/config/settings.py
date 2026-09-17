@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
@@ -13,15 +14,18 @@ for _dotenv_path in (BASE_DIR / ".env", BASE_DIR.parent / ".env"):
         load_dotenv(_dotenv_path, override=False)
         break
 SECRET_KEY = os.environ.get("SECRET_KEY", "unsafe-development-key-change-me")
-DEBUG = parse_env_bool(os.environ.get("DEBUG"), default=True)
+# Secure by default: DEBUG is opt-in. Local development sets DEBUG=True
+# explicitly (backend/.env / .env.example); any forgotten production env
+# boots with DEBUG=False, secure cookies on, and mock payments off.
+DEBUG = parse_env_bool(os.environ.get("DEBUG"), default=False)
 if not DEBUG and SECRET_KEY == "unsafe-development-key-change-me":
     raise ImproperlyConfigured("SECRET_KEY must be set to a secure value when DEBUG is disabled.")
-ALLOWED_HOSTS = [host.strip() for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0,192.168.3.140").split(",") if host.strip()]
+ALLOWED_HOSTS = [host.strip() for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if host.strip()]
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.environ.get(
         "CSRF_TRUSTED_ORIGINS",
-    "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001,http://192.168.3.140:3000,http://192.168.3.140:3001",
+        "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001",
     ).split(",")
     if origin.strip()
 ]
@@ -29,6 +33,8 @@ CSRF_TRUSTED_ORIGINS = [
 # create mock gateway payments and the mock-complete endpoint is turned off,
 # so orders can never be "verified" without a real gateway.
 PAYMENTS_MOCK_ENABLED = parse_env_bool(os.environ.get("PAYMENTS_MOCK_ENABLED"), default=DEBUG)
+if not DEBUG and PAYMENTS_MOCK_ENABLED:
+    raise ImproperlyConfigured("PAYMENTS_MOCK_ENABLED must not be enabled when DEBUG is disabled.")
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes", "django.contrib.sessions",
     "django.contrib.messages", "django.contrib.staticfiles", "corsheaders", "rest_framework", "rest_framework.authtoken",
@@ -70,7 +76,7 @@ CORS_ALLOWED_ORIGINS = [
     value.strip()
     for value in os.environ.get(
         "CORS_ALLOWED_ORIGINS",
-    "http://localhost:3000,http://localhost:3001,http://localhost:3005,http://localhost:3006,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3005,http://127.0.0.1:3006,http://192.168.3.140:3000,http://192.168.3.140:3001"
+        "http://localhost:3000,http://localhost:3001,http://localhost:3005,http://localhost:3006,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3005,http://127.0.0.1:3006"
     ).split(",")
     if value.strip()
 ]
@@ -96,12 +102,25 @@ CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_TASK_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
-REST_FRAMEWORK = {"DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"], "DEFAULT_AUTHENTICATION_CLASSES": ["apps.accounts.authentication.CookieTokenAuthentication"], "DEFAULT_PAGINATION_CLASS": "apps.common.pagination.StandardResultsSetPagination", "PAGE_SIZE": 20, "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.openapi.AutoSchema", "DEFAULT_FILTER_BACKENDS": ["rest_framework.filters.OrderingFilter"], "DEFAULT_THROTTLE_RATES": {"auth": "10/min", "otp": "5/hour", "discount": "30/min"}}
+# Cache isolation: key prefix follows the database (or CACHE_KEY_PREFIX),
+# so dev / test / prod sharing one Redis can never poison each other's
+# entries — a stale dev tree once made the category test suite flaky.
+_cache_db_name = str(DATABASES["default"].get("NAME") or "default")
+CACHES["default"]["KEY_PREFIX"] = os.environ.get(
+    "CACHE_KEY_PREFIX", f"store:{Path(_cache_db_name).stem}",
+)
+if "test" in sys.argv:
+    # Hermetic suite: no Redis required, fully isolated per process.
+    CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "test-cache", "KEY_PREFIX": "test"}}
+REST_FRAMEWORK = {"DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticatedOrReadOnly"], "DEFAULT_AUTHENTICATION_CLASSES": ["apps.accounts.authentication.CookieTokenAuthentication"], "DEFAULT_PAGINATION_CLASS": "apps.common.pagination.StandardResultsSetPagination", "PAGE_SIZE": 20, "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.openapi.AutoSchema", "DEFAULT_FILTER_BACKENDS": ["rest_framework.filters.OrderingFilter"], "DEFAULT_THROTTLE_RATES": {"auth": "10/min", "otp": "5/hour", "discount": "30/min", "public_form": "30/min", "cart_export": "60/min"}}
 AUTH_COOKIE_NAME = "mehrasl_auth"
 AUTH_COOKIE_SECURE = not DEBUG
 AUTH_COOKIE_SAMESITE = "Lax"
 OTP_EXPIRY_SECONDS = int(os.environ.get("OTP_EXPIRY_SECONDS", "120"))
 OTP_RESEND_SECONDS = int(os.environ.get("OTP_RESEND_SECONDS", "60"))
+# OTP debug-code bypass: NEVER enable in production. Even with DEBUG=True the
+# code is only echoed back when this flag is explicitly set (local SMS testing).
+OTP_DEBUG_CODE_ENABLED = parse_env_bool(os.environ.get("OTP_DEBUG_CODE_ENABLED"), default=False)
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://127.0.0.1:3000")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "noreply@mehrasl.local")

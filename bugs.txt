@@ -1,0 +1,71 @@
+ از دید مهندس نرم‌افزار (معماری / DevOps / نگهداشت)
+معماری漂移 کرده:
+
+docs/ARCHITECTURE.md:5 می‌گوید ۷ اپ، backend/config/settings.py:32-35 عملاً ۱۴ اپ نصب کرده (orders,company,website,content,search,rfq,notifications). بدون ADR.
+دو پروتوتایپ واگرا: LOCAL_SHOP/local_shop.html:582 با DATA ۱۲۹۷۱ محصولی ~3.4MB داخل یک فایل، و MehrAsl_Store_Preview/catalog-data.js با ۲۰ محصول که README_FA.md:31 خودش می‌گوید sync نیست. تاکسونومی ۱۴/۱۲۳/۶۹۷ در برابر ۱۰/۱۱۰. منبع canonical مشخص نیست.
+BUG_REPORT.fa.md:104-107 خودش اعتراف می‌کند: mega-menu.tsx ،storefront-demo.tsx و بلوک‌های CSS قدیمی dead code هستند.
+DevOps آماده production نیست:
+
+docker-compose.yml:12,34 : runserver + npm run dev با bind-mount. بدون gunicorn، بدون next build/start، بدون collectstatic، بدون restart/healthcheck.
+docker-compose.yml:25-31 سرویس worker نه env_file دارد نه environment — سلری با localhost:6379 و SQLite بالا می‌آید یا split-brain می‌شود.
+backend/Dockerfile:1-7 و frontend/Dockerfile:1-6 بدون CMD هستند. فرانت EXPOSE 3001 ولی compose 3000:3000 مپ کرده. فقط با override کار می‌کند.
+frontend/package.json:8-11 اسکریپت lint/test/e2e دارد ولی .github/**/* خالی است — هیچ CI نیست.
+backend/requirements/base.txt:1-13 رنج شناور Django>=4.2,<5.0، بدون lock file. در برابر package-lock.json فرانت ناسازگار است.
+Env / داک:
+
+backend/.env:24 خط خراب فارسی فقط محصولات عکس‌دار پارسر dotenv را می‌شکند. FRONTEND_URL=127.0.0.1,localhost در backend/.env:17 اسکیم ندارد.
+frontend/.env.local:4,11 دو بار NEXT_PUBLIC_API_URL تعریف کرده (دومی با IP عمومی 2.186.118.55:9015 برنده می‌شود) و با docker-compose.yml:37 (localhost:8005) و .env.development.local:2-3冲突 دارد.
+README.md:1-15 فقط ۱۵ خط است. docs/DEVELOPMENT.md:5 می‌گوید «فقط sqlite» ولی settings.py:46-56 و compose از Postgres حرف می‌زنند. PROJECT_ANALYSIS.md:1-205 کامل‌ترین سند طراحی است ولی از README لینک نشده.
+۲. از دید برنامه‌نویس (باگ و کیفیت کد)
+بک‌اند:
+
+config/settings.py:99 : DEFAULT_PERMISSION_CLASSES: AllowAny سراسری. هیچ apps/*/permissions*.py وجود ندارد — همه endpointها opt-out هستند.
+apps/carts/api.py:343-353 : تابع _csv_safe() دکوراتور AllowAny گرفته و cart_export_csv بدون permission/throttle مانده — ویو بدون احراز مستقیم از carts/urls.py:1 در دسترس است.
+apps/carts/api.py:87-107 : _save_customer_to_profile حتی رشته خالی "" را روی فیلدهای User overwrite می‌کند — از دست رفتن داده.
+apps/carts/api.py:204-208,222-224 : چک موجودی و write جدا هستند (TOCTOU). فقط add_item لاک دارد.
+apps/carts/api.py:147-164 : ProductSerializer(item.product).data در حلقه + get_price:159-165 کوئری تکی — N+1 کلاسیک. CatalogProductSerializer:222-227 نسخه annotated را دارد ولی استفاده نشده.
+apps/catalog/serializers.py:22-24 : get_children ریکارسیو بدون محدودیت عمق + prefetch فقط یک سطح — درخت بزرگ = N+1 / پاسخ حجیم.
+apps/catalog/api.py:155-159 : ranked.exists() + استفاده مجدد = ۲ کوئری، و mutate کردن self.ordering در سطح ریکوئست thread-unsafe است.
+apps/catalog/cursor.py:48-55 : decode_cursor بدون max_age — کرسر امضاشده تا ابد replay می‌شود.
+apps/orders/api.py:142-144 : FileResponse(invoice.pdf_file.open("rb")) هرگز close نمی‌شود — نشت fd.
+apps/accounts/api.py:151-170 : OTP فقط جدیدترین چک می‌شود، کدهای قدیمی می‌مانند؛ ریسند هر ۶۰ ثانیه لیمیت تلاش را ریست می‌کند.
+ناهماهنگی ولیدیشن موبایل: carts/api.py:41-53 در برابر website/api.py:23-27 در برابر rfq/serializers.py:8-12 — سه منطق متفاوت برای شماره ایران.
+فرانت:
+
+package.json:15-17 : next:^16.3.0 + react:18.3.1 — نکست ۱۶ ری‌اکت ۱۹ می‌خواهد. ریسک hydration.
+package.json:4 : eslint . --ext در ESLint v9 حذف شده — اسکریپت lint همیشه fail.
+next.config.mjs:11,16 : IP خصوصی 192.168.3.140 هاردکد در allowedDevOrigins و remotePatterns. فقط http:localhost/.../media/** — در prod تصویر ۴۰۰ می‌دهد. بدون output:standalone.
+proxy.ts:4-9 : matcher:"/" و ریدایرکت کور به /fa — Accept-Language و دیپ‌لینک /en را می‌شکند.
+app/[locale]/page.tsx:19-33 : سیزده fetch سریالی در Promise.all با revalidate ناهماهنگ 30 در برابر 60 — TTFB بالا، بدون Suspense.
+components/catalog/product-card.tsx:32-34 : به‌ازای هر کارت یک GET .../favorite/ — واترفال N+1. JSON.parse(localStorage) بدون try — دیتای خراب کل گرید را کرش می‌کند.
+components/product/detail/product-gallery.tsx:3 : move() با length=0 می‌شود NaN.
+lib/product/adapters.ts:7 : raw:any بدون null-guard روی inventory و category_tree.
+app/api/[...path]/route.ts:22-28,43 : فورس trailing slash، فوروارد Cookie/Origin، افشای target.origin در خطای ۵۰۲.
+۳. از دید مشتری (کاربر نهایی / خریدار)
+زبان ناقص: خطای API در lib/api/client.ts:24 همیشه فارسی درخواست ناموفق بود است حتی در /en. aria-label=مشاهده ${name} در product-card.tsx:12، خانه در breadcrumb محصول :51، واحد ریال و ٪ تخفیف هاردکد فارسی‌اند.
+RTL خراب: globals.css:34 با mr-3/border-r/pr-1 و left-1 فیزیکی، cart/page.tsx:116 با mr-2، فلش هاردکد ← در enterprise-home.tsx:38 که در LTR برعکس می‌شود. باید ms-/me-/ps-/pe-/start-/end- باشد.
+سبد شکننده: app/[locale]/cart/page.tsx:58 مستقیم localStorage می‌خواند، با window.location.assign(payment_url) فول‌ریلود می‌کند، و orderReference در :104 هیچ‌وقت set نمی‌شود — UI موفقیت مرده است.
+کاتالوگ: lib/category-url.ts:7-9 لینک /category/search با روت category/[slug] تداخل دارد — لینک مرده. catalog-explorer.tsx:72-73 با هر فاست router.push بدون scroll:false صفحه را به بالا می‌پرد.
+پرفورمنس/SEO: فونت vazirmatn در package.json:14 نصب ولی در layout.tsx:1-2 ایمپورت نشده. site-hero.tsx:53-54 هم نسخه دسکتاپ هم موبایل را با fill دانلود می‌کند. layout.tsx:7,19 نه metadataBase دارد نه sitemap.ts/not-found.tsx در حالی که robots.ts:6 به /sitemap.xml اشاره می‌کند. description محصول در :51 بدون truncate در OpenGraph می‌رود.
+موبایل: google-sign-in.tsx:14-17 عرض ثابت 320px در گوشی ۳۶۰px سرریز می‌کند. گرید سبد lg:[1fr_380px] در تبلت تنگ است. globals.css:268 در زیر ۳۹۰px استپ‌های checkout را display:none می‌کند.
+۴. از دید هکر (امنیت — حیاتی)
+🔴 بحرانی ۱ — پرداخت mock در prod: orders/api.py:48-91 و carts/api.py:241-242 با PAYMENTS_MOCK_ENABLED=default=DEBUG گیت شده‌اند. POST /api/v1/orders/payments/<id>/mock-complete/ با outcome=success سفارش را paid می‌کند، موجودی کم می‌کند، فاکتور رسمی می‌دهد — خرید مجانی. BUG_REPORT.fa.md:119-125 می‌گوید فیکس شده ولی همچنان وابسته به DEBUG است.
+
+🔴 بحرانی ۲ — سیکرت کامیت شده: backend/.env:31-32,39-41 شامل EMAIL_HOST_USER/PASSWORD و SMS_USERNAME/PASSWORD واقعی است. فوراً rotate + purge از گیت.
+
+🔴 بحرانی ۳ — CSRF کوکی: authentication.py:5-11 توکن بلندمدت DRF در کوکی می‌گذارد بدون expiry/rotation (api.py:82 get_or_create). config/csrf.py:25,32-33 اگر Origin/Referer نباشد چک را رد می‌کند — fetch no-cors عبور می‌کند. SAMESITE=Lax کافی نیست، AUTH_COOKIE_SAMESITE=Lax:102 باید Strict + Secure باشد.
+
+🟠 بالا — SECRET/DEBUG: settings.py:15-16 دیفالت DEBUG=True و SECRET_KEY=unsafe-development-key. اگر با همین بالا بیاید debug page + جعل سشن/توکن/کرسر (cursor.py با همین کلید امضا می‌کند).
+
+🟠 بالا — افشای دیتای داخلی: inventory/api.py:20,37,54 (Stock/Receipt/Issue) و pricing/api.py:27,44 و dashboard/api.py:13-14 همه AllowAny هستند. ProductDetailSerializer:257-276 قیمت خرید last_purchase_irr و receipt_usd_rate (مارجین) را به همه می‌دهد.
+
+🟠 بالا — OTP bypass: accounts/api.py:167-169 وقتی DEBUG است debug_code را در پاسخ برمی‌گرداند — دور زدن کامل پیامک.
+
+🟡 متوسط:
+
+cart/discount/ بدون throttle بود — گزارش می‌گوید 30/min اضافه شده ولی همچنان oracle موجود/ناموجود برای brute-force کد تخفیف است.
+CSV injection با _csv_safe فیکس شده ولی رندر HTML ادمین در capabilities/[slug] بدون sanitize (BUG_REPORT.fa.md:148-152 تصمیم bleach را عقب انداخته) = XSS ذخیره‌شده اگر اکانت ادمین لو برود.
+payment_detail/mock_complete:18-26 فقط با X-Guest-Token و رفرنس قابل حدس MEHR-{id:08d} در carts/api.py:261 — bearer ضعیف.
+contact/support/warranty/rfq/questions همه AllowAny POST بدون throttle/captcha — اسپم و stored-XSS.
+manage.py check --deploy هشدار HSTS/SSL می‌دهد (BUG_REPORT.fa.md:168) — بدون SECURE_SSL_REDIRECT/HSTS در prod نروید.
+اولویت اقدام: ۱) purge سیکرت و بستن mock-payment ۲) DEBUG=False اجباری + SECRET_KEY اجباری ۳) بستن AllowAny های inventory/pricing/dashboard و قیمت خرید ۴) کوکی Secure/Strict + CSRF واقعی ۵) فیکس compose/worker و Dockerfileها.

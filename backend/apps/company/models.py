@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 
 class SourcedContentModel(models.Model):
@@ -67,6 +68,73 @@ class CompanyBanner(models.Model):
 
     def __str__(self):
         return self.title_fa or f"بنر {self.pk}"
+
+
+class CompanyPromotion(models.Model):
+    class Placement(models.TextChoices):
+        FEATURED = "featured", "کنار محصولات منتخب"
+        HOME_MIDDLE = "home_middle", "میانه صفحه اصلی"
+        HOME_BOTTOM = "home_bottom", "پایین صفحه اصلی"
+
+    class PromotionType(models.TextChoices):
+        CAMPAIGN = "campaign", "کمپین و خدمات شرکت"
+        PRODUCT = "product", "تبلیغ محصول"
+        BRAND = "brand", "تبلیغ برند"
+
+    company_info = models.ForeignKey(CompanyInfo, related_name="promotions", on_delete=models.CASCADE, verbose_name="اطلاعات شرکت")
+    placement = models.CharField("جایگاه نمایش", max_length=20, choices=Placement.choices, default=Placement.FEATURED)
+    promotion_type = models.CharField("نوع تبلیغ", max_length=20, choices=PromotionType.choices, default=PromotionType.CAMPAIGN)
+    title_fa = models.CharField("عنوان فارسی", max_length=255)
+    title_en = models.CharField("عنوان انگلیسی", max_length=255, blank=True)
+    description_fa = models.TextField("توضیحات فارسی", blank=True)
+    description_en = models.TextField("توضیحات انگلیسی", blank=True)
+    discount_percentage = models.PositiveSmallIntegerField("درصد تخفیف", default=0, validators=(MinValueValidator(0), MaxValueValidator(100)))
+    image = models.ImageField("تصویر تبلیغ", upload_to="company/promotions/", blank=True, null=True)
+    button_text_fa = models.CharField("متن دکمه فارسی", max_length=100, blank=True)
+    button_text_en = models.CharField("متن دکمه انگلیسی", max_length=100, blank=True)
+    button_url = models.CharField("نشانی دکمه", max_length=255, blank=True)
+    order = models.PositiveSmallIntegerField("ترتیب", default=0)
+    is_active = models.BooleanField("فعال", default=True)
+
+    class Meta:
+        ordering = ("order", "id")
+        verbose_name = "تبلیغ صفحه اصلی"
+        verbose_name_plural = "تبلیغات صفحه اصلی"
+
+    def __str__(self):
+        return self.title_fa
+
+
+class HomepageCategorySpotlight(models.Model):
+    """Admin-selected category cards displayed between homepage product sections."""
+
+    class Placement(models.TextChoices):
+        AFTER_FEATURED = "after_featured", "بعد از محصولات منتخب"
+        AFTER_BEST_SELLERS = "after_best_sellers", "بعد از پرفروش‌ترین‌ها"
+        BETWEEN_NEWEST_AND_DISCOUNTS = "between_newest_discounts", "بین جدیدترین‌ها و تخفیف‌ها"
+        AFTER_DISCOUNTS = "after_discounts", "بعد از بیشترین تخفیف‌ها"
+        AFTER_LOW_STOCK = "after_low_stock", "بعد از محصولات در حال اتمام"
+
+    company_info = models.ForeignKey(CompanyInfo, related_name="category_spotlights", on_delete=models.CASCADE, verbose_name="اطلاعات شرکت")
+    category = models.ForeignKey("catalog.Category", related_name="homepage_spotlights", on_delete=models.PROTECT, verbose_name="دسته‌بندی")
+    placement = models.CharField("جایگاه نمایش", max_length=32, choices=Placement.choices, default=Placement.AFTER_FEATURED)
+    title_fa = models.CharField("عنوان فارسی (اختیاری)", max_length=255, blank=True)
+    title_en = models.CharField("عنوان انگلیسی (اختیاری)", max_length=255, blank=True)
+    description_fa = models.CharField("توضیح فارسی", max_length=500, blank=True)
+    description_en = models.CharField("توضیح انگلیسی", max_length=500, blank=True)
+    image = models.ImageField("تصویر دسته", upload_to="company/category-spotlights/", blank=True, null=True)
+    button_text_fa = models.CharField("متن دکمه فارسی", max_length=100, blank=True)
+    button_text_en = models.CharField("متن دکمه انگلیسی", max_length=100, blank=True)
+    order = models.PositiveSmallIntegerField("ترتیب", default=0)
+    is_active = models.BooleanField("فعال", default=True)
+
+    class Meta:
+        ordering = ("order", "id")
+        verbose_name = "دسته‌بندی برجسته صفحه اصلی"
+        verbose_name_plural = "دسته‌بندی‌های برجسته صفحه اصلی"
+
+    def __str__(self):
+        return self.title_fa or self.category.name_fa
 
 
 class CompanyAdvantage(models.Model):

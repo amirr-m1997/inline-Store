@@ -43,6 +43,17 @@ class ProfileSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("این ایمیل قبلاً ثبت شده است.")
         return value
 
+    def validate_phone_number(self, value):
+        if not value:
+            return None
+        try:
+            value = normalize_iranian_phone(value)
+        except DjangoValidationError as error:
+            raise serializers.ValidationError(error.messages[0])
+        if User.objects.exclude(pk=self.instance.pk if self.instance else None).filter(phone=value).exists():
+            raise serializers.ValidationError("این شماره موبایل قبلاً ثبت شده است.")
+        return value
+
 
 class CustomerAddressSerializer(serializers.ModelSerializer):
     class Meta:
@@ -65,15 +76,6 @@ class CustomerAddressSerializer(serializers.ModelSerializer):
             instance.user.delivery_addresses.exclude(pk=instance.pk).update(is_default=False)
         return super().update(instance, validated_data)
 
-    def validate_phone_number(self, value):
-        if not value: return None
-        try: value = normalize_iranian_phone(value)
-        except DjangoValidationError as error: raise serializers.ValidationError(error.messages[0])
-        if User.objects.exclude(pk=self.instance.pk if self.instance else None).filter(phone=value).exists():
-            raise serializers.ValidationError("این شماره موبایل قبلاً ثبت شده است.")
-        return value
-
-
 def profile_data(user): return ProfileSerializer(user).data
 
 def auth_response(user, status=200):
@@ -83,7 +85,7 @@ def auth_response(user, status=200):
     return response
 
 def normalized_identifier(value):
-    value = (value or "").strip()
+    value = str(value or "").strip()
     if "@" in value: return "email", value.lower()
     try: return "phone", normalize_iranian_phone(value)
     except DjangoValidationError: return None, None
@@ -125,7 +127,18 @@ def register(request):
 @permission_classes([permissions.AllowAny])
 @throttle_classes([AuthThrottle])
 def login(request):
-    kind, identity = normalized_identifier(request.data.get("identifier") or request.data.get("username"))
+    # هم فرم فعلی (identifier) و هم کلاینت‌های قدیمی که ایمیل یا شماره را
+    # در فیلد جداگانه می‌فرستند پشتیبانی می‌شوند.
+    identifier = (
+        request.data.get("identifier")
+        or request.data.get("username")
+        or request.data.get("email")
+        or request.data.get("phone_number")
+        or request.data.get("phone")
+    )
+    kind, identity = normalized_identifier(identifier)
+    if not kind:
+        return Response({"identifier": ["ایمیل یا شماره موبایل معتبر وارد کنید."]}, status=400)
     user = User.objects.filter(**{kind: identity}).first() if kind else None
     if not user or not user.is_active or not user.check_password(request.data.get("password", "")):
         return Response({"detail": "اطلاعات ورود صحیح نیست."}, status=400)
@@ -143,11 +156,21 @@ def otp_request(request):
     latest = PhoneOTP.objects.filter(phone=phone, purpose=purpose).first()
     if latest and latest.created_at > timezone.now() - timedelta(seconds=settings.OTP_RESEND_SECONDS):
         return Response({"detail": "لطفاً پیش از درخواست مجدد کمی صبر کنید."}, status=429)
+    # A new code invalidates previous unconsumed ones, so attempt limits
+    # cannot be reset by requesting again and old codes stop working.
+    PhoneOTP.objects.filter(phone=phone, purpose=purpose, consumed_at__isnull=True).update(consumed_at=timezone.now())
     code = f"{secrets.randbelow(1000000):06d}"
     from django.contrib.auth.hashers import make_password
     PhoneOTP.objects.create(phone=phone, purpose=purpose, code_hash=make_password(code), expires_at=timezone.now() + timedelta(seconds=settings.OTP_EXPIRY_SECONDS))
     send_otp(phone, code)
-    return Response({"detail": "در صورت معتبر بودن شماره، کد ارسال شد.", "expires_in": settings.OTP_EXPIRY_SECONDS})
+    payload = {"detail": "در صورت معتبر بودن شماره، کد ارسال شد.", "expires_in": settings.OTP_EXPIRY_SECONDS}
+    # در محیط توسعه درگاه ارسال واقعی نداریم؛ کد فقط وقتی به فرانت داده
+    # می‌شود که OTP_DEBUG_CODE_ENABLED صراحتاً فعال باشد (توسعه محلی).
+    # در production این مقدار هرگز در پاسخ API قرار نمی‌گیرد.
+    if settings.DEBUG and settings.OTP_DEBUG_CODE_ENABLED:
+        payload["debug_code"] = code
+        payload["delivery_mode"] = "development"
+    return Response(payload)
 
 
 @api_view(["POST"])
@@ -232,7 +255,9 @@ def password_reset(request):
 
 
 @api_view(["POST"])
+@permission_classes([permissions.AllowAny])
 def logout(request):
+    # Explicitly public: clears the caller's own token/cookie; safe for anonymous calls.
     if request.auth: request.auth.delete()
     response = Response(status=204); response.delete_cookie(settings.AUTH_COOKIE_NAME, path="/"); return response
 

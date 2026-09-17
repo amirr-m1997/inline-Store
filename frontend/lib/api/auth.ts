@@ -2,6 +2,7 @@ import { apiRequest } from "./client";
 
 export type CurrentUser = { id: number; first_name: string; last_name: string; email: string | null; phone_number: string | null };
 export type SessionStatus = { authenticated: boolean; customer: CurrentUser | null };
+export type OtpRequestResult = { detail: string; expires_in: number; debug_code?: string; delivery_mode?: "development" };
 
 export function sessionStatus(signal?: AbortSignal) {
   return apiRequest<SessionStatus>("/api/v1/auth/session/", { cache: "no-store", signal });
@@ -18,7 +19,7 @@ export function logout() {
 export function login(body: unknown) { return apiRequest<unknown>("/api/v1/auth/login/", { method: "POST", body }); }
 export function register(body: unknown) { return apiRequest<unknown>("/api/v1/auth/register/", { method: "POST", body }); }
 export function googleSignIn(credential: string) { return apiRequest<unknown>("/api/v1/auth/google/", { method: "POST", body: { credential } }); }
-export function requestOtp(body: unknown) { return apiRequest<unknown>("/api/v1/auth/otp/request/", { method: "POST", body }); }
+export function requestOtp(body: unknown) { return apiRequest<OtpRequestResult>("/api/v1/auth/otp/request/", { method: "POST", body }); }
 export function verifyOtp<T = Record<string, unknown>>(body: unknown) { return apiRequest<T>("/api/v1/auth/otp/verify/", { method: "POST", body }); }
 export function forgotPassword<T = Record<string, unknown>>(body: unknown) { return apiRequest<T>("/api/v1/auth/password/forgot/", { method: "POST", body }); }
 export function resetPassword<T = { detail: string }>(body: unknown) { return apiRequest<T>("/api/v1/auth/password/reset/", { method: "POST", body }); }

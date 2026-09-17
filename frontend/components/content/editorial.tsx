@@ -47,7 +47,8 @@ export function EditorialCard({ article, locale, variant = "standard" }: { artic
   const type = typeLabel(article, locale);
   const href = `/${locale}/knowledge/${encodeURIComponent(article.slug)}`;
   return <article className={`editorial-card editorial-card--${variant}`}>
-    {article.featured_image && <Link className="editorial-card-media" href={href} aria-label={`${locale === "en" ? "Read" : "مطالعه"} ${title}`}><img src={article.featured_image} alt="" loading={variant === "featured" ? "eager" : "lazy"} /></Link>}
+    {/* eslint-disable-next-line @next/next/no-img-element -- CMS/external image URL, not covered by next/image remotePatterns */}
+    {article.featured_image && <Link className="editorial-card-media" href={href} aria-label={`${locale === "en" ? "Read" : "مطالعه"} ${title}`}><img src={article.featured_image} alt={title} loading={variant === "featured" ? "eager" : "lazy"} decoding="async" /></Link>}
     <div className="editorial-card-body"><div className="editorial-card-meta"><span>{type}</span>{article.category && <span>{locale === "en" && article.category.name_en ? article.category.name_en : article.category.name_fa}</span>}{article.published_at && <time dateTime={article.published_at}>{formatEditorialDate(article.published_at, locale)}</time>}</div><h2><Link href={href}>{title}</Link> {demoLabel(title, locale)}</h2>{excerpt && <p>{excerpt}</p>}<Link className="editorial-read-link" href={href}>{locale === "en" ? "Read article" : "مطالعه مطلب"}<span aria-hidden="true">←</span></Link></div>
   </article>;
 }

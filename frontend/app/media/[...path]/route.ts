@@ -7,7 +7,15 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   const { path } = await params;
   const target = new URL(`/media/${path.map(encodeURIComponent).join("/")}`, backendUrl);
   try {
-    const upstream = await fetch(target, { cache: "no-store", headers: request.headers.get("Range") ? { Range: request.headers.get("Range")! } : undefined });
+    const forwardHeaders = new Headers();
+    const range = request.headers.get("Range");
+    if (range) forwardHeaders.set("Range", range);
+    const ifNoneMatch = request.headers.get("If-None-Match");
+    if (ifNoneMatch) forwardHeaders.set("If-None-Match", ifNoneMatch);
+    const ifModifiedSince = request.headers.get("If-Modified-Since");
+    if (ifModifiedSince) forwardHeaders.set("If-Modified-Since", ifModifiedSince);
+    const upstream = await fetch(target, { cache: "no-store", headers: forwardHeaders });
+    if (upstream.status === 304) return new Response(null, { status: 304 });
     if (!upstream.ok) return new Response(null, { status: upstream.status });
     const headers = new Headers();
     for (const name of ["Content-Type", "Content-Length", "Content-Range", "Accept-Ranges", "Last-Modified", "ETag"]) {

@@ -12,4 +12,4 @@ Open `http://localhost:3000/fa/` for Persian (RTL), `http://localhost:3000/en/` 
 
 For container development, configure `.env` and run `docker compose up --build`.
 
-See [architecture documentation](docs/ARCHITECTURE.md) and [development documentation](docs/DEVELOPMENT.md).
+See [architecture documentation](docs/ARCHITECTURE.md), [development documentation](docs/DEVELOPMENT.md), and [phase-1 product analysis](PROJECT_ANALYSIS.md) (Persian; canonical behavior/spec reference extracted from the original demo).

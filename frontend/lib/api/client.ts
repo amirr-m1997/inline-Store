@@ -13,15 +13,17 @@ export type ApiRequestOptions = Omit<RequestInit, "body" | "headers"> & {
   guestCart?: boolean;
 };
 
-function errorMessage(data: unknown) {
+function errorMessage(data: unknown, locale?: string) {
   if (data && typeof data === "object" && "detail" in data && typeof data.detail === "string") return data.detail;
   const messages = (value: unknown): string[] => {
     if (typeof value === "string") return [value];
     if (Array.isArray(value)) return value.flatMap(messages);
     if (value && typeof value === "object") return Object.values(value).flatMap(messages);
+    if (typeof value === "number" || typeof value === "boolean") return [String(value)];
     return [];
   };
-  return messages(data).join(" ") || "درخواست ناموفق بود.";
+  const fallback = typeof window !== "undefined" && window.location.pathname.startsWith("/en") ? "Request failed." : "درخواست ناموفق بود.";
+  return messages(data).join(" ") || (locale === "en" ? "Request failed." : fallback);
 }
 
 function guestToken() {
@@ -35,7 +37,9 @@ export function storeGuestCartToken(payload: unknown) {
   if (token === null) window.localStorage.removeItem("guestCartToken");
 }
 
-export async function apiRequest<T>(path: string, { body, headers, timeoutMs = 12_000, retries = 0, guestCart = false, signal, ...init }: ApiRequestOptions = {}): Promise<T> {
+export async function apiRequest<T>(path: string, { body, headers, timeoutMs = 12_000, retries = 0, guestCart = false, signal, method = "GET", ...init }: ApiRequestOptions & { method?: string } = {}): Promise<T> {
+  const idempotent = method === "GET" || method === "HEAD" || method === "OPTIONS";
+  const maxRetries = idempotent ? retries : 0;
   let attempt = 0;
   while (true) {
     const controller = new AbortController();
@@ -46,14 +50,17 @@ export async function apiRequest<T>(path: string, { body, headers, timeoutMs = 1
     if (body !== undefined) requestHeaders.set("Content-Type", "application/json");
     if (guestCart) { const token = guestToken(); if (token) requestHeaders.set("X-Guest-Token", token); }
     try {
-      const response = await fetch(path, { ...init, headers: requestHeaders, body: body === undefined ? undefined : JSON.stringify(body), signal: controller.signal });
-      const data: unknown = response.status === 204 ? null : await response.json().catch(() => null);
+      const response = await fetch(path, { ...init, method, headers: requestHeaders, body: body === undefined ? undefined : JSON.stringify(body), signal: controller.signal });
+      if (response.status === 204) return null as T;
+      const text = await response.text();
+      const data: unknown = text ? JSON.parse(text) as unknown : null;
       if (!response.ok) throw new ApiError(errorMessage(data), response.status, data);
       storeGuestCartToken(data);
       return data as T;
     } catch (error) {
-      if (attempt >= retries || (error instanceof ApiError && error.status < 500)) throw error;
+      if (attempt >= maxRetries || (error instanceof ApiError && error.status < 500)) throw error;
       attempt += 1;
+      await new Promise((resolve) => setTimeout(resolve, Math.min(1000 * 2 ** attempt, 4000)));
     } finally {
       globalThis.clearTimeout(timeout);
       signal?.removeEventListener("abort", abort);

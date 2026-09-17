@@ -1,7 +1,8 @@
 from django.http import FileResponse
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 
 from apps.carts.api import current_cart
 from .models import RequestForQuotation, SalesQuotation
@@ -14,8 +15,15 @@ def customer_queryset(request):
     return RequestForQuotation.objects.filter(customer=request.user).select_related("customer").prefetch_related("items__product").prefetch_related("quotation")
 
 
+class PublicFormThrottle(AnonRateThrottle):
+    """Limit anonymous RFQ spam."""
+
+    scope = "public_form"
+
+
 @api_view(["POST", "GET"])
 @permission_classes([AllowAny])
+@throttle_classes([PublicFormThrottle])
 def rfq_collection(request):
     if request.method == "GET":
         if not request.user.is_authenticated:

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+/* eslint-disable @next/next/no-img-element -- external CMS brand logo, not covered by next/image remotePatterns */
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProductBrandServer, type ProductBrand } from "../../../../lib/api/products";

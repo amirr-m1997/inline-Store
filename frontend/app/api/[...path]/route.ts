@@ -13,13 +13,17 @@ async function proxy(request: NextRequest, { params }: RouteContext) {
   const target = new URL(`/api/${path.join("/")}/`, backendUrl);
   target.search = request.nextUrl.search;
 
+  // Same-origin proxy to the trusted backend: Cookie MUST be forwarded or
+  // cookie-based auth (login session, guest cart) silently breaks with 401s.
+  // Origin/Referer are forwarded so the backend CSRF origin check can validate
+  // browser requests instead of seeing them as headerless.
   const headers = new Headers({ Accept: "application/json" });
   for (const name of ["Authorization", "X-Guest-Token", "Content-Type", "Cookie", "X-CSRFToken", "Origin", "Referer"]) {
     const value = request.headers.get(name);
     if (value) headers.set(name, value);
   }
 
-  const hasBody = ["POST", "PATCH", "PUT"].includes(request.method);
+  const hasBody = ["POST", "PATCH", "PUT", "DELETE"].includes(request.method);
   try {
     const upstream = await fetch(target, {
       method: request.method,
@@ -39,8 +43,8 @@ async function proxy(request: NextRequest, { params }: RouteContext) {
       headers: responseHeaders,
     });
   } catch (error) {
-    console.error(`Unable to reach backend API at ${target.origin}`, error);
-    return Response.json({ detail: "Unable to reach the API service.", target: target.origin }, { status: 502 });
+    console.error("Unable to reach backend API", error);
+    return Response.json({ detail: "Unable to reach the API service." }, { status: 502 });
   }
 }
 

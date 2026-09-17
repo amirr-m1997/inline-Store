@@ -4,8 +4,13 @@ from django.db import models
 import re
 
 
+# شماره‌ها معمولاً از کیبورد فارسی یا عربی وارد می‌شوند؛ پیش از هر اعتبارسنجی
+# آن‌ها را به ارقام لاتین تبدیل می‌کنیم تا شکل نوشتن شماره مانع ورود نشود.
+_PHONE_DIGIT_TRANSLATION = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
+
+
 def normalize_iranian_phone(value):
-    value = re.sub(r"[\s\-()]", "", value or "")
+    value = re.sub(r"[\s\-()]", "", str(value or "").translate(_PHONE_DIGIT_TRANSLATION))
     if value.startswith("0098"): value = "+98" + value[4:]
     elif value.startswith("98") and not value.startswith("+98"): value = "+" + value
     elif value.startswith("0"): value = "+98" + value[1:]

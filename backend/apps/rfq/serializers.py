@@ -6,10 +6,10 @@ from .models import RequestForQuotation, RequestForQuotationItem, SalesQuotation
 
 
 def validate_contact_phone(value):
-    compact = "".join(value.split()).replace("-", "").replace("(", "").replace(")", "")
-    if not compact.lstrip("+").isdigit() or len(compact.lstrip("+")) < 7:
-        raise serializers.ValidationError("شماره تماس معتبر نیست.")
-    return compact
+    # Same single rule as cart/website forms (mobiles normalized, landlines
+    # and international numbers kept as compact digits).
+    from apps.carts.api import normalize_contact_phone
+    return normalize_contact_phone(value)
 
 
 class RfqProductSummarySerializer(serializers.ModelSerializer):

@@ -140,7 +140,7 @@ class CatalogQueryService:
                 queryset = self._apply_attribute_filter(queryset, attribute, values)
                 self.applied["attributes"][code] = values
         requested = self.params.get("sort") or self.params.get("ordering", "code")
-        aliases = {"newest": "-created_at", "price": "catalog_price_sort", "availability": "-catalog_availability_sort", "discount": "-discount_percentage", "code": "code", "name": "name"}
+        aliases = {"newest": "-created_at", "oldest": "created_at", "price": "catalog_price_sort", "price_low": "catalog_price_sort", "price_high": "-catalog_price_sort", "availability": "-catalog_availability_sort", "discount": "-discount_percentage", "discount_high": "-discount_percentage", "discount_low": "discount_percentage", "popular": "-catalog_availability_sort", "code": "code", "name": "name"}
         requested = aliases.get(requested, requested)
         if requested.lstrip("-") not in {"code", "name", "created_at", "catalog_price_sort", "catalog_availability_sort", "discount_percentage", "on_hand_quantity"}:
             requested = "code"

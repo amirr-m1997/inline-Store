@@ -1,7 +1,9 @@
 import os
 import re
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.core.files.uploadedfile import UploadedFile
 from .slugs import latin_category_slug
@@ -94,6 +96,9 @@ class ProductBrand(TimestampedModel):
 
 
 class Product(TimestampedModel):
+    class Condition(models.TextChoices):
+        NEW = "new", "نو"
+        USED = "used", "کارکرده"
     code = models.CharField(max_length=64, unique=True, db_index=True)
     name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, unique=True)
@@ -103,6 +108,7 @@ class Product(TimestampedModel):
     technical_specs = models.JSONField(default=dict, blank=True)
     brand = models.ForeignKey(ProductBrand, null=True, blank=True, related_name="products", on_delete=models.SET_NULL)
     is_featured = models.BooleanField("نمایش در محصولات منتخب", default=False, db_index=True)
+    condition = models.CharField("وضعیت کالا", max_length=12, choices=Condition.choices, default=Condition.NEW, db_index=True)
     is_active = models.BooleanField(default=True)
     class Meta:
         ordering = ("name",)
@@ -114,6 +120,54 @@ class Product(TimestampedModel):
         verbose_name = "محصول"
         verbose_name_plural = "محصولات"
     def __str__(self): return f"{self.code} — {self.name}"
+
+
+class ProductFavorite(TimestampedModel):
+    """A single, account-bound favorite; guests never create durable likes."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="product_favorites", on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, related_name="favorites", on_delete=models.CASCADE)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("user", "product"), name="catalog_favorite_user_product_unique")]
+        indexes = [models.Index(fields=("product", "user"), name="cat_favorite_prod_user_idx")]
+        verbose_name = "پسند محصول"
+        verbose_name_plural = "پسندهای محصولات"
+
+    def __str__(self): return f"{self.user} — {self.product}"
+
+
+class ProductReview(TimestampedModel):
+    """Verified-purchase review. It is moderated before being published publicly."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="product_reviews", on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, related_name="reviews", on_delete=models.CASCADE)
+    rating = models.PositiveSmallIntegerField("امتیاز", validators=(MinValueValidator(1), MaxValueValidator(5)))
+    comment = models.TextField("نظر", max_length=3000)
+    is_published = models.BooleanField("نمایش عمومی", default=False)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("user", "product"), name="catalog_review_user_product_unique")]
+        ordering = ("-updated_at", "-id")
+        indexes = [models.Index(fields=("product", "is_published", "-updated_at"), name="catalog_review_public_idx")]
+        verbose_name = "نظر محصول"
+        verbose_name_plural = "نظرهای محصولات"
+
+    def __str__(self): return f"{self.product} — {self.rating}/5"
+
+
+class ProductQuestion(TimestampedModel):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="product_questions", on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, related_name="questions", on_delete=models.CASCADE)
+    question = models.TextField("پرسش", max_length=1500)
+    answer = models.TextField("پاسخ مدیر", max_length=3000, blank=True)
+    is_published = models.BooleanField("نمایش عمومی", default=False)
+
+    class Meta:
+        ordering = ("-updated_at", "-id")
+        indexes = [models.Index(fields=("product", "is_published", "-updated_at"), name="catalog_question_public_idx")]
+        verbose_name = "پرسش محصول"
+        verbose_name_plural = "پرسش‌ها و پاسخ‌های محصولات"
+
+    def __str__(self): return self.question[:80]
 
 
 DOCUMENT_MAX_SIZE = 25 * 1024 * 1024

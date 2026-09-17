@@ -20,6 +20,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
+      REDIS_URL: redis://redis:6379/0
     ports: ["8005:8000"]
     depends_on: [db, redis]
   worker:
@@ -28,6 +29,13 @@ services:
     working_dir: /app
     volumes: [./backend:/app]
     env_file: .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-company_store}
+      POSTGRES_USER: ${POSTGRES_USER:-store}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      REDIS_URL: redis://redis:6379/0
     depends_on: [db, redis]
   frontend:
     build: ./frontend

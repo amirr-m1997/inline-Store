@@ -59,7 +59,8 @@ class CompanyApiTests(TestCase):
         }, content_type="application/json")
 
         self.assertEqual(response.status_code, 201)
-        self.assertTrue(ContactMessage.objects.filter(phone="09123456789", status=ContactMessage.Status.NEW).exists())
+        # Iranian mobiles are stored normalized (+98…).
+        self.assertTrue(ContactMessage.objects.filter(phone="+989123456789", status=ContactMessage.Status.NEW).exists())
 
     def test_contact_message_rejects_invalid_phone(self):
         response = self.client.post("/api/v1/site/contact/", {

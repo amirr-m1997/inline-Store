@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 440" role="img" aria-label="شیر برقی؛ نمای گرافیکی نمونه"><defs>
+<linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fafcfb"/><stop offset=".32" stop-color="#e0e5e3"/><stop offset=".6" stop-color="#aeb9b7"/><stop offset="1" stop-color="#d6ddda"/></linearGradient>
+<linearGradient id="silver" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f8faf9"/><stop offset=".35" stop-color="#cbd4d2"/><stop offset=".5" stop-color="#f5f7f6"/><stop offset=".9" stop-color="#8f9e9a"/></linearGradient>
+<linearGradient id="dark" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#52645e"/><stop offset=".3" stop-color="#253c33"/><stop offset="1" stop-color="#101e1b"/></linearGradient>
+<linearGradient id="black" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#1f2728"/><stop offset=".25" stop-color="#4d595a"/><stop offset=".48" stop-color="#303b3e"/><stop offset="1" stop-color="#101818"/></linearGradient>
+<linearGradient id="green" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9cb943"/><stop offset=".3" stop-color="#729238"/><stop offset=".7" stop-color="#436c2a"/><stop offset="1" stop-color="#234d2c"/></linearGradient>
+<linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#72a4b0"/><stop offset=".35" stop-color="#3f7789"/><stop offset="1" stop-color="#224c5b"/></linearGradient>
+<linearGradient id="copper" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#79513b"/><stop offset=".18" stop-color="#ba7449"/><stop offset=".37" stop-color="#edb27a"/><stop offset=".53" stop-color="#f8d1a1"/><stop offset=".65" stop-color="#a45b36"/><stop offset=".83" stop-color="#d89162"/><stop offset="1" stop-color="#805035"/></linearGradient>
+<linearGradient id="brass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f4dda2"/><stop offset=".35" stop-color="#cda45a"/><stop offset=".55" stop-color="#f9e7b7"/><stop offset=".8" stop-color="#a77d37"/><stop offset="1" stop-color="#e3bd76"/></linearGradient>
+<radialGradient id="shade"><stop stop-color="#102821" stop-opacity=".18"/><stop offset="1" stop-color="#102821" stop-opacity="0"/></radialGradient>
+<pattern id="fins" width="5" height="5" patternUnits="userSpaceOnUse"><rect width="5" height="5" fill="#607775"/><path d="M1 0v5" stroke="#a0b3ad" stroke-width="1"/></pattern>
+<pattern id="smallfins" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="4" fill="#364a45"/><path d="M1 0v4" stroke="#82978e" stroke-width="1"/></pattern>
+<pattern id="grill" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#283f37"/><path d="M0 0h8M0 0v8" stroke="#9baba4" stroke-width=".75"/></pattern>
+</defs><ellipse cx="304" cy="364" rx="232" ry="37" fill="url(#shade)"/><path d="M123 280h353" stroke="url(#copper)" stroke-width="30"/>
+<path d="M223 244h131v69H223z" fill="url(#brass)" stroke="#a4844b" stroke-width="2"/>
+<path d="M226 215h122v44H226z" fill="url(#brass)"/>
+<rect x="244" y="127" width="98" height="107" rx="10" fill="url(#black)" stroke="#56655b" stroke-width="2"/>
+<path d="M235 127l17-22h88l10 22z" fill="#4a5f51"/>
+<rect x="331" y="145" width="39" height="39" rx="4" fill="#2b3d33"/>
+<rect x="258" y="154" width="66" height="39" rx="3" fill="#a7513f"/>
+<text x="268" y="177" font-family="Arial" font-size="14" fill="#fff">DEMO</text>
+<path d="M289 102V82" stroke="url(#brass)" stroke-width="16"/>
+<ellipse cx="124" cy="280" rx="9" ry="15" fill="#875535"/></svg>

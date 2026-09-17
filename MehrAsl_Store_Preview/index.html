@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#254737">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="پیش‌نمایش تعاملی فروشگاه مهراصل؛ تجهیزات و قطعات تهویه و تبرید. تمام قیمت‌ها، موجودی‌ها و مشخصات محصول نمایشی هستند.">
+  <title>مهراصل | فروشگاه تخصصی تهویه و تبرید — پیش‌نمایش</title>
+  <link rel="icon" href="assets/logo-mehrasl.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">رفتن به محتوای اصلی</a>
+<div class="demo-strip">
+  <div class="container demo-inner"><span><span class="status-dot"></span><strong>پیش‌نمایش تعاملی</strong><span class="demo-long"> — قیمت، تخفیف، موجودی و مشخصات محصولات نمونه‌اند.</span></span><button data-info="demo">درباره این نسخه <i data-icon="arrow-left"></i></button></div>
+</div>
+<header class="site-header">
+  <div class="container header-main">
+    <button class="icon-button mobile-menu-toggle" data-action="mobile-menu" aria-label="باز کردن منوی دسته‌بندی"><i data-icon="menu"></i></button>
+    <a class="brand" href="#" aria-label="صفحه اول فروشگاه مهراصل"><span class="logo-window"><img src="assets/logo-mehrasl.png" alt="کارخانجات تولیدی مهراصل، متخصص تهویه و تبرید" width="2048" height="969"></span><span class="brand-divider"></span><span class="store-word">فروشگاه<br><b>آنلاین</b></span></a>
+    <div class="search-wrap">
+      <form id="search-form" class="search-box" role="search">
+        <label class="sr-only" for="main-search">جست‌وجوی محصولات نمونه</label>
+        <i data-icon="search"></i><input id="main-search" type="search" placeholder="نام محصول، برند یا کد فنی را جست‌وجو کنید…" autocomplete="off" aria-controls="search-suggestions" aria-expanded="false">
+        <button class="search-submit" type="submit">جست‌وجو</button>
+      </form>
+      <div id="search-suggestions" class="search-suggestions" hidden></div>
+    </div>
+    <div class="header-actions">
+      <button class="account-button" data-info="account"><i data-icon="user"></i><span>حساب کاربری</span></button>
+      <button class="icon-button favorites-button" data-action="favorites" aria-label="مشاهده علاقه‌مندی‌ها"><i data-icon="heart"></i><span class="count-bubble" id="favorite-count" hidden>۰</span></button>
+      <button class="cart-button" data-action="cart" aria-label="باز کردن سبد خرید نمونه"><i data-icon="bag"></i><span class="count-bubble" id="cart-count">۰</span></button>
+    </div>
+  </div>
+  <div class="nav-border"><nav class="container nav-main" aria-label="ناوبری اصلی">
+    <div class="category-trigger-wrap"><button class="category-trigger" id="category-trigger" aria-expanded="false" aria-controls="mega-menu"><i data-icon="grid"></i> دسته‌بندی محصولات <i class="tiny" data-icon="chevron-down"></i></button></div>
+    <a href="#specials" class="nav-special"><i data-icon="spark"></i> پیشنهادهای ویژه</a>
+    <a href="#latest">جدیدترین محصولات</a>
+    <button data-action="ready">آماده تحویل</button>
+    <button data-action="open-quote">خرید سازمانی</button>
+    <a href="#guides">راهنمای خرید</a>
+    <button class="nav-support" data-info="support"><i data-icon="headset"></i> پشتیبانی فنی</button>
+  </nav></div>
+  <div class="container mega-position"><div class="mega-menu" id="mega-menu" hidden><aside class="mega-sidebar" id="mega-sidebar" aria-label="دسته‌های اصلی"></aside><div class="mega-detail" id="mega-detail"></div></div></div>
+</header>
+<div class="menu-scrim" id="menu-scrim" hidden></div>
+<main id="main">
+  <section class="container hero-section" aria-label="معرفی فروشگاه">
+    <div class="hero-card" id="hero-card">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="little-line"></span> فروشگاه تخصصی مهراصل</div>
+        <h1 id="hero-title">انتخاب دقیق.<br><span>خرید مطمئن.</span></h1>
+        <p id="hero-description">تجهیزات و قطعات تهویه و تبرید، در یک مسیر روشن؛<br class="desktop-only"> از انتخاب فنی تا تأمین نیاز پروژه شما.</p>
+        <div class="hero-buttons"><a class="button button-primary" href="#catalog" id="hero-cta">مشاهده محصولات <i data-icon="arrow-left"></i></a><button class="button button-light" data-action="open-quote">راهنمایی برای انتخاب <i data-icon="headset"></i></button></div>
+        <div class="hero-mini"><span><i data-icon="box"></i> تجهیزات و قطعات</span><span><i data-icon="file"></i> مشخصات کنار محصول</span></div>
+        <div class="hero-controls"><span class="slide-fraction"><b id="slide-index">۰۱</b> / ۰۳</span><div class="slide-dots" aria-label="انتخاب بنر"><button data-slide="0" class="active" aria-label="بنر اول" aria-pressed="true"></button><button data-slide="1" aria-label="بنر دوم" aria-pressed="false"></button><button data-slide="2" aria-label="بنر سوم" aria-pressed="false"></button></div><button class="slide-next" data-action="next-slide" aria-label="بنر بعدی"><i data-icon="arrow-left"></i></button></div>
+      </div>
+      <div class="hero-visual" aria-hidden="true">
+        <div class="hero-orbit orbit-one"></div><div class="hero-orbit orbit-two"></div><div class="hero-grid"></div><span class="hero-tech" dir="ltr">ENGINEERED FOR YOUR NEEDS</span>
+        <div class="hero-art-stage"><img id="hero-art" src="assets/images/chiller.svg" alt="" width="600" height="440"></div>
+        <div class="hero-floating hero-floating-top"><span class="floating-icon"><i data-icon="check"></i></span><span>از دستگاه تا قطعه<b>یک فروشگاه تخصصی</b></span></div>
+        <div class="hero-floating hero-floating-bottom"><img id="hero-small-art" src="assets/images/compressor-green.svg" alt="" width="600" height="440"><div><span>قطعات و ملزومات</span><b id="hero-small-text">انتخاب بر اساس مدل و کد</b></div><span class="round-arrow"><i data-icon="arrow-left"></i></span></div>
+        <span class="art-note">نمای گرافیکی نمونه؛ تصویر کالای واقعی نیست</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="container benefits" aria-label="مسیر خرید">
+    <div><span class="benefit-icon"><i data-icon="search-check"></i></span><div><h3>انتخاب دقیق‌تر</h3><p>جست‌وجو با نام، مدل و کد</p></div></div>
+    <div><span class="benefit-icon"><i data-icon="box"></i></span><div><h3>موجودی روشن</h3><p>وضعیت هر کالا، پیش از سفارش</p></div></div>
+    <div><span class="benefit-icon"><i data-icon="headset"></i></span><div><h3>مسیر پشتیبانی فنی</h3><p>برای انتخاب محصول و قطعه</p></div></div>
+    <div><span class="benefit-icon"><i data-icon="truck"></i></span><div><h3>تحویل قابل پیگیری</h3><p>از ثبت سفارش تا دریافت کالا</p></div></div>
+  </section>
+
+  <section class="container section categories-section" id="categories">
+    <div class="section-heading"><div><span class="section-kicker">مسیر خرید شما</span><h2>از کدام دسته شروع می‌کنید؟</h2></div><button class="text-link" data-action="all-categories">همه دسته‌ها <i data-icon="arrow-left"></i></button></div>
+    <div class="category-grid" id="category-grid"></div>
+  </section>
+
+  <section class="special-section" id="specials">
+    <div class="container"><div class="section-heading"><div><span class="section-kicker"><i data-icon="spark"></i> انتخاب‌های ویژه فروشگاه</span><h2>فرصت‌های خوب، برای خرید تخصصی</h2></div><button class="text-link" data-tab-go="discount">همه تخفیف‌ها <i data-icon="arrow-left"></i></button></div>
+    <div class="special-layout"><div class="special-intro"><span class="offer-label">پیشنهاد ویژه</span><h3>یک انتخاب بهتر.<br><strong>یک قیمت بهتر.</strong></h3><p>تجهیزات و قطعات منتخب<br>با شرایط فروش ویژه</p><span class="max-off">تا <b>۲۵<span>٪</span></b></span><span class="offer-caption">تخفیف در داده‌های نمونه</span><button class="button button-dark" data-tab-go="discount">دیدن پیشنهادها <i data-icon="arrow-left"></i></button><span class="offer-footnote">بدون محدودیت زمانی ساختگی</span></div><div class="product-rail" id="special-products" aria-label="محصولات تخفیف‌دار نمونه"></div></div>
+    </div>
+  </section>
+
+  <section class="container section catalog-section" id="catalog">
+    <div class="section-heading"><div><span class="section-kicker">تجهیزات، قطعات و ملزومات</span><h2 id="catalog-title">محصولات فروشگاه</h2><p class="heading-note">۲۰ محصول نمونه برای تجربه و ارزیابی طراحی</p></div><button class="text-link" id="reset-filters"><i data-icon="rotate"></i> نمایش همه محصولات</button></div>
+    <div class="catalog-toolbar"><div class="product-tabs" role="tablist" aria-label="گروه نمایش محصولات"><button role="tab" data-tab="all" aria-selected="true" class="active">همه محصولات</button><button role="tab" data-tab="featured" aria-selected="false">محصولات ویژه</button><button role="tab" data-tab="new" aria-selected="false">جدیدترین‌ها</button><button role="tab" data-tab="discount" aria-selected="false">تخفیف‌دار</button><button role="tab" data-tab="used" aria-selected="false">کارکرده</button></div><div class="sort-control"><i data-icon="sort"></i><label class="sr-only" for="sort-select">مرتب‌سازی</label><select id="sort-select"><option value="default">مرتب‌سازی: پیشنهادی</option><option value="price-asc">قیمت: کم به زیاد</option><option value="price-desc">قیمت: زیاد به کم</option><option value="discount">بیشترین تخفیف</option><option value="new">جدیدترین‌ها</option></select></div></div>
+    <div class="catalog-subtoolbar"><div class="catalog-filters"><label class="sr-only" for="category-select">انتخاب دسته محصول</label><select id="category-select"><option value="all">تمام دسته‌بندی‌ها</option></select><label class="stock-switch"><input type="checkbox" id="stock-only"><span class="switch-track"></span> فقط موجودها</label></div><span class="results-count" id="results-count" role="status" aria-live="polite"></span></div>
+    <div id="active-filters" class="active-filters" hidden></div>
+    <div id="product-grid" class="product-grid"></div>
+    <div class="load-more-wrap"><button class="button button-outline" id="load-more">نمایش محصولات بیشتر <i data-icon="chevron-down"></i></button><p id="catalog-demo-note">مدل‌ها با شناسه DEMO مشخص شده‌اند؛ قیمت‌ها به تومان و صرفاً نمایشی هستند.</p></div>
+  </section>
+
+  <section class="container feature-banners" aria-label="دسترسی به قطعات و خرید سازمانی">
+    <div class="feature-banner copper-banner"><div><span class="eyebrow">از تولید مهراصل</span><h2>مس؛ جزئیات مهم<br>در یک انتخاب حرفه‌ای.</h2><p>لوله، اتصالات و ملزومات نصب</p><button class="text-link" data-category-go="G">مشاهده این دسته <i data-icon="arrow-left"></i></button></div><img src="assets/images/copper.svg" alt="نمای گرافیکی کلاف لوله مسی" width="600" height="440" loading="lazy"></div>
+    <div class="feature-banner parts-banner"><div><span class="eyebrow">قطعه را دقیق پیدا کنید</span><h2>همان قطعه‌ای که<br>دستگاه شما لازم دارد.</h2><p>جست‌وجوی مدل و کد، یا کمک از کارشناس</p><button class="text-link" data-action="part-help">راهنمای پیدا کردن قطعه <i data-icon="arrow-left"></i></button></div><img src="assets/images/expansion.svg" alt="نمای گرافیکی شیر انبساط" width="600" height="440" loading="lazy"></div>
+  </section>
+
+  <section class="container section" id="latest">
+    <div class="section-heading"><div><span class="section-kicker">تازه به فروشگاه اضافه شده‌اند</span><h2>جدیدترین محصولات</h2></div><button class="text-link" data-tab-go="new">مشاهده همه <i data-icon="arrow-left"></i></button></div>
+    <div class="product-grid latest-grid" id="latest-products"></div>
+  </section>
+
+  <section class="container brands-section" aria-label="برندهای نمونه"><div><span class="section-kicker">برندها</span><h2>نام‌های آشنا در صنعت</h2><p>برندهای نمونه؛ بدون ادعای نمایندگی رسمی</p></div><div class="brand-row"><button data-brand="MEHRASL" class="brand-mehrasl" dir="ltr">MEHRASL<span>HVAC & REFRIGERATION</span></button><button data-brand="BITZER" dir="ltr">BITZER</button><button data-brand="COPELAND" dir="ltr">Copeland</button><button data-brand="DANFOSS" class="brand-danfoss" dir="ltr">Danfoss</button><button data-brand="CAREL" dir="ltr">CAREL</button><button data-brand="LOWARA" dir="ltr">LOWARA</button></div></section>
+
+  <section class="container b2b-section" id="business"><div class="b2b-mark" aria-hidden="true"><i data-icon="building"></i></div><div class="b2b-copy"><span class="section-kicker">ویژه پیمانکاران، شرکت‌ها و همکاران</span><h2>برای خرید پروژه‌ای، مسیر جدا داریم.</h2><p>فهرست نیازتان را آماده کنید؛ درخواست پیش‌فاکتور و بررسی فنی، از همین‌جا شروع می‌شود.</p></div><button class="button button-lime" data-action="open-quote">درخواست پیش‌فاکتور <i data-icon="arrow-left"></i></button><span class="b2b-caption">فرم این نسخه نمایشی است و اطلاعاتی ارسال نمی‌کند.</span></section>
+
+  <section class="container section" id="guides"><div class="section-heading"><div><span class="section-kicker">قبل از خرید، آگاهانه انتخاب کنید</span><h2>راهنمای خرید و انتخاب فنی</h2></div><button class="text-link" data-info="articles">مرکز راهنما <i data-icon="arrow-left"></i></button></div><div class="guide-grid">
+    <article class="guide-card"><button class="guide-art guide-art-one" data-guide="fancoil" aria-label="راهنمای انتخاب فن‌کویل"><span class="article-number">01</span><img src="assets/images/fancoil.svg" alt="نمای گرافیکی فن‌کویل" width="600" height="440" loading="lazy"><span class="article-type">انتخاب دستگاه</span></button><div class="guide-content"><span>عنوان پیشنهادی محتوای فنی</span><h3><button data-guide="fancoil">برای انتخاب فن‌کویل، از کجا شروع کنیم؟</button></h3><p>چه اطلاعاتی پیش از بررسی مدل و ظرفیت آماده کنیم؟</p><button class="text-link" data-guide="fancoil">مشاهده پیش‌نمایش <i data-icon="arrow-left"></i></button></div></article>
+    <article class="guide-card"><button class="guide-art guide-art-two" data-guide="part" aria-label="راهنمای شناسایی قطعه"><span class="article-number">02</span><img src="assets/images/compressor-green.svg" alt="نمای گرافیکی کمپرسور" width="600" height="440" loading="lazy"><span class="article-type">شناخت قطعه</span></button><div class="guide-content"><span>عنوان پیشنهادی محتوای فنی</span><h3><button data-guide="part">مدل و شماره فنی؛ کلید انتخاب قطعه درست</button></h3><p>آشنایی با مسیر جست‌وجو از روی پلاک و کد قطعه.</p><button class="text-link" data-guide="part">مشاهده پیش‌نمایش <i data-icon="arrow-left"></i></button></div></article>
+    <article class="guide-card"><button class="guide-art guide-art-three" data-guide="used" aria-label="راهنمای کالای کارکرده"><span class="article-number">03</span><img src="assets/images/motor.svg" alt="نمای گرافیکی موتور" width="600" height="440" loading="lazy"><span class="article-type">خرید آگاهانه</span></button><div class="guide-content"><span>عنوان پیشنهادی محتوای فنی</span><h3><button data-guide="used">در خرید کالای کارکرده چه چیزهایی روشن باشد؟</button></h3><p>وضعیت واقعی، متعلقات و شرایط عرضه در یک نگاه.</p><button class="text-link" data-guide="used">مشاهده پیش‌نمایش <i data-icon="arrow-left"></i></button></div></article>
+  </div></section>
+
+  <section class="container support-strip"><span class="support-symbol"><i data-icon="headset"></i></span><div><h3>در انتخاب مدل یا قطعه تردید دارید؟</h3><p>مسیر راهنمایی فنی را ببینید و اطلاعات دستگاه را آماده کنید.</p></div><button class="button button-outline" data-action="part-help">راهنمایی برای انتخاب <i data-icon="arrow-left"></i></button></section>
+</main>
+<footer class="site-footer"><div class="container footer-top"><div class="footer-about"><span class="footer-wordmark">مهراصل<span>فروشگاه تخصصی</span></span><p>تجهیزات، قطعات و ملزومات تهویه و تبرید؛<br>یک مسیر منظم برای شناخت، مقایسه و انتخاب.</p><div class="footer-tag"><span class="status-dot"></span> نسخه طراحی؛ بدون خرید واقعی</div></div><div class="footer-col"><h3>دسترسی سریع</h3><a href="#catalog">محصولات فروشگاه</a><a href="#specials">پیشنهادهای ویژه</a><a href="#latest">جدیدترین محصولات</a><button data-action="all-categories">دسته‌بندی‌ها</button></div><div class="footer-col"><h3>همراه خرید شما</h3><button data-info="tracking">پیگیری سفارش</button><button data-info="delivery">ارسال و تحویل</button><button data-info="warranty">گارانتی و مرجوعی</button><button data-action="open-quote">خرید سازمانی</button></div><div class="footer-col"><h3>ارتباط با مهراصل</h3><button data-info="support">پشتیبانی فنی</button><button data-info="dealers">شبکه فروش و خدمات</button><button data-info="about">درباره مهراصل</button><button data-info="privacy">حریم خصوصی پیش‌نمایش</button></div></div><div class="container footer-bottom"><p>مهراصل — پیش‌نمایش صفحه اول فروشگاه، نسخه ۱٫۰</p><button data-info="demo">درباره داده‌ها و محدودیت‌های این نسخه <i data-icon="arrow-left"></i></button><a href="#" class="back-top" aria-label="بازگشت به بالا"><i data-icon="arrow-up"></i></a></div></footer>
+
+<nav class="mobile-bottom" aria-label="منوی سریع موبایل"><a href="#" class="active"><i data-icon="home"></i><span>خانه</span></a><button data-action="mobile-menu"><i data-icon="grid"></i><span>دسته‌بندی</span></button><button data-action="favorites"><i data-icon="heart"></i><span>علاقه‌مندی</span></button><button data-action="cart"><i data-icon="bag"></i><span>سبد خرید <b id="mobile-cart-count">۰</b></span></button></nav>
+<div id="compare-tray" class="compare-tray" hidden><div class="container"><div><i data-icon="compare"></i><span id="compare-count">۰ محصول برای مقایسه</span></div><button class="text-link" data-action="clear-compare">پاک کردن</button><button class="button button-primary" data-action="compare">مقایسه محصولات <i data-icon="arrow-left"></i></button></div></div>
+<div class="toast-stack" id="toast-stack" role="status" aria-live="polite"></div>
+<dialog id="main-dialog" class="main-dialog" aria-labelledby="dialog-title"><div class="dialog-head"><h2 id="dialog-title"></h2><button class="icon-button" data-action="close-dialog" aria-label="بستن پنجره"><i data-icon="x"></i></button></div><div id="dialog-body" class="dialog-body"></div></dialog>
+<dialog id="cart-dialog" class="side-dialog" aria-labelledby="cart-title"><div class="dialog-head"><h2 id="cart-title">سبد خرید نمونه</h2><button class="icon-button" data-action="close-cart" aria-label="بستن سبد خرید"><i data-icon="x"></i></button></div><div class="cart-demo-note"><i data-icon="info"></i> این سبد آزمایشی است؛ وجهی پرداخت نمی‌شود.</div><div class="cart-items" id="cart-items"></div><div class="cart-summary" id="cart-summary"></div></dialog>
+<dialog id="mobile-dialog" class="side-dialog mobile-dialog" aria-labelledby="mobile-menu-title"><div class="dialog-head"><h2 id="mobile-menu-title">دسته‌بندی محصولات</h2><button class="icon-button" data-action="close-mobile" aria-label="بستن دسته‌بندی"><i data-icon="x"></i></button></div><p class="mobile-menu-note">۱۰ دسته اصلی؛ ساختار پیشنهادی منوی فروشگاه</p><div id="mobile-categories"></div></dialog>
+<noscript><div class="noscript">برای استفاده از جست‌وجو، محصولات و سبد نمونه، JavaScript مرورگر را فعال کنید.</div></noscript>
+<script src="catalog-data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

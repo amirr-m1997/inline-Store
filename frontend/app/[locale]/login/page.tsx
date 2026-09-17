@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [mode, setMode] = useState<"password" | "otp">("password");
   const [step, setStep] = useState<"phone" | "code">("phone");
   const [phone, setPhone] = useState("");
+  const [developmentCode, setDevelopmentCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -42,7 +43,8 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     try {
-      await requestOtp({ phone_number: phone, purpose: "login" });
+      const response = await requestOtp({ phone_number: phone, purpose: "login" });
+      setDevelopmentCode(response.delivery_mode === "development" ? response.debug_code ?? "" : "");
       setStep("code");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "درخواست ناموفق بود.");
@@ -86,6 +88,7 @@ export default function LoginPage() {
     loginForm = (
       <form className="auth-form" onSubmit={verifyOTP}>
         <p className="auth-hint">کد ارسال‌شده به {phone}</p>
+        {developmentCode && <p className="auth-hint">محیط توسعه فعال است؛ کد ورود: <strong dir="ltr">{developmentCode}</strong></p>}
         <label>کد شش رقمی<input name="code" dir="ltr" inputMode="numeric" maxLength={6} required /></label>
         <button className="auth-primary" disabled={loading}>{loading ? "در حال بررسی…" : "تأیید و ورود"}</button>
         <button type="button" className="auth-text-button" onClick={() => setStep("phone")}>تغییر شماره</button>

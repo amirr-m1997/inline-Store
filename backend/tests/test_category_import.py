@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.core.management import call_command
 from django.test import TestCase
 
@@ -5,6 +6,10 @@ from apps.catalog.models import Category, CategorySlugRedirect
 
 
 class FullCategoryImportTests(TestCase):
+    def setUp(self):
+        # Cached trees are order-dependent (another test may cache its own
+        # fixture tree first); always rebuild from the database here.
+        cache.clear()
     def test_imports_the_complete_demo_tree_idempotently(self):
         call_command("import_full_category_tree")
         self.assertEqual(Category.objects.count(), 834)

@@ -10,6 +10,14 @@ export function authChanged(authenticated = true) { window.dispatchEvent(new Cus
 
 export async function parseError(response: Response) {
   const data = await response.json().catch(() => ({}));
-  if (typeof data.detail === "string") return data.detail;
-  return Object.values(data).flat().join(" ") || "درخواست ناموفق بود.";
+  if (data && typeof data === "object" && typeof (data as { detail?: unknown }).detail === "string") return (data as { detail: string }).detail;
+  const flatten = (value: unknown): string[] => {
+    if (typeof value === "string") return [value];
+    if (typeof value === "number" || typeof value === "boolean") return [String(value)];
+    if (Array.isArray(value)) return value.flatMap(flatten);
+    if (value && typeof value === "object") return Object.values(value).flatMap(flatten);
+    return [];
+  };
+  const english = typeof window !== "undefined" && window.location.pathname.startsWith("/en");
+  return flatten(data).join(" ") || (english ? "Request failed." : "درخواست ناموفق بود.");
 }

@@ -14,7 +14,9 @@ export type CompanyInfo = {
 };
 
 export type SiteHeroBanner = { id: number; desktop_image: string; mobile_image: string; title: string; description: string; button: { text: string; link: string } | null };
-export type SiteHero = { title: string; slogan: string; description: string; hero_image: string | null; mobile_hero_image: string | null; buttons: { text: string; link: string; variant: "primary" | "secondary" }[]; banners?: SiteHeroBanner[] };
+export type SiteHeroPromotion = { id: number; title: string; description: string; discount_percentage: number; image: string | null; button: { text: string; link: string } | null; placement: "featured" | "home_middle" | "home_bottom"; promotion_type: "campaign" | "product" | "brand" };
+export type SiteHeroCategorySpotlight = { id: number; title: string; description: string; image: string | null; button_text: string; category_slug: string; category_name: string; placement: "after_featured" | "after_best_sellers" | "between_newest_discounts" | "after_discounts" | "after_low_stock" };
+export type SiteHero = { title: string; slogan: string; description: string; hero_image: string | null; mobile_hero_image: string | null; buttons: { text: string; link: string; variant: "primary" | "secondary" }[]; banners?: SiteHeroBanner[]; featured_promotion?: SiteHeroPromotion | null; home_promotions?: SiteHeroPromotion[]; category_spotlights?: SiteHeroCategorySpotlight[] };
 
 export type EditorialCategory = { id: number; slug: string; name_fa: string; name_en: string; description_fa?: string; description_en?: string; display_order?: number };
 export type EditorialContextProduct = { id: number; code: string; name: string; slug: string };

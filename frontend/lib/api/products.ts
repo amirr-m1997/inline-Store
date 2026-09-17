@@ -11,6 +11,7 @@ export type ProductResource = { id: number; title: string; type: "datasheet" | "
 export type ProductResourcePage = { count: number; next: boolean; previous: boolean; results: ProductResource[] };
 export type ProductDetail = {
   id: number; slug: string; name_fa: string; name_en: string; sku: string; unit: string; description: string;
+  brand: { name: string; slug: string } | null;
   images: { id: number; url: string; alt_fa: string; alt_en: string; alt_text: string; is_primary: boolean }[];
   category_tree: { id: number; name_fa: string; slug: string }[];
   inventory: { available: number | null; reserved: number | null; net: number | null; allowed_for_cart: number; last_receipt_date: string | null; last_issue_date: string | null };
@@ -18,6 +19,7 @@ export type ProductDetail = {
   technical_specifications: { label: string; value: unknown }[];
   related_products: { id: number; slug: string; code: string; name_fa: string; unit: string; primary_image: string | null }[];
   service_advantages: { id: number; title_fa: string; title_en: string; description_fa: string; description_en: string; icon: string }[];
+  documents: { id: number; title: string; type: string; file_url: string; file_name: string; display_name: string; mime_type: string; size: number; revision: string; language: string }[];
 };
 export type ProductDiscovery = {
   articles: import("../../types/api").EditorialArticle[];
@@ -36,7 +38,7 @@ export async function getProductsServer(parameters: Record<string, string | numb
   const backendUrl = process.env.BACKEND_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
   const search = new URLSearchParams();
   Object.entries(parameters).forEach(([key, value]) => { if (value !== undefined && value !== "") search.set(key, String(value)); });
-  const response = await fetch(`${backendUrl}/api/v1/products/?${search}`, { next: { revalidate: 30 } });
+  const response = await fetch(`${backendUrl}/api/v1/products/?${search}`, { next: { revalidate: 60 } });
   const data = await response.json().catch(() => null);
   if (!response.ok) throw new Error(`PRODUCTS_REQUEST_FAILED:${response.status}`);
   return data as ProductPage;
@@ -72,7 +74,7 @@ export async function getCatalogQueryServer(parameters: Record<string, string | 
   const backendUrl = process.env.BACKEND_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
   const search = new URLSearchParams();
   Object.entries(parameters).forEach(([key, value]) => { if (value !== undefined && value !== "") search.set(key, String(value)); });
-  const response = await fetch(`${backendUrl}/api/v1/products/catalog-query/?${search}`, { next: { revalidate: 30 } });
+  const response = await fetch(`${backendUrl}/api/v1/products/catalog-query/?${search}`, { next: { revalidate: 60 } });
   const data = await response.json().catch(() => null);
   if (!response.ok) throw new Error(response.status === 404 ? "CATALOG_NOT_FOUND" : "CATALOG_REQUEST_FAILED");
   return data as CatalogQueryResponse;

@@ -1,5 +1,5 @@
 from rest_framework import serializers, viewsets
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
 from .models import Inventory, Issue, Receipt
 
@@ -17,7 +17,9 @@ class StockSerializer(serializers.ModelSerializer):
 class StockViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Inventory.objects.select_related("product").order_by("product__code")
     serializer_class = StockSerializer
-    permission_classes = (AllowAny,)
+    # Internal stock levels: visible to signed-in users only (storefront shows
+    # per-product availability via the public catalog serializer instead).
+    permission_classes = (IsAuthenticated,)
     ordering_fields = ("product__code", "on_hand_quantity", "reserved_quantity", "updated_at")
     ordering = ("product__code",)
 
@@ -34,7 +36,8 @@ class ReceiptSerializer(serializers.ModelSerializer):
 class ReceiptViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Receipt.objects.select_related("product")
     serializer_class = ReceiptSerializer
-    permission_classes = (AllowAny,)
+    # Purchase prices and supplier references are back-office data.
+    permission_classes = (IsAdminUser,)
     ordering_fields = ("occurred_at", "created_at")
     ordering = ("-occurred_at",)
 
@@ -51,6 +54,7 @@ class IssueSerializer(serializers.ModelSerializer):
 class IssueViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Issue.objects.select_related("product")
     serializer_class = IssueSerializer
-    permission_classes = (AllowAny,)
+    # Internal goods-issue history: staff only.
+    permission_classes = (IsAdminUser,)
     ordering_fields = ("occurred_at", "created_at")
     ordering = ("-occurred_at",)

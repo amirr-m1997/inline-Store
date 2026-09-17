@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 440" role="img" aria-label="کمپرسور اسکرال؛ نمای گرافیکی نمونه"><defs>
+<linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fafcfb"/><stop offset=".32" stop-color="#e0e5e3"/><stop offset=".6" stop-color="#aeb9b7"/><stop offset="1" stop-color="#d6ddda"/></linearGradient>
+<linearGradient id="silver" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f8faf9"/><stop offset=".35" stop-color="#cbd4d2"/><stop offset=".5" stop-color="#f5f7f6"/><stop offset=".9" stop-color="#8f9e9a"/></linearGradient>
+<linearGradient id="dark" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#52645e"/><stop offset=".3" stop-color="#253c33"/><stop offset="1" stop-color="#101e1b"/></linearGradient>
+<linearGradient id="black" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#1f2728"/><stop offset=".25" stop-color="#4d595a"/><stop offset=".48" stop-color="#303b3e"/><stop offset="1" stop-color="#101818"/></linearGradient>
+<linearGradient id="green" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9cb943"/><stop offset=".3" stop-color="#729238"/><stop offset=".7" stop-color="#436c2a"/><stop offset="1" stop-color="#234d2c"/></linearGradient>
+<linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#72a4b0"/><stop offset=".35" stop-color="#3f7789"/><stop offset="1" stop-color="#224c5b"/></linearGradient>
+<linearGradient id="copper" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#79513b"/><stop offset=".18" stop-color="#ba7449"/><stop offset=".37" stop-color="#edb27a"/><stop offset=".53" stop-color="#f8d1a1"/><stop offset=".65" stop-color="#a45b36"/><stop offset=".83" stop-color="#d89162"/><stop offset="1" stop-color="#805035"/></linearGradient>
+<linearGradient id="brass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f4dda2"/><stop offset=".35" stop-color="#cda45a"/><stop offset=".55" stop-color="#f9e7b7"/><stop offset=".8" stop-color="#a77d37"/><stop offset="1" stop-color="#e3bd76"/></linearGradient>
+<radialGradient id="shade"><stop stop-color="#102821" stop-opacity=".18"/><stop offset="1" stop-color="#102821" stop-opacity="0"/></radialGradient>
+<pattern id="fins" width="5" height="5" patternUnits="userSpaceOnUse"><rect width="5" height="5" fill="#607775"/><path d="M1 0v5" stroke="#a0b3ad" stroke-width="1"/></pattern>
+<pattern id="smallfins" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="4" fill="#364a45"/><path d="M1 0v4" stroke="#82978e" stroke-width="1"/></pattern>
+<pattern id="grill" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#283f37"/><path d="M0 0h8M0 0v8" stroke="#9baba4" stroke-width=".75"/></pattern>
+</defs><ellipse cx="304" cy="364" rx="232" ry="37" fill="url(#shade)"/><ellipse cx="295" cy="338" rx="101" ry="24" fill="#273431"/>
+<path d="M209 135v192c0 36 170 36 170 0V135z" fill="url(#black)"/>
+<ellipse cx="294" cy="136" rx="85" ry="33" fill="#354442" stroke="#65726a" stroke-width="2"/>
+<path d="M218 124c0-52 151-52 151 1" fill="url(#black)"/>
+<path d="M212 169c53 17 112 17 163-1M212 294c55 16 111 16 163-1" fill="none" stroke="#62716a" stroke-width="3"/>
+<path d="M345 103V70h43M218 200h-39v-45h-30" stroke="url(#copper)" stroke-width="15" fill="none" stroke-linejoin="round"/>
+<path d="M231 342l-12 18h-34l10-29M346 342l16 18h37l-18-30" fill="#263932"/>
+<rect x="253" y="192" width="73" height="79" rx="2" fill="#dbe3dc" transform="rotate(-1 253 192)"/>
+<rect x="263" y="203" width="50" height="13" fill="#497960"/>
+<text x="267" y="212" font-family="Arial" font-size="8" fill="#fff">SCROLL</text>
+<path d="M265 230h46M265 237h40M265 244h48M265 252h38" stroke="#708c7c" stroke-width="2"/>
+<path d="M355 199l29 10v55l-29-11z" fill="#1c2926"/></svg>

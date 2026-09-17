@@ -6,6 +6,12 @@ const sortOptions = [
   { value: "code", fa: "کد کالا", en: "Product code" },
   { value: "name", fa: "نام کالا", en: "Product name" },
   { value: "-created_at", fa: "جدیدترین", en: "Newest" },
+  { value: "created_at", fa: "قدیمی‌ترین", en: "Oldest" },
+  { value: "catalog_price_sort", fa: "قیمت: کم به زیاد", en: "Price: low to high" },
+  { value: "-catalog_price_sort", fa: "قیمت: زیاد به کم", en: "Price: high to low" },
+  { value: "-discount_percentage", fa: "بیشترین تخفیف", en: "Highest discount" },
+  { value: "discount_percentage", fa: "کمترین تخفیف", en: "Lowest discount" },
+  { value: "-catalog_availability_sort", fa: "پرطرفدارترین", en: "Most popular" },
 ];
 
 export function CatalogSortSelect({ value, onChange, label, id, locale = "fa" }: { value: string; onChange: (value: string) => void; label: string; id?: string; locale?: string }) {

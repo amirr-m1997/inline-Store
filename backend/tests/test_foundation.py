@@ -1,4 +1,5 @@
 from django.db import IntegrityError, transaction
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from apps.accounts.models import User
@@ -6,9 +7,11 @@ from apps.catalog.models import Category, CategorySlugRedirect, Product, SupplyB
 from apps.catalog.slugs import latin_category_slug
 from apps.carts.models import Cart, CartItem
 from apps.inventory.models import Inventory
+from apps.orders.models import Order, OrderItem
 
 class FoundationTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.category = Category.objects.create(code="tools", name_fa="ابزار", name_en="Tools", slug="tools")
         self.product = Product.objects.create(code="P-001", name="Sample", slug="sample", category=self.category, unit="piece")
     def test_custom_user_and_database(self):
@@ -101,6 +104,20 @@ class FoundationTests(TestCase):
         selected = Product.objects.create(code="P-FEATURED", name="Featured", slug="featured", category=self.category, unit="piece", is_featured=True)
         response = self.client.get("/api/v1/products/?featured=true")
         self.assertEqual([item["id"] for item in response.json()["results"]], [selected.id])
+
+    def test_bestseller_and_low_stock_filters(self):
+        best_seller = Product.objects.create(code="P-BEST", name="Best seller", slug="best-seller", category=self.category, unit="piece")
+        low_stock = Product.objects.create(code="P-LOW", name="Low stock", slug="low-stock", category=self.category, unit="piece")
+        Inventory.objects.create(product=self.product, on_hand_quantity=12, reserved_quantity=0)
+        Inventory.objects.create(product=low_stock, on_hand_quantity=2, reserved_quantity=0)
+        order = Order.objects.create(status=Order.Status.CONFIRMED)
+        OrderItem.objects.create(order=order, product=best_seller, product_name=best_seller.name, product_code=best_seller.code, unit="piece", unit_price=100, quantity=7, line_subtotal=700, line_total=700)
+        bestseller_response = self.client.get("/api/v1/products/?best_sellers=true")
+        self.assertEqual(bestseller_response.status_code, 200)
+        self.assertEqual(bestseller_response.json()["results"][0]["id"], best_seller.id)
+        low_stock_response = self.client.get("/api/v1/products/?low_stock=true")
+        self.assertEqual(low_stock_response.status_code, 200)
+        self.assertEqual(low_stock_response.json()["results"][0]["id"], low_stock.id)
 
     def test_only_active_supply_brands_are_public(self):
         SupplyBrand.objects.create(name="Active brand", is_active=True)

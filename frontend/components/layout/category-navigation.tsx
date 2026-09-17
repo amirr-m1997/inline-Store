@@ -23,7 +23,6 @@ export function CategoryNavigation({ mobileOpen, onNavigate }: CategoryNavigatio
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeRootId, setActiveRootId] = useState<number | null>(null);
-  const [mobilePath, setMobilePath] = useState<CategoryTreeNode[]>([]);
   const [mobileMode, setMobileMode] = useState<"main" | "categories">("main");
 
   useEffect(() => {
@@ -36,9 +35,9 @@ export function CategoryNavigation({ mobileOpen, onNavigate }: CategoryNavigatio
       .then((data) => { const tree = asArray<CategoryTreeNode>(data); setRoots(tree); setActiveRootId(tree[0]?.id ?? null); })
       .catch(() => setRoots([])).finally(() => setLoading(false));
   };
-  const toggleCategories = () => { setMobileMode("categories"); setOpen((current) => { const next = !current; if (next) loadTree(); else setMobilePath([]); return next; }); };
-  const closeCategories = () => { setOpen(false); setMobilePath([]); setMobileMode("main"); };
-  const returnToMainMenu = () => { setOpen(false); setMobilePath([]); setMobileMode("main"); };
+  const toggleCategories = () => { setMobileMode("categories"); setOpen((current) => { const next = !current; if (next) loadTree(); return next; }); };
+  const closeCategories = () => { setOpen(false); setMobileMode("main"); };
+  const returnToMainMenu = () => { setMobileMode("main"); };
   const closeAll = () => { closeCategories(); onNavigate(); };
 
   useEffect(() => {
@@ -72,9 +71,6 @@ export function CategoryNavigation({ mobileOpen, onNavigate }: CategoryNavigatio
   const remainingItems = ordinaryItems.filter((item) => !homeItems.includes(item));
   const supportActive = pathname === `/${locale}/support` || pathname.startsWith(`/${locale}/support/`);
   const activeRoot = roots.find((root) => root.id === activeRootId) ?? roots[0];
-  const mobileParent = mobilePath.at(-1);
-  const mobileNodes = mobileParent ? mobileParent.children : roots;
-
   return <nav id="site-mobile-navigation" ref={navigationRef} className={`reference-category-nav responsive-container${mobileOpen ? " mobile-open" : ""}${mobileMode === "categories" ? " category-mode" : ""}`} aria-label="ناوبری وب‌سایت">
     <div className="reference-nav-links">
       {(!mobileOpen || mobileMode === "main") && <><div className="category-nav-section"><span className="mobile-nav-section-label">دسته‌بندی محصولات</span><button ref={triggerRef} className="category-menu-trigger" type="button" onClick={toggleCategories} aria-expanded={open} aria-controls="product-category-menu"><span className="category-menu-icon" aria-hidden="true"><i /><i /><i /></span><b>دسته‌بندی محصولات</b><i aria-hidden="true">⌄</i></button></div>
@@ -101,10 +97,7 @@ export function CategoryNavigation({ mobileOpen, onNavigate }: CategoryNavigatio
         </div>
       </div>
 
-      <div className="mobile-category-drawer">
-        <header><button autoFocus type="button" onClick={() => mobilePath.length ? setMobilePath((path) => path.slice(0, -1)) : returnToMainMenu()} aria-label={mobilePath.length ? "بازگشت به سطح قبل" : "بازگشت به منوی اصلی"}><span aria-hidden="true">→</span><span className="mobile-category-back-label">بازگشت</span></button><div><small>{mobilePath.length ? "زیرگروه‌های" : "فهرست"}</small><b>{mobileParent?.name_fa ?? "دسته‌بندی محصولات"}</b></div>{mobileParent ? <Link href={getCategoryUrl(mobileParent, locale)} onClick={closeAll}>همه</Link> : <span />}</header>
-        <div className="mobile-category-list">{loading && <p className="category-menu-state">در حال دریافت دسته‌بندی‌ها…</p>}{mobileNodes.map((node) => <div key={node.id}><Link href={getCategoryUrl(node, locale)} onClick={closeAll}>{node.name_fa}<small>{node.product_count.toLocaleString("fa-IR")} محصول</small></Link>{node.children.length > 0 && <button type="button" onClick={() => setMobilePath((path) => [...path, node])} aria-label={`نمایش زیرگروه‌های ${node.name_fa}`}><span className="category-direction-indicator" aria-hidden="true" /></button>}</div>)}</div>
-      </div>
+      <div className="mobile-category-drawer">{mobileMode === "categories" && <button type="button" className="mobile-category-back" onClick={returnToMainMenu} aria-label={locale === "en" ? "Back to previous level" : "بازگشت به سطح قبل"}>{locale === "en" ? "Back to previous level" : "بازگشت به سطح قبل"}</button>}<Link className="mobile-category-index-link" href={`/${locale}/categories`} onClick={closeAll}>{locale === "en" ? "Browse all product categories" : "مشاهده همه دسته‌بندی‌های محصولات"}<span aria-hidden="true">←</span></Link></div>
     </section>}
   </nav>;
 }

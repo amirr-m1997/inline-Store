@@ -1,0 +1,4 @@
+# Never bake local env, build output, or deps into the image.
+.env*
+.next/
+node_modules/

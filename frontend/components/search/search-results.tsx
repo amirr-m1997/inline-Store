@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element -- external brand logos, not covered by next/image remotePatterns */
 import Link from "next/link";
 import { EditorialCard, FAQContextLinks, faqTypeLabel, localizedFAQ } from "../content/editorial";
 import { ProductCard, type CatalogProduct } from "../catalog/product-card";
@@ -20,7 +21,7 @@ export function SearchCategoryGroup({ categories, locale }: { categories: SiteSe
 
 export function SearchBrandGroup({ brands, locale }: { brands: SiteSearchBrand[]; locale: string }) {
   if (!brands.length) return null;
-  return <section id="search-brands" className="site-search-group" aria-labelledby="search-brands-title"><header><h2 id="search-brands-title">{locale === "en" ? "Brands" : "برندها"}</h2></header><div className="site-search-links site-search-brand-links">{brands.map((brand) => <Link key={brand.id} href={`/${locale}/brands/${brand.slug}`}>{brand.logo ? <img src={brand.logo} alt="" loading="lazy" /> : <span className="site-search-brand-mark" aria-hidden="true">◇</span>}<strong>{brand.name}</strong><small>{brand.product_count.toLocaleString(locale === "en" ? "en-US" : "fa-IR")} {locale === "en" ? "products" : "محصول"}</small></Link>)}</div></section>;
+  return <section id="search-brands" className="site-search-group" aria-labelledby="search-brands-title"><header><h2 id="search-brands-title">{locale === "en" ? "Brands" : "برندها"}</h2></header><div className="site-search-links site-search-brand-links">{brands.map((brand) => <Link key={brand.id} href={`/${locale}/brands/${brand.slug}`}>{brand.logo ? <img src={brand.logo} alt={`${locale === "en" ? "Logo of" : "لوگوی"} ${brand.name}`} loading="lazy" decoding="async" /> : <span className="site-search-brand-mark" aria-hidden="true">◇</span>}<strong>{brand.name}</strong><small>{brand.product_count.toLocaleString(locale === "en" ? "en-US" : "fa-IR")} {locale === "en" ? "products" : "محصول"}</small></Link>)}</div></section>;
 }
 
 export function SearchEditorialGroup({ articles, locale }: { articles: EditorialArticle[]; locale: string }) {
