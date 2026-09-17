@@ -1,4 +1,5 @@
 import type { ProductDetail, ProductDocument, DocumentType } from "../../../lib/product/types";
+import { formatNumber } from "../../../lib/product/formatters";
 
 const labels: Record<DocumentType, string> = { datasheet: "دیتاشیت", manual: "راهنما", cad: "فایل CAD", certificate: "گواهی‌نامه", catalogue: "کاتالوگ", other: "سند فنی" };
 
@@ -16,5 +17,5 @@ function DocumentRow({ document }: { document: ProductDocument }) {
 
 export function ProductDocuments({ product }: { product: ProductDetail }) {
   const grouped = new Map<DocumentType, ProductDocument[]>(); product.documents.forEach((document) => grouped.set(document.type, [...(grouped.get(document.type) || []), document]));
-  return <section className="product-documents" aria-labelledby="product-documents-title"><header><div><span>مرجع فنی محصول</span><h2 id="product-documents-title">اسناد فنی</h2></div>{product.documents.length > 0 && <small>{product.documents.length.toLocaleString("fa-IR")} سند</small>}</header>{grouped.size ? <div className="product-document-groups">{Array.from(grouped.entries()).map(([type, documents]) => <section key={type} aria-labelledby={`document-group-${type}`}><h3 id={`document-group-${type}`}>{labels[type]}</h3><ul>{documents.map((document) => <DocumentRow key={document.id} document={document} />)}</ul></section>)}</div> : <p className="empty-section">سند فنی برای این کالا ثبت نشده است.</p>}</section>;
+  return <section className="product-documents" aria-labelledby="product-documents-title"><header><div><span>مرجع فنی محصول</span><h2 id="product-documents-title">اسناد فنی</h2></div>{product.documents.length > 0 && <small>{formatNumber(product.documents.length)} سند</small>}</header>{grouped.size ? <div className="product-document-groups">{Array.from(grouped.entries()).map(([type, documents]) => <section key={type} aria-labelledby={`document-group-${type}`}><h3 id={`document-group-${type}`}>{labels[type]}</h3><ul>{documents.map((document) => <DocumentRow key={document.id} document={document} />)}</ul></section>)}</div> : <p className="empty-section">سند فنی برای این کالا ثبت نشده است.</p>}</section>;
 }

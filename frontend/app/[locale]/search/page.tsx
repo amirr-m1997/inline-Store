@@ -3,6 +3,7 @@ import Link from "next/link";
 import { SearchCategoryGroup, SearchEditorialGroup, SearchBrandGroup, SearchProductGroup, SearchFAQGroup, SearchGroupSummary } from "../../../components/search/search-results";
 import { getSiteSearchServer, type SiteSearchResponse } from "../../../lib/api/search";
 import { absoluteUrl, localizedAlternates, localizedPath } from "../../../lib/locale-url";
+import { formatNumber } from "../../../lib/product/formatters";
 
 type Props = { params: Promise<{ locale: string }>; searchParams: Promise<{ q?: string | string[] }> };
 const valueOf = (value?: string | string[]) => Array.isArray(value) ? value[0] || "" : value || "";
@@ -28,7 +29,7 @@ export default async function SearchPage({ params, searchParams }: Props) {
     <nav className="public-breadcrumb" aria-label={english ? "Breadcrumb" : "مسیر صفحه"}><Link href={`/${locale}`}>{english ? "Home" : "خانه"}</Link><span aria-hidden="true">/</span><b>{english ? "Search" : "جست‌وجو"}</b></nav>
     <header className="site-search-heading">
       <h1>{query ? (english ? `Results for “${query}”` : `نتایج برای «${query}»`) : (english ? "Search" : "جست‌وجو")}</h1>
-      {query.length >= 2 && <p className="site-search-count">{visibleResultCount.toLocaleString(english ? "en-US" : "fa-IR")} {english ? "results" : "نتیجه"}</p>}
+      {query.length >= 2 && <p className="site-search-count">{formatNumber(visibleResultCount)} {english ? "results" : "نتیجه"}</p>}
     </header>
     {query.length < 2 ? <section className="site-search-empty site-search-empty-query" aria-live="polite"><h2>{english ? "Search from the header" : "جست‌وجو را از نوار بالای صفحه شروع کنید"}</h2></section> : hasResults ? <>
       <SearchGroupSummary groups={groups} locale={locale} />

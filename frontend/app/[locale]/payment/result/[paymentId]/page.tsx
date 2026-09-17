@@ -5,10 +5,11 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getPayment } from "../../../../../lib/api/payments";
 import { paymentState, type PaymentState } from "../../../../../lib/payment-presenters";
+import { formatNumber } from "../../../../../lib/product/formatters";
 
 export type PaymentResultData = { amount: string; reference_id?: string; status: string; verified_at: string | null; order: { order_number: string; status: string } };
 
-const amount = (value: string) => `${Number(value).toLocaleString("fa-IR")} ریال`;
+const amount = (value: string) => `${formatNumber(Number(value))} ریال`;
 
 const stateCopy: Record<PaymentState, { title: string; description: string; icon: string }> = {
   success: { title: "پرداخت با موفقیت انجام شد", description: "پرداخت سفارش در سیستم ثبت شد.", icon: "✓" },

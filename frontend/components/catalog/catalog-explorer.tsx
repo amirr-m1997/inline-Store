@@ -17,6 +17,7 @@ import { CatalogPagination } from "./catalog-pagination";
 import { CatalogEmptyState } from "./catalog-empty-state";
 import { CatalogErrorState } from "./catalog-error-state";
 import { MobileFilterDrawer } from "./mobile-filter-drawer";
+import { formatNumber } from "../../lib/product/formatters";
 
 type TreeCategory = NavCategory & { children: TreeCategory[]; product_count: number };
 type CategoryResponse = NavCategory & { redirect_slug?: string };
@@ -58,7 +59,7 @@ export function CatalogExplorer({ slug, query, initialData, initialCategory }: {
     return () => controller.abort();
   }, [category, categoryStatus, cursor, inStock, hasImage, isBestDiscounts, isNewest, isSearch, isShop, isSpecialListing, ordering, pageParam, params, queryString, searchQuery]);
   const title = isShop ? (locale === "en" ? "Store products" : "محصولات فروشگاه") : isNewest ? (locale === "en" ? "Newest products" : "جدیدترین‌ها") : isBestDiscounts ? (locale === "en" ? "Best discounts" : "بیشترین تخفیف") : isSearch ? (locale === "en" ? "Catalog search" : "جست‌وجوی کاتالوگ") : categoryStatus === "loading" ? (locale === "en" ? "Loading category…" : "در حال دریافت دسته‌بندی…") : categoryStatus === "error" ? (locale === "en" ? "Category error" : "خطا در دریافت دسته‌بندی") : category?.name_fa || (locale === "en" ? "Category not found" : "دسته‌بندی یافت نشد");
-  const resultCountLabel = locale === "en" ? `${(products?.count ?? 0).toLocaleString("en-US")} ${(products?.count ?? 0) === 1 ? "product" : "products"} found` : `${(products?.count ?? 0).toLocaleString("fa-IR")} محصول پیدا شد`;
+  const resultCountLabel = locale === "en" ? `${formatNumber(products?.count ?? 0)} ${(products?.count ?? 0) === 1 ? "product" : "products"} found` : `${formatNumber(products?.count ?? 0)} محصول پیدا شد`;
   const resultTitle = searchQuery ? (locale === "en" ? `Search results for “${searchQuery}”` : `نتایج جستجو برای «${searchQuery}»`) : title;
   const totalPages = Math.max(1, Math.ceil((products?.count ?? 0) / pageSize)), activeTreeNode = findCategory(roots, slug), cursorMode = !pageParam;
   const search = (value: string) => updateUrl({ q: value.trim() || null, page: null });

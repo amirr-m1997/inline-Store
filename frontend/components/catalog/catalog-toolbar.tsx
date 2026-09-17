@@ -2,6 +2,7 @@
 
 import { CatalogSortSelect } from "./catalog-sort-select";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { formatNumber } from "../../lib/product/formatters";
 
 function ShopCatalogTabs() {
   const pathname = usePathname(), router = useRouter(), params = useSearchParams();

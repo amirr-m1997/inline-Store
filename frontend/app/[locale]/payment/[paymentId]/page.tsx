@@ -4,10 +4,11 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { completeMockPayment, getPayment } from "../../../../lib/api/payments";
 import { paymentGatewayLabel } from "../../../../lib/payment-presenters";
+import { formatNumber } from "../../../../lib/product/formatters";
 
 export type PaymentData = { id: number; amount: string; status: string; gateway?: string; order: { order_number: string } };
 
-const amount = (value: string) => `${Number(value).toLocaleString("fa-IR")} ریال`;
+const amount = (value: string) => `${formatNumber(Number(value))} ریال`;
 
 export default function MockPaymentPage() {
   const { locale = "fa", paymentId } = useParams<{ locale: string; paymentId: string }>();

@@ -4,6 +4,7 @@ import { EditorialCard, FAQContextLinks, faqTypeLabel, localizedFAQ } from "../c
 import { ProductCard, type CatalogProduct } from "../catalog/product-card";
 import type { SiteSearchBrand, SiteSearchCategory, SiteSearchProduct } from "../../lib/api/search";
 import type { EditorialArticle, FAQEntry } from "../../types/api";
+import { formatNumber } from "../../lib/product/formatters";
 
 function productCard(product: SiteSearchProduct): CatalogProduct {
   return { id: product.id, name: product.name, slug: product.slug, code: product.code, unit: product.unit, available_quantity: null, category: product.category ? { name_fa: product.category.name_fa } : null, images: product.image ? [{ image: product.image, alt_text: product.name, alt_fa: product.name, is_primary: true }] : [], price: null };
@@ -16,12 +17,12 @@ export function SearchProductGroup({ products, locale, query }: { products: Site
 
 export function SearchCategoryGroup({ categories, locale }: { categories: SiteSearchCategory[]; locale: string }) {
   if (!categories.length) return null;
-  return <section id="search-categories" className="site-search-group" aria-labelledby="search-categories-title"><header><h2 id="search-categories-title">{locale === "en" ? "Categories" : "دسته‌بندی‌ها"}</h2></header><div className="site-search-links">{categories.map((category) => <Link key={category.id} href={`/${locale}/category/${category.slug}`}><strong>{locale === "en" && category.name_en ? category.name_en : category.name_fa}</strong><small>{category.product_count.toLocaleString(locale === "en" ? "en-US" : "fa-IR")} {locale === "en" ? "products" : "محصول"}</small></Link>)}</div></section>;
+  return <section id="search-categories" className="site-search-group" aria-labelledby="search-categories-title"><header><h2 id="search-categories-title">{locale === "en" ? "Categories" : "دسته‌بندی‌ها"}</h2></header><div className="site-search-links">{categories.map((category) => <Link key={category.id} href={`/${locale}/category/${category.slug}`}><strong>{locale === "en" && category.name_en ? category.name_en : category.name_fa}</strong><small>{formatNumber(category.product_count)} {locale === "en" ? "products" : "محصول"}</small></Link>)}</div></section>;
 }
 
 export function SearchBrandGroup({ brands, locale }: { brands: SiteSearchBrand[]; locale: string }) {
   if (!brands.length) return null;
-  return <section id="search-brands" className="site-search-group" aria-labelledby="search-brands-title"><header><h2 id="search-brands-title">{locale === "en" ? "Brands" : "برندها"}</h2></header><div className="site-search-links site-search-brand-links">{brands.map((brand) => <Link key={brand.id} href={`/${locale}/brands/${brand.slug}`}>{brand.logo ? <img src={brand.logo} alt={`${locale === "en" ? "Logo of" : "لوگوی"} ${brand.name}`} loading="lazy" decoding="async" /> : <span className="site-search-brand-mark" aria-hidden="true">◇</span>}<strong>{brand.name}</strong><small>{brand.product_count.toLocaleString(locale === "en" ? "en-US" : "fa-IR")} {locale === "en" ? "products" : "محصول"}</small></Link>)}</div></section>;
+  return <section id="search-brands" className="site-search-group" aria-labelledby="search-brands-title"><header><h2 id="search-brands-title">{locale === "en" ? "Brands" : "برندها"}</h2></header><div className="site-search-links site-search-brand-links">{brands.map((brand) => <Link key={brand.id} href={`/${locale}/brands/${brand.slug}`}>{brand.logo ? <img src={brand.logo} alt={`${locale === "en" ? "Logo of" : "لوگوی"} ${brand.name}`} loading="lazy" decoding="async" /> : <span className="site-search-brand-mark" aria-hidden="true">◇</span>}<strong>{brand.name}</strong><small>{formatNumber(brand.product_count)} {locale === "en" ? "products" : "محصول"}</small></Link>)}</div></section>;
 }
 
 export function SearchEditorialGroup({ articles, locale }: { articles: EditorialArticle[]; locale: string }) {
@@ -39,7 +40,7 @@ export function SearchGroupSummary({ groups, locale }: { groups: SearchGroups; l
   const labels = locale === "en" ? { products: "Products", categories: "Categories", brands: "Brands", articles: "Knowledge & News", faqs: "FAQs" } : { products: "محصولات", categories: "دسته‌بندی‌ها", brands: "برندها", articles: "دانش و اخبار", faqs: "سوالات متداول" };
   const entries = (Object.keys(labels) as Array<keyof SearchGroups>).filter((key) => groups[key].length > 0);
   if (entries.length < 2) return null;
-  return <nav className="site-search-group-summary" aria-label={locale === "en" ? "Search result groups" : "گروه‌های نتایج جست‌وجو"}>{entries.map((key) => <a key={key} href={`#search-${key}`}><span>{labels[key]}</span><b>{groups[key].length.toLocaleString(locale === "en" ? "en-US" : "fa-IR")}</b></a>)}</nav>;
+  return <nav className="site-search-group-summary" aria-label={locale === "en" ? "Search result groups" : "گروه‌های نتایج جست‌وجو"}>{entries.map((key) => <a key={key} href={`#search-${key}`}><span>{labels[key]}</span><b>{formatNumber(groups[key].length)}</b></a>)}</nav>;
 }
 
 export function SearchEntryForm({ locale, query = "" }: { locale: string; query?: string }) {

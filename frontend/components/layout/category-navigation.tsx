@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getCategoryUrl } from "../../lib/category-url";
 import { getCategories } from "../../lib/api/products";
 import { getNavigation } from "../../lib/api/content";
+import { formatNumber } from "../../lib/product/formatters";
 
 type NavigationItem = { id: number; title_fa: string; url: string; icon: string };
 export type CategoryTreeNode = { id: number; code: string; name_fa: string; name_en: string; slug: string; level: number; product_count: number; children: CategoryTreeNode[] };
@@ -80,11 +81,11 @@ export function CategoryNavigation({ mobileOpen, onNavigate }: CategoryNavigatio
     {open && <section id="product-category-menu" className="product-category-menu" aria-label="دسته‌بندی محصولات">
       <div className="desktop-category-menu">
         <aside aria-label="دسته‌بندی‌های اصلی">
-          <header><b>گروه‌های اصلی</b><small>{roots.length.toLocaleString("fa-IR")} گروه</small></header>
+          <header><b>گروه‌های اصلی</b><small>{formatNumber(roots.length)} گروه</small></header>
           {loading && <p className="category-menu-state">در حال دریافت دسته‌بندی‌ها…</p>}
           {!loading && !roots.length && <p className="category-menu-state">دسته‌بندی‌ای یافت نشد.</p>}
           {roots.map((root) => <div className={`root-category-row${root.id === activeRoot?.id ? " active" : ""}`} key={root.id} onMouseEnter={() => setActiveRootId(root.id)}>
-            <button type="button" onFocus={() => setActiveRootId(root.id)} onClick={() => setActiveRootId(root.id)} aria-pressed={root.id === activeRoot?.id}><span>{root.name_fa}</span><small>{root.product_count.toLocaleString("fa-IR")}</small></button>
+            <button type="button" onFocus={() => setActiveRootId(root.id)} onClick={() => setActiveRootId(root.id)} aria-pressed={root.id === activeRoot?.id}><span>{root.name_fa}</span><small>{formatNumber(root.product_count)}</small></button>
             <Link href={getCategoryUrl(root, locale)} onClick={closeAll} aria-label={`مشاهده ${root.name_fa}`}><span className="category-direction-indicator" aria-hidden="true" /></Link>
           </div>)}
         </aside>

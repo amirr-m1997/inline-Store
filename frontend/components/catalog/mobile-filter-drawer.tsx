@@ -5,6 +5,7 @@ import type { CatalogFacet } from "./facet-types";
 import { FacetSidebar } from "./facet-sidebar";
 import { CatalogSortSelect } from "./catalog-sort-select";
 import { Drawer } from "../ui/drawer";
+import { formatNumber } from "../../lib/product/formatters";
 
 export function MobileFilterDrawer({ open, ordering, inStock, hasImage = false, resultCount = 0, activeFilterCount = 0, facets = [], onClose, onApply, onReset, onFacetOptionChange, onFacetRangeChange }: { open: boolean; ordering: string; inStock: boolean; hasImage?: boolean; resultCount?: number; activeFilterCount?: number; facets?: CatalogFacet[]; onClose: () => void; onApply: (ordering: string, inStock: boolean, hasImage: boolean) => void; onReset?: () => void; onFacetOptionChange?: (facet: CatalogFacet, value: string, selected: boolean) => void; onFacetRangeChange?: (facet: CatalogFacet, value: { min?: string; max?: string }) => void }) {
   const [nextOrdering, setNextOrdering] = useState(ordering);

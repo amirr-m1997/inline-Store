@@ -10,6 +10,7 @@ const nextConfig = {
   // static JS chunks hydrate and the theme toggle/interactive UI works there.
   allowedDevOrigins: (process.env.ALLOWED_DEV_ORIGINS || "localhost,127.0.0.1").split(",").map((item) => item.trim()).filter(Boolean),
   images: {
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       { protocol: "http", hostname: "localhost", port: "8000", pathname: "/media/**" },
       { protocol: "http", hostname: "127.0.0.1", port: "8000", pathname: "/media/**" },

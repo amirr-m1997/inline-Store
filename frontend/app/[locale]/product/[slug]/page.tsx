@@ -37,7 +37,8 @@ function structuredData(product: ProductDetail, locale: string) {
   if (product.description) productData.description = product.description;
   if (product.images.length) productData.image = product.images.map((image) => image.url);
   if (product.category_tree.length) productData.category = product.category_tree.at(-1)?.name_fa;
-  if (product.pricing.final_price && product.pricing.currency) productData.offers = { "@type": "Offer", price: product.pricing.final_price, priceCurrency: product.pricing.currency, availability: product.inventory.allowed_for_cart > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock", url: productUrl };
+  if (product.brand?.name) productData.brand = { "@type": "Brand", name: product.brand.name };
+  if (product.pricing.final_price && product.pricing.currency) productData.offers = { "@type": "Offer", price: product.pricing.final_price, priceCurrency: product.pricing.currency === "ریال" ? "IRR" : product.pricing.currency, availability: product.inventory.allowed_for_cart > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock", url: productUrl };
   const breadcrumbItems = [{ "@type": "ListItem", position: 1, name: locale === "en" ? "Home" : "خانه", item: absoluteUrl(localizedPath(locale)) }, ...product.category_tree.map((category, index) => ({ "@type": "ListItem", position: index + 2, name: category.name_fa, item: absoluteUrl(getCategoryUrl(category, locale)) })), { "@type": "ListItem", position: product.category_tree.length + 2, name: locale === "en" && product.name_en ? product.name_en : product.name_fa, item: productUrl }];
   return [productData, { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: breadcrumbItems }];
 }
