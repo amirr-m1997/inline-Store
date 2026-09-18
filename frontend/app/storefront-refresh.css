@@ -591,6 +591,11 @@ html.dark .home-product-section--featured,html.dark .home-product-section--best,
 html.dark .mehrasl-special-promo{border-color:var(--border)!important;background:linear-gradient(145deg,#1a271e,#243528)!important}
 html.dark .mehrasl-special-promo>span{background:rgba(82,164,90,.16)!important;color:var(--mehrasl-green-strong)!important}
 html.dark .mehrasl-text-link{border-color:var(--border)!important;background:var(--surface-elevated)!important;color:var(--text-primary)!important}
+html.dark .home-context-card,html.dark .mehrasl-storefront .supply-brand-grid>*{background:var(--surface)!important}
+html.dark .account-tabs button.active{background:var(--primary)!important;color:#fff!important}
+html.dark .customer-menu>div{border-color:var(--border)!important;background:var(--surface-elevated)!important}
+html.dark .customer-menu>div a{color:var(--text-primary)!important}
+html.dark .customer-menu>div button{color:var(--danger)!important}
 html.dark .company-promotion-card--brand{background:var(--color-surface-muted)!important}html.dark .company-promotion-card--product,html.dark .company-promotion-card,html.dark .category-spotlight-card--fresh,html.dark .category-spotlight-card--warm{border-color:var(--color-border)!important;background:var(--color-surface)!important;color:var(--color-text-primary)!important}
 html.dark .product-category-menu,html.dark .desktop-category-menu>aside,html.dark .category-branch-content,html.dark .category-branch-grid>section{border-color:var(--color-border)!important;background:var(--color-surface)!important}
 html.dark .product-purchase-layout>.product-buy-panel,html.dark .product-purchase-layout>.product-gallery-workspace,html.dark .product-detail-tabs,html.dark .product-reviews,html.dark .product-questions,html.dark .product-price-panel,html.dark .product-gallery-workspace .gallery-stage{border-color:var(--color-border)!important;background:var(--color-surface)!important}
