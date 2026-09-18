@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>فاکتور {{ status.number }} — {{ seller.name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand-dark-green: #14532d; --brand-green: #1B5E20; --brand-green-light: #2e7d32;
+      --brand-green-subtle: #e8f5e9; --brand-green-bg: #f0fdf4; --brand-green-border: #a7f3d0;
+      --gray-900: #0f172a; --gray-800: #1e293b; --gray-700: #334155; --gray-600: #475569;
+      --gray-500: #64748b; --gray-400: #94a3b8; --gray-300: #cbd5e1; --gray-200: #e2e8f0;
+      --gray-100: #f1f5f9; --gray-50: #f8fafc;
+      --danger: #b91c1c;
+      --font-family: 'Vazirmatn', Tahoma, Arial, sans-serif;
+    }
+    body { font-family: var(--font-family); background-color: #0b1320; color: var(--gray-800); line-height: 1.45; font-size: 11.5px; direction: rtl; -webkit-font-smoothing: antialiased; padding: 24px 12px 60px; }
+    .screen-toolbar { max-width: 210mm; margin: 0 auto 16px; background: #1e293b; color: #f8fafc; padding: 12px 20px; border-radius: 12px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); }
+    .toolbar-left, .toolbar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .toolbar-title { font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+    .toolbar-title span.badge { background: var(--brand-green); color: #fff; padding: 2px 8px; border-radius: 6px; font-size: 11px; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; font-size: 12px; font-weight: 600; border-radius: 8px; cursor: pointer; border: none; transition: all 0.15s ease-in-out; font-family: inherit; }
+    .btn-primary { background: #16a34a; color: #ffffff; box-shadow: 0 2px 6px rgba(22, 163, 74, 0.4); }
+    .btn-primary:hover { background: #15803d; }
+    .btn-secondary { background: #334155; color: #f1f5f9; border: 1px solid #475569; }
+    .btn-secondary:hover { background: #475569; }
+    .invoice-wrapper { max-width: 210mm; min-height: 297mm; margin: 0 auto; background: #ffffff; padding: 10mm 12mm 10mm; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35); border-radius: 4px; position: relative; display: flex; flex-direction: column; justify-content: space-between; }
+    .top-accent-bar { height: 4px; background: linear-gradient(90deg, var(--brand-dark-green) 0%, var(--brand-green) 50%, #4ade80 100%); border-radius: 2px; margin-bottom: 12px; }
+    .invoice-header { display: grid; grid-template-columns: 180px 1fr 200px; align-items: center; gap: 16px; padding-bottom: 12px; border-bottom: 2px solid var(--brand-green); position: relative; }
+    .header-logo-col { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
+    .header-logo { max-width: 175px; max-height: 62px; object-fit: contain; }
+    .logo-subtitle { font-size: 9px; font-weight: 700; color: var(--brand-dark-green); margin-top: 4px; }
+    .header-title-col { text-align: center; }
+    .official-badge { display: inline-block; font-size: 9.5px; font-weight: 600; color: var(--brand-dark-green); background: var(--brand-green-subtle); border: 1px solid var(--brand-green-border); padding: 1px 10px; border-radius: 12px; margin-bottom: 4px; }
+    .invoice-title { font-size: 20px; font-weight: 900; color: var(--brand-dark-green); line-height: 1.2; }
+    .invoice-subtitle { font-size: 10px; color: var(--gray-600); margin-top: 3px; font-weight: 500; }
+    .header-meta-col { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 8px; padding: 8px 10px; font-size: 10.5px; }
+    .meta-row { display: flex; justify-content: space-between; align-items: center; padding: 2px 0; border-bottom: 1px dashed var(--gray-200); }
+    .meta-row:last-child { border-bottom: none; }
+    .meta-label { color: var(--gray-500); font-size: 10px; }
+    .meta-value { font-weight: 700; color: var(--gray-900); overflow-wrap: anywhere; }
+    .meta-value.highlight { color: var(--brand-green); font-size: 11px; }
+    .invoice-status-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 10.5px; }
+    .status-paid { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+    .status-pending { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+    .status-proforma { background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .party-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .party-card { border: 1px solid var(--gray-300); border-radius: 6px; overflow: hidden; background: #ffffff; }
+    .party-card.seller-card { border-top: 3px solid var(--brand-green); }
+    .party-card.buyer-card { border-top: 3px solid var(--brand-green-light); }
+    .party-card-header { background: var(--gray-50); padding: 5px 10px; font-weight: 800; font-size: 11px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--gray-200); }
+    .party-card-header .title-text { display: flex; align-items: center; gap: 6px; color: var(--brand-dark-green); }
+    .party-badge { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: var(--gray-200); color: var(--gray-700); }
+    .party-card-body { padding: 8px 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 5px 12px; font-size: 10px; }
+    .party-field { display: flex; flex-direction: row; align-items: baseline; gap: 4px; }
+    .party-field.full-span { grid-column: span 2; }
+    .field-key { color: var(--gray-500); white-space: nowrap; font-size: 9.5px; }
+    .field-val { font-weight: 600; color: var(--gray-900); }
+    .field-val.company-name { font-size: 11px; font-weight: 800; color: var(--brand-dark-green); }
+    .table-section { margin-top: 10px; }
+    .section-headline { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .section-title { font-size: 11px; font-weight: 800; color: var(--brand-dark-green); display: flex; align-items: center; gap: 5px; }
+    .section-title::before { content: ""; display: inline-block; width: 4px; height: 12px; background: var(--brand-green); border-radius: 2px; }
+    .table-note { font-size: 9.5px; color: var(--gray-500); }
+    .items-table { width: 100%; border-collapse: collapse; font-size: 10px; border: 1px solid var(--gray-300); }
+    .items-table thead th { background: var(--brand-dark-green); color: #ffffff; padding: 6px 4px; font-weight: 700; font-size: 9.5px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.15); white-space: nowrap; }
+    .items-table thead th.text-right { text-align: right; padding-right: 8px; }
+    .items-table tbody tr { border-bottom: 1px solid var(--gray-200); }
+    .items-table td { padding: 6px 4px; text-align: center; vertical-align: middle; border: 1px solid var(--gray-200); }
+    .item-desc-cell { text-align: right !important; padding: 6px 8px !important; }
+    .item-title { font-weight: 800; color: var(--gray-900); font-size: 11px; margin-bottom: 2px; }
+    .item-subtitle { font-size: 9px; color: var(--gray-600); line-height: 1.3; }
+    .product-thumb-wrap { width: 44px; height: 44px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 6px; display: flex; align-items: center; justify-content: center; margin: 0 auto; overflow: hidden; }
+    .product-thumb-wrap img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .product-thumb-empty { color: var(--gray-400); font-size: 16px; }
+    .sku-code { font-weight: 700; color: var(--brand-dark-green); background: var(--brand-green-subtle); padding: 2px 5px; border-radius: 4px; display: inline-block; font-size: 9.5px; direction: ltr; }
+    .brand-pill { font-weight: 700; font-size: 9.5px; color: var(--gray-800); display: inline-block; }
+    .model-code { font-weight: 700; color: var(--gray-700); font-size: 9.5px; direction: ltr; display: inline-block; }
+    .qty-number { font-weight: 800; font-size: 11px; }
+    .price-cell { font-weight: 600; color: var(--gray-800); }
+    .discount-cell { color: var(--danger); font-weight: 600; }
+    .line-total-cell { font-weight: 800; color: var(--brand-dark-green); font-size: 11px; }
+    .middle-section { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .info-card { border: 1px solid var(--gray-300); border-radius: 6px; overflow: hidden; background: #ffffff; display: flex; flex-direction: column; }
+    .info-card-header { background: var(--gray-100); padding: 5px 10px; font-weight: 700; font-size: 10.5px; color: var(--gray-800); border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; }
+    .info-card-body { padding: 7px 10px; font-size: 10px; flex: 1; }
+    .finance-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+    .finance-table tr { border-bottom: 1px solid var(--gray-200); }
+    .finance-table tr:last-child { border-bottom: none; }
+    .finance-table td { padding: 4px 0; }
+    .finance-table td.val { text-align: left; font-weight: 700; color: var(--gray-800); }
+    .finance-table tr.total-row { background: var(--brand-dark-green); color: #ffffff; }
+    .finance-table tr.total-row td { padding: 7px 8px; font-weight: 800; font-size: 12px; color: #ffffff; }
+    .finance-table tr.total-row td.val { font-size: 13.5px; }
+    .amount-words-box { background: var(--brand-green-subtle); border: 1px solid var(--brand-green-border); border-radius: 6px; padding: 5px 8px; margin-top: 6px; font-size: 10px; }
+    .amount-words-title { font-weight: 700; color: var(--brand-dark-green); font-size: 9.5px; margin-bottom: 1px; }
+    .amount-words-text { font-weight: 800; color: var(--brand-dark-green); font-size: 10.5px; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 8px; }
+    .detail-item { display: flex; gap: 4px; align-items: baseline; }
+    .detail-item.full { grid-column: span 2; }
+    .detail-item .lbl { color: var(--gray-500); white-space: nowrap; }
+    .detail-item .val { font-weight: 600; color: var(--gray-900); }
+    .sub-section-title { font-weight: 700; color: var(--brand-dark-green); font-size: 10px; border-bottom: 1px solid var(--gray-200); padding-bottom: 2px; margin-bottom: 3px; }
+    .terms-section { margin-top: 8px; border: 1px solid var(--gray-300); border-radius: 6px; background: var(--gray-50); padding: 6px 10px; }
+    .terms-header { font-size: 10px; font-weight: 800; color: var(--brand-dark-green); margin-bottom: 4px; }
+    .terms-list { list-style-type: none; display: grid; grid-template-columns: 1fr 1fr; gap: 3px 12px; font-size: 9px; color: var(--gray-700); line-height: 1.35; }
+    .terms-list li { position: relative; padding-right: 12px; }
+    .terms-list li::before { content: "▪"; position: absolute; right: 0; color: var(--brand-green); font-size: 11px; line-height: 1; }
+    .signatures-section { margin-top: 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .signature-box { border: 1px dashed var(--gray-400); border-radius: 6px; background: #ffffff; padding: 6px 8px; display: flex; flex-direction: column; justify-content: space-between; height: 78px; text-align: center; }
+    .sig-title { font-size: 10px; font-weight: 700; color: var(--gray-800); border-bottom: 1px solid var(--gray-200); padding-bottom: 3px; }
+    .sig-subtitle { font-size: 8.5px; color: var(--gray-500); margin-top: 1px; }
+    .sig-placeholder { font-size: 9px; color: var(--gray-400); display: flex; align-items: center; justify-content: center; flex: 1; font-style: italic; }
+    .invoice-footer { margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--gray-300); display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 9px; color: var(--gray-600); }
+    .footer-contacts { line-height: 1.45; }
+    .footer-contacts b { color: var(--brand-dark-green); }
+    .tax-uuid { font-family: monospace; font-weight: 700; color: var(--gray-700); font-size: 8.5px; }
+    .page-number { font-size: 9px; color: var(--gray-500); direction: rtl; font-weight: 600; }
+    @page { size: A4 portrait; margin: 8mm 10mm 8mm 10mm; }
+    @media print {
+      body { background: #ffffff !important; padding: 0 !important; color: #000000 !important; font-size: 10.5px !important; }
+      .screen-toolbar { display: none !important; }
+      .invoice-wrapper { max-width: 100% !important; min-height: auto !important; padding: 0 !important; margin: 0 !important; box-shadow: none !important; border-radius: 0 !important; }
+      *, *::before, *::after { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      .items-table thead th { background-color: #14532d !important; color: #ffffff !important; }
+      .finance-table tr.total-row { background-color: #14532d !important; color: #ffffff !important; }
+      .status-paid { background-color: #dcfce7 !important; color: #15803d !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="screen-toolbar">
+    <div class="toolbar-left">
+      <div class="toolbar-title"><span>فاکتور {{ status.number }}</span><span class="badge">{{ status.label }}</span></div>
+    </div>
+    <div class="toolbar-right">
+      <button type="button" class="btn btn-secondary" onclick="toggleCurrency()" id="currToggleBtn"><span>نمایش به تومان</span></button>
+      <button type="button" class="btn btn-primary" onclick="window.print()"><span>چاپ سند / ذخیره PDF</span></button>
+    </div>
+  </div>
+
+  <main class="invoice-wrapper">
+    <div>
+      <div class="top-accent-bar"></div>
+      <header class="invoice-header">
+        <div class="header-logo-col">
+          {% if seller.logo_url %}<img class="header-logo" src="{{ seller.logo_url }}" alt="لوگوی {{ seller.name }}">{% endif %}
+          <div class="logo-subtitle">{{ seller.name }}</div>
+        </div>
+        <div class="header-title-col">
+          <div class="official-badge">صورتحساب فروشگاهی {{ seller.name }}</div>
+          <h1 class="invoice-title">{{ status.title }}</h1>
+          <div class="invoice-subtitle">{{ status.subtitle }}</div>
+        </div>
+        <div class="header-meta-col">
+          <div class="meta-row"><span class="meta-label">شماره سند:</span><span class="meta-value highlight">{{ status.number }}</span></div>
+          <div class="meta-row"><span class="meta-label">شماره سفارش:</span><span class="meta-value">{{ order_number }}</span></div>
+          <div class="meta-row"><span class="meta-label">تاریخ صدور:</span><span class="meta-value">{{ issued_date }}</span></div>
+          <div class="meta-row"><span class="meta-label">ساعت صدور:</span><span class="meta-value">{{ issued_time }}</span></div>
+          <div class="meta-row"><span class="meta-label">وضعیت سند:</span><span class="invoice-status-tag status-{{ status.key }}">● {{ status.label }}</span></div>
+        </div>
+      </header>
+
+      <section class="party-grid" aria-label="اطلاعات فروشنده و خریدار">
+        <article class="party-card seller-card">
+          <div class="party-card-header"><div class="title-text"><span>مشخصات فروشنده (صادرکننده)</span></div><span class="party-badge">حقوقی / تولیدکننده</span></div>
+          <div class="party-card-body">
+            <div class="party-field full-span"><span class="field-key">نام شرکت:</span><span class="field-val company-name">{{ seller.name }}</span></div>
+            <div class="party-field"><span class="field-key">تلفن فروش:</span><span class="field-val">{{ seller.phone }}</span></div>
+            <div class="party-field"><span class="field-key">همراه:</span><span class="field-val">{{ seller.mobile }}</span></div>
+            <div class="party-field full-span"><span class="field-key">نشانی:</span><span class="field-val">{{ seller.address }}</span></div>
+            <div class="party-field"><span class="field-key">ایمیل سازمانی:</span><span class="field-val">{{ seller.email }}</span></div>
+            <div class="party-field"><span class="field-key">پایگاه اینترنتی:</span><span class="field-val">{{ seller.website }}</span></div>
+          </div>
+        </article>
+        <article class="party-card buyer-card">
+          <div class="party-card-header"><div class="title-text"><span>مشخصات خریدار (مشتری)</span></div><span class="party-badge">مشتری فروشگاه</span></div>
+          <div class="party-card-body">
+            <div class="party-field full-span"><span class="field-key">نام:</span><span class="field-val company-name">{{ buyer.name }}</span></div>
+            {% if buyer.company %}<div class="party-field full-span"><span class="field-key">شرکت:</span><span class="field-val">{{ buyer.company }}</span></div>{% endif %}
+            <div class="party-field"><span class="field-key">شناسه ملی:</span><span class="field-val">{{ buyer.national_id }}</span></div>
+            <div class="party-field"><span class="field-key">کد اقتصادی:</span><span class="field-val">{{ buyer.economic_code }}</span></div>
+            <div class="party-field"><span class="field-key">تلفن:</span><span class="field-val">{{ buyer.phone }}</span></div>
+            <div class="party-field"><span class="field-key">ایمیل:</span><span class="field-val">{{ buyer.email }}</span></div>
+            <div class="party-field full-span"><span class="field-key">نشانی:</span><span class="field-val">{{ buyer.address }}</span></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="table-section" aria-label="جدول اقلام فاکتور">
+        <div class="section-headline">
+          <div class="section-title">مشخصات کالا یا خدمات مورد معامله ({{ items_count }} قلم)</div>
+          <div class="table-note">واحد ارزی مبنا: <b>ریال جمهوری اسلامی ایران</b></div>
+        </div>
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th style="width: 28px;">ردیف</th>
+              <th style="width: 48px;">تصویر</th>
+              <th class="text-right">شرح کالا</th>
+              <th style="width: 72px;">برند</th>
+              <th style="width: 72px;">مدل</th>
+              <th style="width: 85px;">کد کالا</th>
+              <th style="width: 38px;">تعداد</th>
+              <th style="width: 40px;">واحد</th>
+              <th style="width: 82px;">قیمت واحد</th>
+              <th style="width: 68px;">مبلغ تخفیف</th>
+              <th style="width: 95px;">مبلغ کل نهایی</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+            <tr>
+              <td><b>{{ item.position }}</b></td>
+              <td><div class="product-thumb-wrap">{% if item.image_url %}<img src="{{ item.image_url }}" alt="{{ item.name }}">{% else %}<span class="product-thumb-empty">◇</span>{% endif %}</div></td>
+              <td class="item-desc-cell"><div class="item-title">{{ item.name }}</div></td>
+              <td><span class="brand-pill">{{ item.brand }}</span></td>
+              <td><span class="model-code">{{ item.model }}</span></td>
+              <td><span class="sku-code">{{ item.code }}</span></td>
+              <td><span class="qty-number">{{ item.quantity }}</span></td>
+              <td>{{ item.unit }}</td>
+              <td class="price-cell"><span data-irr="{{ item.unit_price_raw }}">{{ item.unit_price }}</span></td>
+              <td class="discount-cell"><span data-irr="{{ item.discount_raw }}">{{ item.discount }}</span></td>
+              <td class="line-total-cell"><span data-irr="{{ item.line_total_raw }}">{{ item.line_total }}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="11">قلمی در این فاکتور ثبت نشده است.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+      <section class="middle-section">
+        <article class="info-card">
+          <div class="info-card-header"><span>خلاصه محاسبات مالی صورتحساب</span><span style="font-size: 9.5px; color: var(--gray-500);">مبالغ به <span class="curr-unit-label">ریال</span></span></div>
+          <div class="info-card-body">
+            <table class="finance-table">
+              <tr><td>مجموع مبلغ ناخالص (پایه):</td><td class="val"><span data-irr="{{ subtotal_raw }}">{{ subtotal }}</span> <span class="curr-unit-label">ریال</span></td></tr>
+              <tr><td>مجموع تخفیف:</td><td class="val" style="color: var(--danger);">(<span data-irr="{{ discount_raw }}">{{ discount }}</span>) <span class="curr-unit-label">ریال</span></td></tr>
+              <tr><td>خالص کل پس از تخفیف:</td><td class="val"><span data-irr="{{ net_raw }}">{{ net }}</span> <span class="curr-unit-label">ریال</span></td></tr>
+              <tr><td>مالیات و عوارض:</td><td class="val"><span data-irr="{{ tax_raw }}">{{ tax }}</span> <span class="curr-unit-label">ریال</span></td></tr>
+              <tr><td>هزینه بسته‌بندی و ارسال:</td><td class="val"><span data-irr="{{ shipping_raw }}">{{ shipping }}</span> <span class="curr-unit-label">ریال</span></td></tr>
+              <tr class="total-row"><td>مبلغ کل قابل پرداخت:</td><td class="val"><span data-irr="{{ total_raw }}">{{ total }}</span> <span class="curr-unit-label">ریال</span></td></tr>
+            </table>
+            <div class="amount-words-box">
+              <div class="amount-words-title">مبلغ قابل پرداخت به حروف:</div>
+              <div class="amount-words-text" id="amountInWords">{{ total_words }}</div>
+            </div>
+          </div>
+        </article>
+        <article class="info-card">
+          <div class="info-card-header"><span>اطلاعات پرداخت و ارسال سفارش</span></div>
+          <div class="info-card-body">
+            <div class="sub-section-title"><span>مشخصات تسویه و تراکنش بانکی</span></div>
+            <div class="detail-grid">
+              {% if payment %}
+              <div class="detail-item"><span class="lbl">روش پرداخت:</span><span class="val">{{ payment.method }}</span></div>
+              <div class="detail-item"><span class="lbl">وضعیت پرداخت:</span><span class="val"{% if payment.paid %} style="color: #15803d; font-weight: 800;"{% endif %}>{{ payment.state }}</span></div>
+              <div class="detail-item"><span class="lbl">کد پیگیری تراکنش:</span><span class="val" style="direction: ltr;">{{ payment.reference }}</span></div>
+              <div class="detail-item"><span class="lbl">تاریخ و زمان پرداخت:</span><span class="val">{{ payment.at }}</span></div>
+              {% else %}
+              <div class="detail-item full"><span class="lbl">وضعیت پرداخت:</span><span class="val">پرداختی برای این سفارش ثبت نشده است.</span></div>
+              {% endif %}
+            </div>
+            <div class="sub-section-title" style="margin-top: 6px;"><span>مشخصات تحویل محموله</span></div>
+            <div class="detail-grid">
+              <div class="detail-item"><span class="lbl">کدپستی مقصد:</span><span class="val">{{ postal_code }}</span></div>
+              <div class="detail-item full"><span class="lbl">نشانی مقصد:</span><span class="val">{{ shipping_address }}</span></div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="terms-section" aria-label="توضیحات و شرایط فروش">
+        <div class="terms-header"><span>توضیحات و شرایط فروش:</span></div>
+        <ul class="terms-list">
+          <li><b>شرایط پرداخت و تسویه:</b> این سند پس از دریافت تاییدیه مالی و تسویه قطعی اعتبار قانونی دارد.</li>
+          <li><b>مهلت انصراف و مرجوعی:</b> استرداد کالا حداکثر تا ۷ روز تقویمی پس از تحویل، منوط به سلامت کامل بسته‌بندی امکان‌پذیر است.</li>
+          <li><b>ضوابط گارانتی:</b> هرگونه اتصال غیراستاندارد یا تغییر در محصول موجب خروج از گارانتی می‌گردد.</li>
+          <li><b>تحویل فیزیکی محموله:</b> خریدار موظف است حین تحویل سلامت فیزیکی مرسوله را بررسی نماید.</li>
+        </ul>
+      </section>
+
+      <section class="signatures-section" aria-label="محل مهر و امضا">
+        <div class="signature-box"><div class="sig-title">مهر و امضای فروشنده (صادرکننده)</div><div class="sig-subtitle">{{ seller.name }}</div><div class="sig-placeholder"><span>مهر و امضای مجاز فروشگاه</span></div></div>
+        <div class="signature-box"><div class="sig-title">مهر و امضای انباردار / تحویل‌دهنده</div><div class="sig-subtitle">واحد انبار و کنترل کیفیت</div><div class="sig-placeholder"><span>امضا و مهر خروج از انبار</span></div></div>
+        <div class="signature-box"><div class="sig-title">مهر و امضای خریدار / تحویل‌گیرنده</div><div class="sig-subtitle">{{ buyer.name }}</div><div class="sig-placeholder"><span>صحت اقلام و سلامت بسته دریافت شد</span></div></div>
+      </section>
+    </div>
+
+    <footer class="invoice-footer">
+      <div class="footer-contacts">
+        <div><b>پشتیبانی مشتریان:</b> {{ seller.phone }} | <b>همراه:</b> {{ seller.mobile }}</div>
+        <div><b>ایمیل سازمانی:</b> {{ seller.email }} | <b>وب‌سایت رسمی:</b> {{ seller.website }}</div>
+      </div>
+      <div style="text-align: left;"><div class="tax-uuid">UUID: {{ invoice_uid }}</div><div class="page-number">صفحه ۱ از ۱</div></div>
+    </footer>
+  </main>
+
+  <script>
+    let currentCurrency = 'irr';
+    const wordForms = { irr: "{{ total_words|escapejs }}", toman: "{{ total_words_toman|escapejs }}" };
+    function toggleCurrency() {
+      const btn = document.getElementById('currToggleBtn');
+      const wordsEl = document.getElementById('amountInWords');
+      const labels = document.querySelectorAll('.curr-unit-label');
+      const spans = document.querySelectorAll('[data-irr]');
+      if (currentCurrency === 'irr') {
+        currentCurrency = 'toman';
+        btn.querySelector('span').textContent = 'نمایش به ریال (رسمی)';
+        wordsEl.textContent = wordForms.toman;
+        labels.forEach(l => l.textContent = 'تومان');
+        spans.forEach(el => { el.textContent = Math.floor(parseInt(el.getAttribute('data-irr'), 10) / 10).toLocaleString('fa-IR'); });
+      } else {
+        currentCurrency = 'irr';
+        btn.querySelector('span').textContent = 'نمایش به تومان';
+        wordsEl.textContent = wordForms.irr;
+        labels.forEach(l => l.textContent = 'ریال');
+        spans.forEach(el => { el.textContent = parseInt(el.getAttribute('data-irr'), 10).toLocaleString('fa-IR'); });
+      }
+    }
+  </script>
+</body>
+</html>

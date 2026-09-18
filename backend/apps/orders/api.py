@@ -12,6 +12,9 @@ from rest_framework.response import Response
 from apps.carts.models import DiscountCode
 from apps.inventory.models import Inventory, Issue, Reservation
 from .models import Order, Payment, ProformaRequest
+from django.http import HttpResponse
+
+from .invoice_document import render_invoice_html
 from .services import create_invoice, email_invoice, ensure_invoice_pdf
 
 
@@ -139,9 +142,12 @@ def customer_order_detail(request, order_id):
 def invoice_download(request, order_id):
     order = _owned_order(request, order_id)
     if not order: return Response({"detail": "سفارش یافت نشد."}, status=404)
-    invoice = ensure_invoice_pdf(create_invoice(order))
-    preview = request.query_params.get("preview") == "1"
-    return FileResponse(invoice.pdf_file.open("rb"), as_attachment=not preview, filename=f"{invoice.invoice_number}.pdf", content_type="application/pdf")
+    invoice = create_invoice(order)
+    if request.query_params.get("preview") == "1":
+        base_url = request.build_absolute_uri("/")[:-1]
+        return HttpResponse(render_invoice_html(invoice, base_url), content_type="text/html; charset=utf-8")
+    invoice = ensure_invoice_pdf(invoice)
+    return FileResponse(invoice.pdf_file.open("rb"), as_attachment=True, filename=f"{invoice.invoice_number}.pdf", content_type="application/pdf")
 
 
 @api_view(["POST"])

@@ -16,14 +16,28 @@ from .models import Invoice, InvoiceEmailLog
 from apps.common.document_typography import register_document_fonts
 
 
+def _snapshot_image_url(product):
+    if product is None:
+        return ""
+    image = product.images.order_by("-is_primary", "sort_order", "id").first()
+    if not image or not image.image:
+        return ""
+    return image.image.url
+
+
 def create_invoice(order):
     user = order.customer
     customer_name = " ".join(filter(None, (order.customer_first_name, order.customer_last_name))).strip()
-    snapshot = [{
-        "product_name": item.product_name, "product_code": item.product_code, "unit": item.unit,
-        "unit_price": str(item.unit_price), "quantity": item.quantity,
-        "discount_amount": str(item.discount_amount), "line_total": str(item.line_total),
-    } for item in order.items.all()]
+    snapshot = []
+    for item in order.items.select_related("product", "product__brand").all():
+        product = item.product
+        snapshot.append({
+            "product_name": item.product_name, "product_code": item.product_code, "unit": item.unit,
+            "unit_price": str(item.unit_price), "quantity": item.quantity,
+            "discount_amount": str(item.discount_amount), "line_total": str(item.line_total),
+            "brand": product.brand.name if product and product.brand else "",
+            "image_url": _snapshot_image_url(product),
+        })
     invoice, _ = Invoice.objects.get_or_create(order=order, defaults={
         "invoice_number": f"INV-{order.order_number}",
         "company_name": order.customer_company_name,

@@ -69,10 +69,14 @@ class CustomerOrderApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(InvoiceEmailLog.objects.filter(invoice=invoice, recipient=self.user.email, success=True).exists())
 
-    def test_invoice_preview_opens_inline(self):
+    def test_invoice_preview_renders_rich_html(self):
         response = self.client.get(f"/api/customer/orders/{self.order.id}/invoice/?preview=1")
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(response["Content-Disposition"].startswith("inline;"))
+        self.assertIn("text/html", response["Content-Type"])
+        content = response.content.decode("utf-8")
+        self.assertIn(f"INV-{self.order.order_number}", content)
+        self.assertIn("محصول ثابت", content)
+        self.assertIn("مبلغ کل قابل پرداخت", content)
 
     def test_status_change_creates_history_and_timestamps(self):
         self.order.status = Order.Status.SHIPPED; self.order.save(update_fields=("status", "updated_at"))
@@ -94,3 +98,21 @@ class CustomerOrderApiTests(TestCase):
         response = self.client.post(f"/api/customer/orders/{self.order.id}/proforma/request/", {}, format="json")
         self.assertEqual(response.status_code, 404)
         self.assertFalse(ProformaRequest.objects.filter(order=self.order).exists())
+
+
+class InvoiceTextTests(TestCase):
+    def test_fa_digits(self):
+        from apps.orders.invoice_text import fa_digits
+        self.assertEqual(fa_digits(57930000), "۵۷٬۹۳۰٬۰۰۰")
+
+    def test_amount_in_words(self):
+        from apps.orders.invoice_text import amount_in_words
+        self.assertEqual(amount_in_words(0), "صفر")
+        self.assertEqual(amount_in_words(900000), "نهصد هزار")
+        self.assertEqual(amount_in_words(57930000), "پنجاه و هفت میلیون و نهصد و سی هزار")
+
+    def test_gregorian_to_jalali(self):
+        from datetime import datetime
+        from apps.orders.invoice_text import fa_date, gregorian_to_jalali
+        self.assertEqual(gregorian_to_jalali(2026, 9, 18), (1405, 6, 27))
+        self.assertEqual(fa_date(datetime(2026, 9, 18, 10, 42, 15)), "۱۴۰۵/۰۶/۲۷")
