@@ -445,7 +445,7 @@ html.dark .industrial-card-image{background:rgba(255,255,255,.03)}
 }
 
 /* Organization-wide application theme */
-::selection{background:color-mix(in srgb,var(--mehrasl-green) 30%,transparent);color:var(--color-text-primary)}
+::selection{background:var(--primary);color:#fff}
 a{transition:color .18s ease,border-color .18s ease,background .18s ease,box-shadow .18s ease}
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline-color:var(--mehrasl-green)!important}
 .btn-primary,.auth-primary,.checkout-primary-action{border-color:var(--mehrasl-green)!important;background:var(--mehrasl-green)!important;color:#fff!important}
@@ -475,7 +475,8 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .contact-form input:focus,.contact-form textarea:focus,.form-field input:focus,.form-field textarea:focus,.form-field select:focus{border-color:var(--mehrasl-green)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--mehrasl-green) 18%,transparent)!important}
 
 /* Professional Responsive Enterprise Footer */
-.database-footer,.site-footer{direction:rtl!important;border-top:3px solid var(--primary)!important;background:#111a14!important;color:#d8e2dc!important;font-family:inherit}
+.database-footer,.site-footer{direction:rtl!important;border-top:3px solid var(--primary)!important;background:#1e2c23!important;color:#d8e2dc!important;font-family:inherit}
+html.dark .database-footer,html.dark .site-footer{background:#10150f!important}
 .database-footer .footer-main,.site-footer .footer-main{display:grid!important;grid-template-columns:minmax(260px,1.4fr) repeat(3,minmax(130px,1fr)) minmax(240px,1.3fr)!important;gap:var(--space-8)!important;padding:var(--space-12) 0 var(--space-8)!important}
 .footer-col{min-width:0}
 .footer-col-title{margin:0 0 var(--space-4)!important;padding-bottom:var(--space-2)!important;border-bottom:1px solid rgba(255,255,255,.1)!important;color:#ffffff!important;font-size:13.5px!important;font-weight:800!important;position:relative}
