@@ -10,6 +10,7 @@ import type { ReactNode } from "react";
 import { getLocaleConfig, isLocale } from "../../lib/i18n";
 import { absoluteUrl } from "../../lib/locale-url";
 import { SiteHeader } from "../../components/layout/site-header";
+import { FloatingActions } from "../../components/layout/floating-actions";
 import { SiteFooter } from "../../components/layout/site-footer";
 import { ProductCompareTray } from "../../components/catalog/product-compare-tray";
 import { getCompanyServer } from "../../lib/api/content";
@@ -30,5 +31,5 @@ export default async function LocaleLayout({ children, params }: { children: Rea
   if (!isLocale(localeName)) notFound();
   const locale = getLocaleConfig(localeName);
   const company = await getCompanyServer<CompanyInfo>().catch(() => null);
-  return <html lang={locale.lang} dir={locale.dir}><body><Script id="theme-init" strategy="beforeInteractive">{`(() => { try { const saved = localStorage.getItem("theme"); const dark = saved === "dark"; document.documentElement.classList.toggle("dark", dark); } catch (_) {} })();`}</Script><SiteHeader initialCompany={company} />{children}<ProductCompareTray locale={localeName} /><SiteFooter locale={localeName} /></body></html>;
+  return <html lang={locale.lang} dir={locale.dir}><body><Script id="theme-init" strategy="beforeInteractive">{`(() => { try { const saved = localStorage.getItem("theme"); const dark = saved === "dark"; document.documentElement.classList.toggle("dark", dark); } catch (_) {} })();`}</Script><SiteHeader initialCompany={company} />{children}<ProductCompareTray locale={localeName} /><FloatingActions locale={localeName} phone={company?.phone || company?.mobile || null} /><SiteFooter locale={localeName} /></body></html>;
 }

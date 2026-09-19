@@ -18,6 +18,8 @@ import { DiscoveryResources } from "../../../../components/content/discovery";
 
 type RouteParams = { locale: string; slug: string };
 
+const stripHtml = (value: string) => value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+
 async function loadProduct(slug: string) {
   try { return await getProductServer(slug); } catch (error) { if (error instanceof Error && error.message === "PRODUCT_NOT_FOUND") notFound(); throw error; }
 }
@@ -26,7 +28,7 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
   const { locale, slug } = await params;
   const product = await loadProduct(slug);
   const title = locale === "en" && product.name_en ? product.name_en : product.name_fa;
-  const description = (product.description || title).slice(0, 160);
+  const description = (stripHtml(product.description || "") || title).slice(0, 160);
   const path = `/product/${encodeURIComponent(slug)}`;
   return { title, description, alternates: { canonical: absoluteUrl(localizedPath(locale, path)), ...localizedAlternates(path) }, openGraph: { title, description, type: "website", locale: locale === "en" ? "en_US" : "fa_IR" } };
 }
@@ -34,7 +36,7 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
 function structuredData(product: ProductDetail, locale: string) {
   const productUrl = absoluteUrl(localizedPath(locale, `/product/${encodeURIComponent(product.slug)}`));
   const productData: Record<string, unknown> = { "@context": "https://schema.org", "@type": "Product", name: product.name_fa, sku: product.sku, url: productUrl };
-  if (product.description) productData.description = product.description;
+  if (product.description) productData.description = stripHtml(product.description);
   if (product.images.length) productData.image = product.images.map((image) => image.url);
   if (product.category_tree.length) productData.category = product.category_tree.at(-1)?.name_fa;
   if (product.brand?.name) productData.brand = { "@type": "Brand", name: product.brand.name };

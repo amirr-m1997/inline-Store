@@ -20,7 +20,7 @@ class HomepageCategorySpotlightInline(admin.StackedInline):
     model = HomepageCategorySpotlight
     extra = 0
     autocomplete_fields = ("category",)
-    fields = ("category", "placement", "title_fa", "title_en", "description_fa", "description_en", "image", "button_text_fa", "button_text_en", "order", "is_active")
+    fields = ("category", "placement", "side", "title_fa", "title_en", "description_fa", "description_en", "image", "button_text_fa", "button_text_en", "order", "is_active")
 
 
 class TranslationMissingFilter(admin.SimpleListFilter):

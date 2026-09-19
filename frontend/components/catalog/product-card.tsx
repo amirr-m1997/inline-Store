@@ -13,6 +13,7 @@ export type CatalogProduct = {
   code: string;
   unit: string;
   available_quantity: number | null;
+  short_description?: string | null;
   category: { name_fa: string } | null;
   images: { image: string; alt_text: string; alt_fa?: string; is_primary?: boolean }[];
   price: { original_amount: string; final_amount: string; discount_percentage: string } | null;

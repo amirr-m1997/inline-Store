@@ -165,6 +165,7 @@ class Invoice(models.Model):
     final_amount = models.DecimalField("مبلغ نهایی", max_digits=18, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
     pdf_file = models.FileField("فایل PDF", upload_to="invoices/%Y/%m/", blank=True)
+    pdf_renderer = models.CharField("موتور تولید PDF", max_length=16, default="", blank=True)
 
     class Meta:
         ordering = ("-created_at",)

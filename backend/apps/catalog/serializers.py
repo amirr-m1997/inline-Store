@@ -1,7 +1,10 @@
 from decimal import Decimal
 
+import bleach
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.html import strip_tags
+from django.utils.text import Truncator
 from rest_framework import serializers
 
 from apps.inventory.models import Issue, Receipt
@@ -9,6 +12,18 @@ from apps.pricing.models import ProductPrice
 from apps.company.models import CompanyAdvantage
 
 from .models import Category, Product, ProductBrand, ProductDocument, ProductImage, SupplyBrand
+
+
+def rich_text_to_html(value):
+    """Sanitize admin-authored rich text into a safe HTML fragment for public rendering."""
+    if not value:
+        return value
+    return bleach.clean(
+        value,
+        tags={"p", "div", "br", "span", "strong", "b", "em", "i", "u", "s", "sub", "sup", "ul", "ol", "li", "blockquote", "h2", "h3", "h4", "pre", "hr", "a", "img", "table", "thead", "tbody", "tfoot", "tr", "th", "td", "caption"},
+        attributes={"a": ["href", "title", "target", "rel"], "img": ["src", "alt", "title", "width", "height"], "th": ["colspan", "rowspan", "scope"], "td": ["colspan", "rowspan"], "span": ["class"], "p": ["class"], "div": ["class"]},
+        strip=True,
+    )
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -132,10 +147,14 @@ class ProductSerializer(serializers.ModelSerializer):
     category_tree = serializers.SerializerMethodField()
     price = serializers.SerializerMethodField()
     brand = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = ("id", "code", "name", "name_fa", "name_en", "slug", "category", "category_tree", "unit", "description", "technical_specs", "is_active", "images", "on_hand_quantity", "reserved_quantity", "available_quantity", "price", "brand", "created_at", "updated_at")
+
+    def get_description(self, obj):
+        return rich_text_to_html(obj.description)
 
     def get_brand(self, obj):
         brand = getattr(obj, "brand", None)
@@ -191,10 +210,16 @@ class CatalogProductSerializer(serializers.ModelSerializer):
     reserved_quantity = serializers.DecimalField(max_digits=18, decimal_places=6, read_only=True, allow_null=True)
     price = serializers.SerializerMethodField()
     brand = serializers.SerializerMethodField()
+    short_description = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
-        fields = ("id", "code", "name", "name_fa", "name_en", "slug", "category", "unit", "images", "on_hand_quantity", "reserved_quantity", "available_quantity", "price", "brand", "created_at", "updated_at")
+        fields = ("id", "code", "name", "name_fa", "name_en", "slug", "category", "unit", "images", "on_hand_quantity", "reserved_quantity", "available_quantity", "price", "brand", "short_description", "created_at", "updated_at")
+
+    def get_short_description(self, obj):
+        text = strip_tags(obj.description or "")
+        text = " ".join(text.split())
+        return Truncator(text).chars(160) if text else ""
 
     def get_brand(self, obj):
         brand = getattr(obj, "brand", None)

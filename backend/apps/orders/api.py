@@ -15,6 +15,7 @@ from .models import Order, Payment, ProformaRequest
 from django.http import HttpResponse
 
 from .invoice_document import render_invoice_html
+from .invoice_pdf import InvoicePdfError
 from .services import create_invoice, email_invoice, ensure_invoice_pdf
 
 
@@ -143,10 +144,13 @@ def invoice_download(request, order_id):
     order = _owned_order(request, order_id)
     if not order: return Response({"detail": "سفارش یافت نشد."}, status=404)
     invoice = create_invoice(order)
+    base_url = request.build_absolute_uri("/")[:-1]
     if request.query_params.get("preview") == "1":
-        base_url = request.build_absolute_uri("/")[:-1]
         return HttpResponse(render_invoice_html(invoice, base_url), content_type="text/html; charset=utf-8")
-    invoice = ensure_invoice_pdf(invoice)
+    try:
+        invoice = ensure_invoice_pdf(invoice, base_url)
+    except InvoicePdfError:
+        return Response({"detail": "تولید PDF فاکتور ممکن نشد؛ تنظیمات چاپ سرور را بررسی کنید."}, status=503)
     return FileResponse(invoice.pdf_file.open("rb"), as_attachment=True, filename=f"{invoice.invoice_number}.pdf", content_type="application/pdf")
 
 

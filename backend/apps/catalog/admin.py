@@ -162,6 +162,10 @@ class ProductAdmin(HierarchicalCategoryAdminMixin, admin.ModelAdmin):
             category_field.widget = CategoryPickerWidget(
                 picker_url=reverse("admin:catalog_category_picker"),
             )
+        description_field = form.base_fields.get("description")
+        if description_field is not None:
+            from ckeditor.widgets import CKEditorWidget
+            description_field.widget = CKEditorWidget(config_name="default")
         return form
 @admin.register(ProductImage)
 class ProductImageAdmin(admin.ModelAdmin): list_display = ("product", "is_primary", "sort_order"); list_filter = ("is_primary",); search_fields = ("product__code", "alt_text", "alt_fa", "alt_en")

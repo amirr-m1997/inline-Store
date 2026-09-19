@@ -53,6 +53,9 @@ export function ProductCard({ product, priority = false, locale = "fa" }: { prod
         <Link className="industrial-card-title" href={productHref}>
           {product.name}
         </Link>
+        {product.shortDescription && (
+          <p className="industrial-card-excerpt">{product.shortDescription}</p>
+        )}
 
         <p className="industrial-card-code">
           <span>{english ? "Product code" : "کد کالا"}:</span> <bdi dir="ltr">{product.sku || product.code}</bdi>

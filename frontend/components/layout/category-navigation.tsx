@@ -25,6 +25,7 @@ export function CategoryNavigation({ mobileOpen, onNavigate }: CategoryNavigatio
   const [loading, setLoading] = useState(false);
   const [activeRootId, setActiveRootId] = useState<number | null>(null);
   const [mobileMode, setMobileMode] = useState<"main" | "categories">("main");
+  const [mobilePath, setMobilePath] = useState<CategoryTreeNode[]>([]);
 
   useEffect(() => {
     getNavigation<NavigationItem[]>().then((data) => setItems(asArray<NavigationItem>(data))).catch(() => setItems([]));
@@ -36,10 +37,14 @@ export function CategoryNavigation({ mobileOpen, onNavigate }: CategoryNavigatio
       .then((data) => { const tree = asArray<CategoryTreeNode>(data); setRoots(tree); setActiveRootId(tree[0]?.id ?? null); })
       .catch(() => setRoots([])).finally(() => setLoading(false));
   };
-  const toggleCategories = () => { setMobileMode("categories"); setOpen((current) => { const next = !current; if (next) loadTree(); return next; }); };
-  const closeCategories = () => { setOpen(false); setMobileMode("main"); };
-  const returnToMainMenu = () => { setMobileMode("main"); };
+  const toggleCategories = () => { setMobilePath([]); setMobileMode("categories"); setOpen((current) => { const next = !current; if (next) loadTree(); return next; }); };
+  const closeCategories = () => { setOpen(false); setMobileMode("main"); setMobilePath([]); };
+  const returnToMainMenu = () => { setMobileMode("main"); setMobilePath([]); };
   const closeAll = () => { closeCategories(); onNavigate(); };
+  const mobileLevel = mobilePath.length ? mobilePath[mobilePath.length - 1].children : roots;
+  const mobileTitle = mobilePath.length ? mobilePath[mobilePath.length - 1].name_fa : null;
+  const mobileGoBack = () => { if (mobilePath.length) setMobilePath((path) => path.slice(0, -1)); else returnToMainMenu(); };
+  const mobileDrill = (node: CategoryTreeNode, event: { preventDefault(): void }) => { if (node.children?.length) { event.preventDefault(); setMobilePath((path) => [...path, node]); } else closeAll(); };
 
   useEffect(() => {
     if (!mobileOpen) closeCategories();
@@ -98,7 +103,7 @@ export function CategoryNavigation({ mobileOpen, onNavigate }: CategoryNavigatio
         </div>
       </div>
 
-      <div className="mobile-category-drawer">{mobileMode === "categories" && <button type="button" className="mobile-category-back" onClick={returnToMainMenu} aria-label={locale === "en" ? "Back to previous level" : "بازگشت به سطح قبل"}>{locale === "en" ? "Back to previous level" : "بازگشت به سطح قبل"}</button>}<Link className="mobile-category-index-link" href={`/${locale}/categories`} onClick={closeAll}>{locale === "en" ? "Browse all product categories" : "مشاهده همه دسته‌بندی‌های محصولات"}<span aria-hidden="true">←</span></Link></div>
+      <div className="mobile-category-drawer">{mobileMode === "categories" && <><header><button type="button" onClick={mobileGoBack} aria-label={locale === "en" ? "Back" : "بازگشت"}><span aria-hidden="true">→</span><span className="mobile-category-back-label">{locale === "en" ? "Back" : "بازگشت"}</span></button><b>{mobileTitle || (locale === "en" ? "Categories" : "دسته‌بندی محصولات")}</b><button type="button" onClick={closeAll} aria-label={locale === "en" ? "Close menu" : "بستن منو"}>✕</button></header><div className="mobile-category-list" role="list">{loading && <p className="category-menu-state">{locale === "en" ? "Loading categories…" : "در حال دریافت دسته‌بندی‌ها…"}</p>}{!loading && !mobileLevel.length && <p className="category-menu-state">{locale === "en" ? "No categories found." : "دسته‌بندی‌ای یافت نشد."}</p>}{mobileLevel.map((node) => <div key={node.id} role="listitem"><Link href={getCategoryUrl(node, locale)} onClick={(event) => mobileDrill(node, event)}><span>{node.name_fa}</span>{node.product_count > 0 && <small>{formatNumber(node.product_count)}</small>}</Link><Link href={getCategoryUrl(node, locale)} onClick={closeAll} aria-label={`${locale === "en" ? "View" : "مشاهده"} ${node.name_fa}`}><span className="category-direction-indicator" aria-hidden="true" /></Link></div>)}</div></>}<Link className="mobile-category-index-link" href={`/${locale}/categories`} onClick={closeAll}>{locale === "en" ? "Browse all product categories" : "مشاهده همه دسته‌بندی‌های محصولات"}<span aria-hidden="true">←</span></Link></div>
     </section>}
   </nav>;
 }

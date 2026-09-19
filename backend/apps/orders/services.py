@@ -1,19 +1,10 @@
-import io
-
-import arabic_reshaper
-from bidi.algorithm import get_display
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.mail import EmailMessage
-from reportlab.lib import colors
-from reportlab.lib.enums import TA_RIGHT
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import mm
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+from .invoice_document import render_invoice_html
+from .invoice_pdf import render_invoice_pdf_bytes
 from .models import Invoice, InvoiceEmailLog
-from apps.common.document_typography import register_document_fonts
 
 
 def _snapshot_image_url(product):
@@ -52,39 +43,29 @@ def create_invoice(order):
     return invoice
 
 
-def _rtl(value):
-    return get_display(arabic_reshaper.reshape(str(value)))
+CHROMIUM_RENDERER = "chromium-a4"
 
 
-def ensure_invoice_pdf(invoice):
-    if invoice.pdf_file:
+def ensure_invoice_pdf(invoice, base_url=""):
+    """Store the official A4 PDF (re)built from the rich HTML invoice.
+
+    Legacy reportlab PDFs (pdf_renderer == "") are regenerated on next
+    download so customers always receive the official design.
+    """
+    if invoice.pdf_file and invoice.pdf_renderer == CHROMIUM_RENDERER:
         return invoice
-    buffer = io.BytesIO()
-    font_names = register_document_fonts()
-    font_name = font_names["persian"]
-    styles = getSampleStyleSheet()
-    rtl = ParagraphStyle("rtl", parent=styles["Normal"], fontName=font_name, fontSize=9, leading=15, alignment=TA_RIGHT)
-    title = ParagraphStyle("title-fa", parent=rtl, fontName=font_names["persian_bold"], fontSize=16, leading=24)
-    document = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=14 * mm, leftMargin=14 * mm, topMargin=14 * mm, bottomMargin=14 * mm)
-    story = [Paragraph(_rtl("فاکتور فروش"), title), Spacer(1, 5 * mm)]
-    details = [
-        [_rtl(f"شماره فاکتور: {invoice.invoice_number}"), _rtl(f"شماره سفارش: {invoice.order.order_number}")],
-        [_rtl(f"مشتری: {invoice.customer_name}"), _rtl(f"شرکت: {invoice.company_name or '-'}")],
-        [_rtl(f"شناسه ملی: {invoice.national_id or '-'}"), _rtl(f"کد اقتصادی: {invoice.economic_code or '-'}")],
-        [_rtl(f"تلفن: {invoice.phone or '-'}"), _rtl(f"نشانی: {invoice.address or '-'}")],
-    ]
-    table = Table(details, colWidths=[88 * mm, 88 * mm])
-    table.setStyle(TableStyle([("FONTNAME", (0, 0), (-1, -1), font_name), ("FONTSIZE", (0, 0), (-1, -1), 8), ("ALIGN", (0, 0), (-1, -1), "RIGHT"), ("GRID", (0, 0), (-1, -1), .3, colors.grey), ("PADDING", (0, 0), (-1, -1), 6)]))
-    story += [table, Spacer(1, 5 * mm)]
-    rows = [[_rtl("مبلغ"), _rtl("تعداد"), _rtl("واحد"), _rtl("کد"), _rtl("شرح")]]
-    for item in invoice.items_snapshot:
-        rows.append([str(item["line_total"]), str(item["quantity"]), _rtl(item["unit"]), item["product_code"], _rtl(item["product_name"])])
-    items = Table(rows, colWidths=[32 * mm, 18 * mm, 24 * mm, 32 * mm, 70 * mm], repeatRows=1)
-    items.setStyle(TableStyle([("FONTNAME", (0, 0), (-1, -1), font_name), ("FONTSIZE", (0, 0), (-1, -1), 8), ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#eeeeee")), ("ALIGN", (0, 0), (-1, -1), "RIGHT"), ("GRID", (0, 0), (-1, -1), .3, colors.grey), ("PADDING", (0, 0), (-1, -1), 5)]))
-    story += [items, Spacer(1, 5 * mm), Paragraph(_rtl(f"جمع اقلام: {invoice.subtotal} ریال"), rtl), Paragraph(_rtl(f"تخفیف: {invoice.discount} ریال"), rtl), Paragraph(_rtl(f"مالیات: {invoice.tax} ریال"), rtl), Paragraph(_rtl(f"مبلغ نهایی: {invoice.final_amount} ریال"), title)]
-    document.build(story)
-    invoice.pdf_file.save(f"{invoice.invoice_number}.pdf", ContentFile(buffer.getvalue()), save=True)
+    html = render_invoice_html(invoice, base_url or invoice_base_url())
+    pdf_bytes = render_invoice_pdf_bytes(html)
+    if invoice.pdf_file:
+        invoice.pdf_file.delete(save=False)
+    invoice.pdf_file.save(f"{invoice.invoice_number}.pdf", ContentFile(pdf_bytes), save=False)
+    invoice.pdf_renderer = CHROMIUM_RENDERER
+    invoice.save(update_fields=["pdf_file", "pdf_renderer"])
     return invoice
+
+
+def invoice_base_url():
+    return getattr(settings, "INVOICE_PUBLIC_BASE_URL", "") or "http://127.0.0.1:8000"
 
 
 def email_invoice(invoice, recipient):

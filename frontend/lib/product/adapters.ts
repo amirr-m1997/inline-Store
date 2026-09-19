@@ -12,9 +12,9 @@ type ProductDetailInput = {
   documents?: { id: number | string; title: string; type: string; file_url: string; file_name?: string | null; display_name?: string | null; size?: number | string | null; revision?: string | null; language?: string | null }[] | null;
 };
 
-export function toProductSummary(raw: { id:number; name:string; slug:string; code:string; unit:string; available_quantity:number|null; category:{name_fa:string}|null; images:{image:string;alt_text:string;alt_fa?:string;is_primary?:boolean}[] | null | undefined; price:{original_amount:string;final_amount:string;discount_percentage:string}|null }): ProductSummary {
+export function toProductSummary(raw: { id:number; name:string; slug:string; code:string; unit:string; short_description?:string|null; available_quantity:number|null; category:{name_fa:string}|null; images:{image:string;alt_text:string;alt_fa?:string;is_primary?:boolean}[] | null | undefined; price:{original_amount:string;final_amount:string;discount_percentage:string}|null }): ProductSummary {
   const images = Array.isArray(raw.images) ? raw.images : [];
-  return { id:raw.id, name:raw.name, slug:raw.slug, code:raw.code, unit:raw.unit, category:raw.category ? { name:raw.category.name_fa } : undefined, media:images.map((image) => ({ url:image.image, alt:image.alt_fa || image.alt_text, isPrimary:image.is_primary })), pricing:raw.price ? { originalAmount:raw.price.original_amount, finalAmount:raw.price.final_amount, discountPercentage:raw.price.discount_percentage, currency:"IRR" } : undefined, availability:{ quantity:raw.available_quantity, availableToCart:raw.available_quantity ?? 0 } };
+  return { id:raw.id, name:raw.name, slug:raw.slug, code:raw.code, unit:raw.unit, shortDescription:raw.short_description || undefined, category:raw.category ? { name:raw.category.name_fa } : undefined, media:images.map((image) => ({ url:image.image, alt:image.alt_fa || image.alt_text, isPrimary:image.is_primary })), pricing:raw.price ? { originalAmount:raw.price.original_amount, finalAmount:raw.price.final_amount, discountPercentage:raw.price.discount_percentage, currency:"IRR" } : undefined, availability:{ quantity:raw.available_quantity, availableToCart:raw.available_quantity ?? 0 } };
 }
 
 const KNOWN_DOCUMENT_TYPES = new Set(["datasheet", "manual", "cad", "certificate", "catalogue", "other"]);

@@ -7,6 +7,7 @@ import { ProductCard, type CatalogProduct } from "./product-card";
 import { SiteHero } from "./site-hero";
 import type { CompanyInfo, SiteHeroCategorySpotlight, SiteHeroPromotion } from "../../types/api";
 import { EditorialPreview } from "../content/editorial";
+import { TrustSections, type CompanyCertification, type CompanyHonor } from "./trust-sections";
 import type { EditorialArticle } from "../../types/api";
 import { formatNumber } from "../../lib/product/formatters";
 
@@ -28,6 +29,8 @@ export type HomepageInitialData = {
   industries: HomepageIndustry[];
   capabilities: HomepageCapability[];
   editorial: EditorialArticle[];
+  certifications: CompanyCertification[];
+  honors: CompanyHonor[];
 };
 
 const categoryArtwork = ["fancoil", "compressor-green", "axial", "exchanger", "expansion", "pcb", "copper", "pump", "bearing", "gauge"] as const;
@@ -53,20 +56,21 @@ function CompanyPromotionStrip({ locale, promotions }: { locale: string; promoti
   </section>;
 }
 
-function CategorySpotlightStrip({ locale, item }: { locale: string; item?: SiteHeroCategorySpotlight }) {
+function CategorySpotlightStrip({ locale, items }: { locale: string; items: SiteHeroCategorySpotlight[] }) {
   const english = locale === "en";
-  if (!item) return null;
+  if (!items.length) return null;
+  const ordered = [...items].sort((a, b) => (a.side === b.side ? a.order - b.order : a.side === "right" ? -1 : 1));
   return <section className="category-spotlight-strip site-container" aria-label={english ? "Featured categories" : "دسته‌بندی‌های مهم"}>
-    <Link className={`category-spotlight-card category-spotlight-card--${item.placement === "between_newest_discounts" ? "warm" : "fresh"}`} href={`/${locale}/category/${encodeURIComponent(item.category_slug)}`}>
+    {ordered.map((item) => <Link key={item.id} className={`category-spotlight-card category-spotlight-card--${item.placement === "between_newest_discounts" ? "warm" : "fresh"} ${item.side === "left" ? "category-spotlight-card--left" : "category-spotlight-card--right"}`} href={`/${locale}/category/${encodeURIComponent(item.category_slug)}`}>
       {item.image && <Image src={item.image} alt={item.title} width={260} height={180} />}
       <div><span>{english ? "Featured category" : "دسته‌بندی منتخب"}</span><h2>{item.title}</h2>{item.description && <p>{item.description}</p>}<b>{item.button_text} <i aria-hidden="true">←</i></b></div>
-    </Link>
+    </Link>)}
   </section>;
 }
 
-export function EnterpriseHome({ locale, company, hero, advantages, categories, featured, bestSelling, newest, discounted, lowStock, brands, industries, capabilities, editorial }: HomepageInitialData) {
+export function EnterpriseHome({ locale, company, hero, advantages, categories, featured, bestSelling, newest, discounted, lowStock, brands, industries, capabilities, editorial, certifications, honors }: HomepageInitialData) {
   const english = locale === "en";
-  const spotlightAt = (placement: SiteHeroCategorySpotlight["placement"]) => hero?.category_spotlights?.find((item) => item.placement === placement);
+  const spotlightsAt = (placement: SiteHeroCategorySpotlight["placement"]) => (hero?.category_spotlights || []).filter((item) => item.placement === placement);
   const demo = (value: string) => value.startsWith("[DEMO]") ? <span className="content-demo-indicator" title={english ? "Development content" : "محتوای محیط توسعه"}>{english ? "Demo" : "نمونه"}</span> : null;
   // Category links retain their explicit accessible naming: aria-label={`مشاهده دسته ${category.name_fa}`}
   return <main className="enterprise-home mehrasl-storefront">
@@ -78,22 +82,23 @@ export function EnterpriseHome({ locale, company, hero, advantages, categories, 
     {company?.description && <section className="home-company-intro site-container mehrasl-company-intro" aria-label={english ? "Company introduction" : "معرفی شرکت"}><div><div className="section-kicker">{english ? "About the company" : "درباره مجموعه"}</div><h2 id="home-company-title">{company.name_fa}</h2><p>{company.description}</p></div><div className="home-company-intro-actions"><Link className="secondary" href={`/${locale}/about`}>{english ? "About us" : "آشنایی با شرکت"}</Link><Link className="primary" href={`/${locale}/contact`}>{english ? "Contact us" : "تماس با ما"}</Link></div></section>}
     <section id="categories" className="enterprise-section site-container mehrasl-categories" aria-labelledby="home-categories-title"><header className="home-section-heading mehrasl-section-heading"><div><div className="section-kicker">{english ? "Your shopping path" : "مسیر خرید شما"}</div><h2 id="home-categories-title">{english ? "Where would you like to start?" : "از کدام دسته شروع می‌کنید؟"}</h2></div><Link className="mehrasl-text-link" href={`/${locale}/categories`}>{english ? "All categories" : "همه دسته‌ها"} <span aria-hidden="true">←</span></Link></header>{categories.length ? <div className="root-cards">{categories.slice(0, 10).map((category, index) => <Link key={category.id} href={getCategoryUrl(category, locale)} aria-label={`${english ? "View category" : "مشاهده دسته"} ${category.name_fa}`}><span className="mehrasl-category-number">{String(index + 1).padStart(2, "0")}</span><span className="mehrasl-category-art" aria-hidden="true"><Image src={`/images/category-art/${categoryArtwork[index % categoryArtwork.length]}.svg`} alt="" width={96} height={76} /></span><b>{category.name_fa}</b><i>{english ? "Explore" : "مشاهده محصولات"} <span aria-hidden="true">←</span></i></Link>)}</div> : <div className="home-section-empty">{english ? "Product categories are not available." : "دسته‌بندی‌های محصولات در دسترس نیست."}</div>}</section>
     <ProductSection locale={locale} title={english ? "Featured products" : "محصولات منتخب"} kicker={english ? "Selected for the catalog" : "انتخاب مدیریت فروشگاه"} products={featured} href={`/${locale}/shop`} empty={english ? "No featured products have been selected." : "هنوز محصولی به‌عنوان منتخب تعیین نشده است."} tone="featured" promotion={hero?.featured_promotion} />
-    <CategorySpotlightStrip locale={locale} item={spotlightAt("after_featured")} />
+    <CategorySpotlightStrip locale={locale} items={spotlightsAt("after_featured")} />
     <ProductSection locale={locale} title={english ? "Best sellers" : "پرفروش‌ترین‌ها"} kicker={english ? "Most ordered products" : "محبوب‌ترین انتخاب مشتریان"} products={bestSelling} href={`/${locale}/shop?best_sellers=true`} empty={english ? "Best sellers will appear after the first confirmed orders." : "پرفروش‌ترین‌ها پس از ثبت نخستین سفارش‌های تأییدشده نمایش داده می‌شوند."} skin="best" />
-    <CategorySpotlightStrip locale={locale} item={spotlightAt("after_best_sellers")} />
+    <CategorySpotlightStrip locale={locale} items={spotlightsAt("after_best_sellers")} />
     <CompanyPromotionStrip locale={locale} promotions={(hero?.home_promotions || []).filter((promotion) => promotion.placement === "home_middle")} />
     <section className="mehrasl-split-promos site-container" aria-label={english ? "MehrAsl services" : "خدمات مهراصل"}>
       <Link href={`/${locale}/about`}><span>{english ? "About MehrAsl" : "معرفی مجموعه مهراصل"}</span><h2>{english ? "A dependable partner for specialist industrial purchasing." : `${company?.name_fa || "مهراصل"}؛ همراه مطمئن خریدهای تخصصی شما.`}</h2><b>{english ? "Get to know us" : "آشنایی با مجموعه"} ←</b></Link>
       <Link href={`/${locale}/rfq`}><span>{english ? "Project purchasing" : "خرید پروژه‌ای و سازمانی"}</span><h2>{english ? "Get technical guidance and a tailored quotation for your project." : "مشاوره فنی و پیش‌فاکتور متناسب با پروژه‌تان را دریافت کنید."}</h2><b>{english ? "Request a quote" : "درخواست پیش‌فاکتور"} ←</b></Link>
     </section>
+    <TrustSections locale={locale} companyName={company?.name_fa || (english ? "MehrAsl" : "مهراصل")} certifications={certifications} honors={honors} />
     {industries.length > 0 && <section className="enterprise-section site-container" aria-labelledby="home-industries-title"><header className="home-section-heading"><div><div className="section-kicker">{english ? "Industrial context" : "زمینه‌های صنعتی"}</div><h2 id="home-industries-title">{english ? "Industries and applications" : "صنایع و کاربردها"}</h2></div><Link href={`/${locale}/industries`}>{english ? "View all" : "مشاهده همه"} <span aria-hidden="true">←</span></Link></header><div className="home-industry-grid">{industries.slice(0, 3).map((item) => <Link className="home-context-card" key={item.id} href={`/${locale}/industries/${item.slug}`}><span>{english ? "Industry" : "زمینه صنعتی"}</span><h3>{english && item.name_en ? item.name_en : item.name_fa} {demo(english && item.name_en ? item.name_en : item.name_fa)}</h3>{(english ? item.description_en || item.description_fa : item.description_fa) && <p>{english ? item.description_en || item.description_fa : item.description_fa}</p>}</Link>)}</div></section>}
     {capabilities.length > 0 && <section className="enterprise-section site-container" aria-labelledby="home-capabilities-title"><header className="home-section-heading"><div><div className="section-kicker">{english ? "Company expertise" : "توانمندی شرکت"}</div><h2 id="home-capabilities-title">{english ? "Capabilities" : "توانمندی‌ها"}</h2></div><Link href={`/${locale}/capabilities`}>{english ? "View all" : "مشاهده همه"} <span aria-hidden="true">←</span></Link></header><div className="home-capability-grid">{capabilities.slice(0, 3).map((item) => <Link className="home-context-card" key={item.id} href={`/${locale}/capabilities/${item.slug}`}><span>{english ? "Published capability" : "توانمندی منتشرشده"}</span><h3>{english && item.title_en ? item.title_en : item.title_fa} {demo(english && item.title_en ? item.title_en : item.title_fa)}</h3>{(english ? item.summary_en || item.summary_fa : item.summary_fa) && <p>{english ? item.summary_en || item.summary_fa : item.summary_fa}</p>}</Link>)}</div></section>}
     <ProductSection locale={locale} title={english ? "Newest products" : "جدیدترین محصولات"} kicker={english ? "Latest catalog additions" : "تازه‌های کاتالوگ"} products={newest} href={`/${locale}/newest`} empty={english ? "No new products have been registered." : "محصول جدیدی ثبت نشده است."} skin="newest" />
-    <CategorySpotlightStrip locale={locale} item={spotlightAt("between_newest_discounts")} />
+    <CategorySpotlightStrip locale={locale} items={spotlightsAt("between_newest_discounts")} />
     <ProductSection locale={locale} title={english ? "Discounted products" : "بیشترین تخفیف‌ها"} kicker={english ? "Current offers" : "فرصت‌های خرید"} products={discounted} href={`/${locale}/best-discounts`} empty={english ? "There are no discounted products currently." : "در حال حاضر محصول تخفیف‌داری وجود ندارد."} skin="discount" />
-    <CategorySpotlightStrip locale={locale} item={spotlightAt("after_discounts")} />
+    <CategorySpotlightStrip locale={locale} items={spotlightsAt("after_discounts")} />
     <ProductSection locale={locale} title={english ? "Running low" : "محصولات در حال اتمام"} kicker={english ? "Limited remaining inventory" : "موجودی محدود؛ پیش از اتمام تهیه کنید"} products={lowStock} href={`/${locale}/shop?low_stock=true`} empty={english ? "No products currently have limited available stock." : "در حال حاضر محصولی با موجودی محدود ثبت نشده است."} skin="low-stock" />
-    <CategorySpotlightStrip locale={locale} item={spotlightAt("after_low_stock")} />
+    <CategorySpotlightStrip locale={locale} items={spotlightsAt("after_low_stock")} />
     <section className="enterprise-section supply-brands-section site-container"><header className="home-section-heading"><div><div className="section-kicker">{english ? "Supply context" : "شبکه تأمین"}</div><h2>{english ? "Available brands" : "برندهای قابل تأمین"}</h2></div><Link href={`/${locale}/brands`}>{english ? "View all" : "مشاهده همه"} <span aria-hidden="true">←</span></Link></header>{brands.length ? <div className="supply-brand-grid">{brands.slice(0, 6).map((brand) => { const content = <>{brand.logo ? <Image src={brand.logo} alt={`${english ? "Logo of" : "لوگوی"} ${brand.name}`} width={120} height={64} /> : <span aria-hidden="true">{brand.name.slice(0, 1)}</span>}<b>{brand.name}</b></>; return brand.website ? <a key={brand.id} href={brand.website} target="_blank" rel="noreferrer">{content}</a> : <article key={brand.id}>{content}</article>; })}</div> : <div className="home-section-empty">{english ? "No supply brands are available yet." : "فهرست برندهای قابل تأمین به‌زودی تکمیل می‌شود."}</div>}</section>
     <CompanyPromotionStrip locale={locale} promotions={(hero?.home_promotions || []).filter((promotion) => promotion.placement === "home_bottom")} />
     <EditorialPreview articles={editorial} locale={locale} href={`/${locale}/knowledge`} />

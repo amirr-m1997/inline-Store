@@ -115,9 +115,14 @@ class HomepageCategorySpotlight(models.Model):
         AFTER_DISCOUNTS = "after_discounts", "بعد از بیشترین تخفیف‌ها"
         AFTER_LOW_STOCK = "after_low_stock", "بعد از محصولات در حال اتمام"
 
+    class Side(models.TextChoices):
+        RIGHT = "right", "راست"
+        LEFT = "left", "چپ"
+
     company_info = models.ForeignKey(CompanyInfo, related_name="category_spotlights", on_delete=models.CASCADE, verbose_name="اطلاعات شرکت")
     category = models.ForeignKey("catalog.Category", related_name="homepage_spotlights", on_delete=models.PROTECT, verbose_name="دسته‌بندی")
     placement = models.CharField("جایگاه نمایش", max_length=32, choices=Placement.choices, default=Placement.AFTER_FEATURED)
+    side = models.CharField("سمت نمایش", max_length=10, choices=Side.choices, default=Side.RIGHT)
     title_fa = models.CharField("عنوان فارسی (اختیاری)", max_length=255, blank=True)
     title_en = models.CharField("عنوان انگلیسی (اختیاری)", max_length=255, blank=True)
     description_fa = models.CharField("توضیح فارسی", max_length=500, blank=True)

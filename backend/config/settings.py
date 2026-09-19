@@ -20,7 +20,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "unsafe-development-key-change-me")
 DEBUG = parse_env_bool(os.environ.get("DEBUG"), default=False)
 if not DEBUG and SECRET_KEY == "unsafe-development-key-change-me":
     raise ImproperlyConfigured("SECRET_KEY must be set to a secure value when DEBUG is disabled.")
-ALLOWED_HOSTS = [host.strip() for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if host.strip()]
+ALLOWED_HOSTS = [host.strip() for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if host.strip()] + ["testserver"]
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.environ.get(
@@ -38,6 +38,7 @@ if not DEBUG and PAYMENTS_MOCK_ENABLED:
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes", "django.contrib.sessions",
     "django.contrib.messages", "django.contrib.staticfiles", "corsheaders", "rest_framework", "rest_framework.authtoken",
+    "ckeditor",
     "apps.accounts", "apps.catalog", "apps.inventory", "apps.pricing", "apps.carts", "apps.orders", "apps.dashboard", "apps.company", "apps.website", "apps.content", "apps.search", "apps.rfq", "apps.common", "apps.notifications",
 ]
 MIDDLEWARE = ["corsheaders.middleware.CorsMiddleware", "django.middleware.security.SecurityMiddleware", "config.csrf.CookieAuthOriginCheckMiddleware", "django.contrib.sessions.middleware.SessionMiddleware", "django.middleware.common.CommonMiddleware", "django.middleware.csrf.CsrfViewMiddleware", "django.contrib.auth.middleware.AuthenticationMiddleware", "django.contrib.messages.middleware.MessageMiddleware", "django.middleware.clickjacking.XFrameOptionsMiddleware"]
@@ -123,6 +124,11 @@ OTP_RESEND_SECONDS = int(os.environ.get("OTP_RESEND_SECONDS", "60"))
 OTP_DEBUG_CODE_ENABLED = parse_env_bool(os.environ.get("OTP_DEBUG_CODE_ENABLED"), default=False)
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://127.0.0.1:3000")
+# Public base URL of this backend, used to absolutize media/logo URLs inside
+# the invoice PDF (headless Chromium fetches them over HTTP while printing).
+INVOICE_PUBLIC_BASE_URL = os.environ.get("INVOICE_PUBLIC_BASE_URL", "http://127.0.0.1:8000")
+# Explicit Chromium binary for invoice PDF rendering (auto-detected otherwise).
+INVOICE_CHROMIUM_PATH = os.environ.get("INVOICE_CHROMIUM_PATH", "")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "noreply@mehrasl.local")
 EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
@@ -139,5 +145,27 @@ SMS_USERNAME = os.environ.get("SMS_USERNAME", "")
 SMS_PASSWORD = os.environ.get("SMS_PASSWORD", "")
 SMS_PORTAL = os.environ.get("SMS_PORTAL", "")
 SMS_BACKEND = os.environ.get("SMS_BACKEND", "")
+
+# Rich-text editor for admin description fields (product description, etc.).
+CKEDITOR_CONFIGS = {
+    "default": {
+        "skin": "moono-lisa",
+        "language": "fa",
+        "contentsLangDirection": "rtl",
+        "bodyId": "ckeditor-product-description",
+        "height": 320,
+        "toolbar": [
+            {"name": "clipboard", "items": ["Undo", "Redo"]},
+            {"name": "paragraph", "items": ["Format", "Bold", "Italic", "Underline", "Strike", "-", "Subscript", "Superscript"]},
+            {"name": "colors", "items": ["TextColor", "BGColor"]},
+            {"name": "align", "items": ["JustifyLeft", "JustifyCenter", "JustifyRight", "JustifyBlock"]},
+            {"name": "lists", "items": ["BulletedList", "NumberedList", "Outdent", "Indent"]},
+            {"name": "links", "items": ["Link", "Unlink", "Anchor"]},
+            {"name": "insert", "items": ["Image", "Table", "HorizontalRule", "SpecialChar"]},
+            {"name": "styles", "items": ["RemoveFormat", "Source"]},
+        ],
+        "format_tags": "p;h2;h3;h4;pre",
+    },
+}
 SALES_NOTIFICATION_EMAIL = os.environ.get("SALES_NOTIFICATION_EMAIL", "")
 SALES_NOTIFICATION_SMS = os.environ.get("SALES_NOTIFICATION_SMS", "")

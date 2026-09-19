@@ -40,10 +40,12 @@ export function SiteHero({ hero, locale }: { hero: SiteHeroData | null; locale: 
 
   if (!hero || !banners.length) return <section className="site-hero site-hero-fallback site-container">
     <div className="site-hero-content">
-      <h1>{english ? "Precise selection. Confident purchasing." : "انتخاب دقیق. خرید مطمئن."}</h1>
-      <h2>{english ? "Specialist HVAC and refrigeration equipment" : "فروشگاه تخصصی تجهیزات و قطعات تهویه و تبرید"}</h2>
-      <p>{english ? "A clear path from technical selection to supplying your project." : "از انتخاب فنی تا تأمین نیاز پروژه، محصولات و اطلاعات مورد نیازتان را در یک مسیر روشن پیدا کنید."}</p>
-      <div className="site-hero-actions"><Link className="site-hero-button primary" href={`/${locale}/shop`}>{english ? "Browse products" : "مشاهده محصولات"}</Link><Link className="site-hero-button secondary" href={`/${locale}/rfq`}>{english ? "Get technical help" : "راهنمایی برای انتخاب"}</Link></div>
+      <div className="section-kicker">{english ? "Industrial supply, engineered for reliability" : "تأمین صنعتی؛ دقیق، شفاف و قابل اتکا"}</div>
+      <h1>{english ? "A dependable partner for specialist industrial purchasing." : "همراه مطمئن خریدهای تخصصی صنعتی شما."}</h1>
+      <h2>{english ? "HVAC, refrigeration and building-services equipment and parts" : "تجهیزات و قطعات تهویه، تبرید و تأسیسات ساختمان"}</h2>
+      <p>{english ? "Official catalog, technical selection guidance, transparent quotations and trackable orders — everything your project needs in one clear path." : "کاتالوگ رسمی، راهنمایی فنی انتخاب، پیش‌فاکتور شفاف و سفارش قابل پیگیری — همه نیاز پروژه شما در یک مسیر روشن."}</p>
+      <div className="site-hero-actions"><Link className="site-hero-button primary" href={`/${locale}/rfq`}>{english ? "Request a Quote" : "درخواست پیش‌فاکتور"}</Link><Link className="site-hero-button secondary" href={`/${locale}/shop`}>{english ? "View Products" : "مشاهده محصولات"}</Link></div>
+      <ul className="site-hero-trust">{(english ? ["Official, up-to-date catalog", "Technical selection support", "Transparent order tracking"] : ["کاتالوگ رسمی و به‌روز", "پشتیبانی فنی انتخاب", "پیگیری شفاف سفارش"]).map((item) => <li key={item}>{item}</li>)}</ul>
     </div>
   </section>;
   const banner = banners[active] || banners[0];

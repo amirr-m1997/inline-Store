@@ -84,7 +84,7 @@ export async function SiteFooter({ locale = "fa" }: { locale?: string }) {
   return (
     <footer className="database-footer" role="contentinfo" aria-label={english ? "Site footer" : "پاورقی سایت"}>
       <div className="footer-main responsive-container">
-        {/* Column 1: Company / Brand */}
+        {/* Column 1: Company / Brand + Quick Access */}
         <section className="footer-col footer-company" aria-label={companyName}>
           <div className="footer-brand">
             {company?.logo ? (
@@ -102,26 +102,26 @@ export async function SiteFooter({ locale = "fa" }: { locale?: string }) {
             </div>
           </div>
           <p className="footer-description">{companyDesc}</p>
+
+          {/* Quick Access merged into company column */}
+          <div style={{ marginTop: 'var(--space-6)' }}>
+            <h2 className="footer-col-title">{english ? "Quick Access" : "دسترسی سریع"}</h2>
+            <ul className="footer-nav-list">
+              {quickLinks.map((link, idx) => (
+                <li key={idx}>
+                  <Link href={link.href}>
+                    <span>{link.label}</span>
+                    <span aria-hidden="true" className="footer-link-arrow rtl:rotate-180 inline-block">←</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         </section>
 
-        {/* Column 2: Quick Access */}
-        <section className="footer-col" aria-label={english ? "Quick Access" : "دسترسی سریع"}>
-          <h2 className="footer-col-title">{english ? "Quick Access" : "دسترسی سریع"}</h2>
-          <ul className="footer-nav-list">
-            {quickLinks.map((link, idx) => (
-              <li key={idx}>
-                <Link href={link.href}>
-                  <span>{link.label}</span>
-                  <span aria-hidden="true" className="footer-link-arrow rtl:rotate-180 inline-block">←</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        {/* Column 3: Customer Services */}
-        <section className="footer-col" aria-label={english ? "Customer Services" : "خدمات مشتریان"}>
-          <h2 className="footer-col-title">{english ? "Customer Services" : "خدمات مشتریان"}</h2>
+        {/* Column 2: Customer Services + Products & Industries */}
+        <section className="footer-col" aria-label={english ? "Services & Products" : "خدمات و محصولات"}>
+          <h2 className="footer-col-title">{english ? "Services & Products" : "خدمات و محصولات"}</h2>
           <ul className="footer-nav-list">
             {customerServices.map((service, idx) => (
               <li key={idx}>
@@ -131,15 +131,8 @@ export async function SiteFooter({ locale = "fa" }: { locale?: string }) {
                 </Link>
               </li>
             ))}
-          </ul>
-        </section>
-
-        {/* Column 4: Key Categories / Sections */}
-        <section className="footer-col" aria-label={english ? "Products & Industries" : "محصولات و صنایع"}>
-          <h2 className="footer-col-title">{english ? "Key Categories" : "دسته‌بندی‌های مهم"}</h2>
-          <ul className="footer-nav-list">
             {footer?.sections && footer.sections.length > 0 ? (
-              footer.sections.flatMap((s) => s.links).slice(0, 5).map((link) => (
+              footer.sections.flatMap((s) => s.links).slice(0, 4).map((link) => (
                 <li key={link.id}>
                   {isInternal(link.url) && !link.open_in_new_tab ? (
                     <Link href={link.url}>
@@ -183,8 +176,8 @@ export async function SiteFooter({ locale = "fa" }: { locale?: string }) {
           </ul>
         </section>
 
-        {/* Column 5: Contact Information */}
-        <section className="footer-col footer-contact" aria-label={english ? "Contact Information" : "اطلاعات تماس"}>
+        {/* Column 3: Contact Information (wider) */}
+        <section className="footer-col footer-contact" style={{ gridColumn: 'span 1', minWidth: '280px' }} aria-label={english ? "Contact Information" : "اطلاعات تماس"}>
           <h2 className="footer-col-title">{english ? "Contact Us" : "اطلاعات تماس"}</h2>
           <address className="footer-address-block">
             <div className="footer-contact-item">

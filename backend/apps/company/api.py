@@ -73,6 +73,8 @@ class HeroSerializer(serializers.ModelSerializer):
                 "category_slug": item.category.slug,
                 "category_name": item.category.name_en if english and item.category.name_en else item.category.name_fa,
                 "placement": item.placement,
+                "side": item.side,
+                "order": item.order,
             }
             for item in obj.category_spotlights.select_related("category").filter(is_active=True)
         ]

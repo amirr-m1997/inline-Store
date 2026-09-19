@@ -13,3 +13,5 @@ reportlab==4.4.6
 arabic-reshaper==3.0.0
 python-bidi==0.6.11
 python-dotenv==1.0.0
+django-ckeditor==6.7.3
+bleach==6.2.0
