@@ -68,6 +68,38 @@ class CustomerAuthenticationTests(TestCase):
         )
         self.assertEqual(by_persian_phone.status_code, 200)
 
+    def test_login_succeeds_despite_stale_auth_cookie(self):
+        # Regression: a stale mehrasl_auth cookie (token deleted server-side
+        # via logout, password change/reset, or DB redeploy) must not lock
+        # the user out of login with correct credentials. Previously the
+        # cookie authenticator raised "Invalid token." ("توکن هدر نامعتبر
+        # است.") before the login view ran, for ANY user on that browser.
+        from rest_framework.authtoken.models import Token
+
+        self.register(phone_number="09121234567")
+        Token.objects.all().delete()  # cookie now stale
+        stale_login = self.client.post(
+            "/api/v1/auth/login/",
+            {"identifier": "09121234567", "password": self.password},
+            content_type="application/json",
+        )
+        self.assertEqual(stale_login.status_code, 200)
+        self.assertIn("mehrasl_auth", stale_login.cookies)
+        self.assertEqual(self.client.get("/api/v1/auth/profile/").status_code, 200)
+
+    def test_bogus_auth_cookie_is_treated_as_anonymous(self):
+        self.register(phone_number="09121234567")
+        self.client.cookies["mehrasl_auth"] = "0" * 40
+        bogus_login = self.client.post(
+            "/api/v1/auth/login/",
+            {"identifier": "09121234567", "password": self.password},
+            content_type="application/json",
+        )
+        self.assertEqual(bogus_login.status_code, 200)
+        self.client.cookies["mehrasl_auth"] = "0" * 40
+        self.assertEqual(self.client.get("/api/v1/auth/profile/").status_code, 401)
+        self.assertEqual(self.client.get("/api/v1/auth/session/").json()["authenticated"], False)
+
     def test_customer_can_update_extended_profile(self):
         self.register(phone_number="09121234567")
         response = self.client.patch("/api/v1/auth/profile/", {"customer_type": "business", "company_name": "صنایع نمونه", "economic_code": "411111", "job_title": "مدیر خرید", "landline": "02112345678", "phone_number": "۰۹۱۲۱۲۳۴۵۶۷"}, content_type="application/json")
