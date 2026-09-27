@@ -100,6 +100,24 @@ class CustomerAuthenticationTests(TestCase):
         self.assertEqual(self.client.get("/api/v1/auth/profile/").status_code, 401)
         self.assertEqual(self.client.get("/api/v1/auth/session/").json()["authenticated"], False)
 
+    def test_auth_cookie_secure_flag_follows_setting(self):
+        # Regression for plain-HTTP deployments: with AUTH_COOKIE_SECURE=True
+        # (production default) browsers on http:// drop the cookie, so a
+        # successful login is immediately followed by anonymous 401s
+        # ("Authentication credentials were not provided."). Deployments
+        # without TLS must set AUTH_COOKIE_SECURE=False; the flag below
+        # proves the setting actually controls the Set-Cookie header.
+        with override_settings(AUTH_COOKIE_SECURE=True):
+            secured = self.register(email="secure@example.com")
+            self.assertEqual(secured.status_code, 201)
+            self.assertTrue(secured.cookies["mehrasl_auth"]["secure"])
+        self.client.cookies.clear()
+        with override_settings(AUTH_COOKIE_SECURE=False):
+            plain = self.register(email="plain@example.com")
+            self.assertEqual(plain.status_code, 201)
+            self.assertFalse(plain.cookies["mehrasl_auth"]["secure"])
+            self.assertEqual(self.client.get("/api/v1/auth/profile/").status_code, 200)
+
     def test_customer_can_update_extended_profile(self):
         self.register(phone_number="09121234567")
         response = self.client.patch("/api/v1/auth/profile/", {"customer_type": "business", "company_name": "صنایع نمونه", "economic_code": "411111", "job_title": "مدیر خرید", "landline": "02112345678", "phone_number": "۰۹۱۲۱۲۳۴۵۶۷"}, content_type="application/json")

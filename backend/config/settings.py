@@ -82,8 +82,16 @@ CORS_ALLOWED_ORIGINS = [
     if value.strip()
 ]
 CORS_ALLOW_CREDENTIALS = True
-SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SECURE = not DEBUG
+# Cookie `Secure` flags follow DEBUG by default (secure on production), but a
+# plain-HTTP deployment (no TLS terminator in front) must explicitly opt out,
+# otherwise browsers silently drop the auth cookie and every request after a
+# successful login looks anonymous (401 "Authentication credentials were not
+# provided."). Set AUTH_COOKIE_SECURE=False (and the session/CSRF ones if the
+# Django admin is also served over HTTP) ONLY while HTTP is in use; switch to
+# HTTPS + Secure cookies as soon as possible.
+AUTH_COOKIE_SECURE = parse_env_bool(os.environ.get("AUTH_COOKIE_SECURE"), default=not DEBUG)
+SESSION_COOKIE_SECURE = parse_env_bool(os.environ.get("SESSION_COOKIE_SECURE"), default=not DEBUG)
+CSRF_COOKIE_SECURE = parse_env_bool(os.environ.get("CSRF_COOKIE_SECURE"), default=not DEBUG)
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = False
 SECURE_SSL_REDIRECT = parse_env_bool(os.environ.get("SECURE_SSL_REDIRECT"), default=False)
@@ -115,7 +123,7 @@ if "test" in sys.argv:
     CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "test-cache", "KEY_PREFIX": "test"}}
 REST_FRAMEWORK = {"DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticatedOrReadOnly"], "DEFAULT_AUTHENTICATION_CLASSES": ["apps.accounts.authentication.CookieTokenAuthentication"], "DEFAULT_PAGINATION_CLASS": "apps.common.pagination.StandardResultsSetPagination", "PAGE_SIZE": 20, "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.openapi.AutoSchema", "DEFAULT_FILTER_BACKENDS": ["rest_framework.filters.OrderingFilter"], "DEFAULT_THROTTLE_RATES": {"auth": "10/min", "otp": "5/hour", "discount": "30/min", "public_form": "30/min", "cart_export": "60/min"}}
 AUTH_COOKIE_NAME = "mehrasl_auth"
-AUTH_COOKIE_SECURE = not DEBUG
+AUTH_COOKIE_SECURE = parse_env_bool(os.environ.get("AUTH_COOKIE_SECURE"), default=AUTH_COOKIE_SECURE)
 AUTH_COOKIE_SAMESITE = "Lax"
 OTP_EXPIRY_SECONDS = int(os.environ.get("OTP_EXPIRY_SECONDS", "120"))
 OTP_RESEND_SECONDS = int(os.environ.get("OTP_RESEND_SECONDS", "60"))
