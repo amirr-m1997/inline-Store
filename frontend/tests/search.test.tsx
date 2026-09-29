@@ -7,7 +7,7 @@ vi.mock("next/link", () => ({ default: ({ href, children, ...props }: { href: st
 
 import { SearchCategoryGroup, SearchEditorialGroup, SearchEntryForm, SearchGroupSummary, SearchProductGroup } from "../components/search/search-results";
 
-const product = { id: 1, slug: "chiller", code: "CH-1", name: "Chiller", name_fa: "چیلر", name_en: "Chiller", unit: "عدد", image: null, category: { id: 1, slug: "hvac", name_fa: "تهویه", name_en: "HVAC" }, brand: null };
+const product = { id: 1, slug: "chiller", code: "CH-1", name: "Chiller", name_fa: "چیلر", name_en: "Chiller", unit: "عدد", image: null, category: { id: 1, slug: "hvac", name_fa: "تهویه", name_en: "HVAC" }, brand: null, price: { original_amount: "1000000", final_amount: "900000", discount_percentage: "10" }, available_quantity: 7 };
 const article = { id: 2, slug: "guide", content_type: "technical_article" as const, title: "راهنما", title_fa: "راهنما", title_en: "Guide", excerpt: "خلاصه", excerpt_fa: "خلاصه", excerpt_en: "Summary", featured_image: null, published_at: "2026-08-14T08:00:00Z", is_featured: false, category: null, related_products: [], related_catalog_categories: [], related_brands: [], related_industries: [], related_capabilities: [] };
 
 describe("unified search UI", () => {
@@ -22,6 +22,10 @@ describe("unified search UI", () => {
   it("renders grouped results and cross-links", () => {
     render(<><SearchProductGroup products={[product]} locale="fa" query="چیلر" /><SearchCategoryGroup categories={[{ id: 1, slug: "hvac", name: "تهویه", name_fa: "تهویه", name_en: "HVAC", image: null, product_count: 2 }]} locale="fa" /><SearchEditorialGroup articles={[article]} locale="fa" /></>);
     expect(screen.getByRole("heading", { name: "محصولات" })).toBeInTheDocument();
+    // Search cards must show price/stock like catalog cards (regression:
+    // the unified-search payload used to omit them, forcing "not listed").
+    expect(screen.getByText("موجود")).toBeInTheDocument();
+    expect(screen.getByText(/900,000/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /مشاهده همه محصولات/ })).toHaveAttribute("href", "/fa/shop?q=%DA%86%DB%8C%D9%84%D8%B1");
     expect(screen.getByRole("link", { name: /تهویه/ })).toHaveAttribute("href", "/fa/category/hvac");
     expect(screen.getByRole("link", { name: /راهنما/ })).toHaveAttribute("href", "/fa/knowledge/guide");

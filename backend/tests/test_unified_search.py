@@ -7,6 +7,8 @@ from rest_framework.test import APIClient
 from apps.catalog.models import Category, Product, ProductBrand, ProductIdentifier
 from apps.catalog.services import CatalogQueryService
 from apps.content.models import ContentArticle
+from apps.inventory.models import Inventory
+from apps.pricing.models import ProductPrice
 
 
 class UnifiedSearchApiTests(TestCase):
@@ -60,3 +62,17 @@ class UnifiedSearchApiTests(TestCase):
         catalog_ids = list(CatalogQueryService(Product.objects.filter(is_active=True), {"q": "پیچ"}).apply().values_list("id", flat=True))
         unified_ids = [item["id"] for item in self.search("پیچ")["products"]]
         self.assertEqual(unified_ids, catalog_ids[:8])
+
+    def test_search_products_carry_price_and_availability(self):
+        Inventory.objects.create(product=self.product, on_hand_quantity=10, reserved_quantity=3)
+        ProductPrice.objects.create(product=self.product, amount=1000000, discount_percentage=10, currency="IRR", effective_from=timezone.now() - timedelta(days=1))
+        by_id = {item["id"]: item for item in self.search("Chiller")["products"]}
+        priced = by_id[self.product.id]
+        self.assertEqual(priced["price"]["final_amount"], "900000.00")
+        self.assertEqual(priced["price"]["discount_percentage"], "10.00")
+        self.assertEqual(float(priced["available_quantity"]), 7.0)
+        # Products without a price/inventory row keep nulls (cards render the
+        # "not listed / unknown" states instead of crashing).
+        unpriced = {item["id"]: item for item in self.search("P-SCR-001")["products"]}[self.screw_product.id]
+        self.assertIsNone(unpriced["price"])
+        self.assertIsNone(unpriced["available_quantity"])

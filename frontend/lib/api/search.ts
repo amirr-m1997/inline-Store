@@ -1,6 +1,6 @@
 import type { EditorialArticle, FAQEntry } from "../../types/api";
 
-export type SiteSearchProduct = { id: number; slug: string; code: string; name: string; name_fa: string; name_en: string; unit: string; image: string | null; category: { id: number; slug: string; name_fa: string; name_en: string } | null; brand: { id: number; slug: string; name: string } | null };
+export type SiteSearchProduct = { id: number; slug: string; code: string; name: string; name_fa: string; name_en: string; unit: string; image: string | null; category: { id: number; slug: string; name_fa: string; name_en: string } | null; brand: { id: number; slug: string; name: string } | null; price: { original_amount: string; final_amount: string; discount_percentage: string } | null; available_quantity: number | null };
 export type SiteSearchCategory = { id: number; slug: string; name: string; name_fa: string; name_en: string; image: string | null; product_count: number };
 export type SiteSearchBrand = { id: number; slug: string; name: string; logo: string | null; product_count: number };
 export type SiteSearchResponse = { query: string; products: SiteSearchProduct[]; categories: SiteSearchCategory[]; brands: SiteSearchBrand[]; articles: EditorialArticle[]; faqs: FAQEntry[]; counts: { products: number; categories: number; brands: number; articles: number; faqs: number } };

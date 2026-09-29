@@ -7,7 +7,7 @@ import type { EditorialArticle, FAQEntry } from "../../types/api";
 import { formatNumber } from "../../lib/product/formatters";
 
 function productCard(product: SiteSearchProduct): CatalogProduct {
-  return { id: product.id, name: product.name, slug: product.slug, code: product.code, unit: product.unit, available_quantity: null, category: product.category ? { name_fa: product.category.name_fa } : null, images: product.image ? [{ image: product.image, alt_text: product.name, alt_fa: product.name, is_primary: true }] : [], price: null };
+  return { id: product.id, name: product.name, slug: product.slug, code: product.code, unit: product.unit, available_quantity: product.available_quantity, category: product.category ? { name_fa: product.category.name_fa } : null, images: product.image ? [{ image: product.image, alt_text: product.name, alt_fa: product.name, is_primary: true }] : [], price: product.price };
 }
 
 export function SearchProductGroup({ products, locale, query }: { products: SiteSearchProduct[]; locale: string; query: string }) {

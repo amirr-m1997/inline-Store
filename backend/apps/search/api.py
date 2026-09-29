@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db.models import Case, Count, IntegerField, Prefetch, Q, When
 from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
@@ -7,6 +9,8 @@ from rest_framework.response import Response
 from apps.catalog.models import Category, Product, ProductBrand, ProductImage
 from apps.catalog.services import CatalogQueryService
 from apps.catalog.search_normalization import normalize_search_text
+from apps.inventory.models import Inventory
+from apps.pricing.models import ProductPrice
 from apps.content.api import PublicEditorialQuerySetMixin
 from apps.company.models import Capability, Industry
 from apps.content.models import ContentArticle, FAQEntry
@@ -26,8 +30,16 @@ def _localized(value_fa, value_en, language):
     return (value_en or value_fa) if language == "en" else (value_fa or value_en)
 
 
-def _product_payload(product):
+def _product_payload(product, price_map=None, inventory_map=None):
     image = next(iter(getattr(product, "_search_images", [])), None)
+    price_row = (price_map or {}).get(product.id)
+    price = None
+    if price_row is not None:
+        discount = price_row.discount_percentage or Decimal("0")
+        final = price_row.amount * (Decimal("1") - discount / Decimal("100"))
+        price = {"original_amount": str(price_row.amount), "currency": price_row.currency, "discount_percentage": str(discount), "final_amount": str(final.quantize(Decimal("0.01")))}
+    inventory = (inventory_map or {}).get(product.id)
+    available = (inventory.on_hand_quantity - inventory.reserved_quantity) if inventory is not None else None
     return {
         "id": product.id,
         "slug": product.slug,
@@ -39,6 +51,8 @@ def _product_payload(product):
         "image": image.image.url if image and image.image else None,
         "category": {"id": product.category_id, "slug": product.category.slug, "name_fa": product.category.name_fa, "name_en": product.category.name_en} if product.category and product.category.is_active else None,
         "brand": {"id": product.brand_id, "slug": product.brand.slug, "name": product.brand.name} if product.brand and product.brand.is_active and product.brand.is_published and product.brand.slug else None,
+        "price": price,
+        "available_quantity": available,
     }
 
 
@@ -81,6 +95,16 @@ def unified_search(request):
     # identifier handling, ranking, and deduplication rules.
     products_queryset = CatalogQueryService(Product.objects.filter(is_active=True), {"q": raw_query}).apply().select_related("category", "brand").prefetch_related(Prefetch("images", queryset=image_queryset, to_attr="_search_images"))
     products = list(products_queryset[:GROUP_LIMIT])
+    # Search cards render the same price/stock block as catalog cards, so the
+    # payload carries the current selling price and availability (at most
+    # GROUP_LIMIT products: two small queries, no per-product N+1).
+    price_map, inventory_map = {}, {}
+    if products:
+        now = timezone.now()
+        product_ids = [product.id for product in products]
+        for row in ProductPrice.objects.filter(product_id__in=product_ids, effective_from__lte=now).filter(Q(effective_to__isnull=True) | Q(effective_to__gte=now)).order_by("product_id", "-effective_from").only("product_id", "amount", "currency", "discount_percentage"):
+            price_map.setdefault(row.product_id, row)
+        inventory_map = {row.product_id: row for row in Inventory.objects.filter(product_id__in=product_ids).only("product_id", "on_hand_quantity", "reserved_quantity")}
 
     categories_queryset = Category.objects.filter(is_active=True).filter(Q(name_fa__icontains=query) | Q(name_en__icontains=query) | Q(slug__icontains=normalized) | Q(code__icontains=normalized)).annotate(product_count=Count("products", filter=Q(products__is_active=True))).order_by("level", "name_fa", "id")
     categories = list(categories_queryset[:GROUP_LIMIT])
@@ -100,7 +124,7 @@ def unified_search(request):
     faq_data = FAQEntrySerializer(faqs, many=True, context={"request": request}).data
     return Response({
         "query": query,
-        "products": [_product_payload(product) for product in products],
+        "products": [_product_payload(product, price_map, inventory_map) for product in products],
         "categories": [_category_payload(category, language) for category in categories],
         "brands": [_brand_payload(brand) for brand in brands],
         "articles": article_data,
