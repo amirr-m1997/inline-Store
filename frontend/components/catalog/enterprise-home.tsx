@@ -11,7 +11,6 @@ import { TrustSections, type CompanyCertification, type CompanyHonor } from "./t
 import type { EditorialArticle } from "../../types/api";
 import { formatNumber } from "../../lib/product/formatters";
 
-export type SupplyBrand = { id: number; name: string; logo: string | null; website: string };
 export type HomepageIndustry = { id: number; slug: string; name_fa: string; name_en: string; description_fa: string; description_en: string; image: string | null };
 export type HomepageCapability = { id: number; slug: string; title_fa: string; title_en: string; summary_fa: string; summary_en: string };
 export type HomepageInitialData = {
@@ -25,7 +24,6 @@ export type HomepageInitialData = {
   newest: CatalogProduct[];
   discounted: CatalogProduct[];
   lowStock: CatalogProduct[];
-  brands: SupplyBrand[];
   industries: HomepageIndustry[];
   capabilities: HomepageCapability[];
   editorial: EditorialArticle[];
@@ -68,7 +66,7 @@ function CategorySpotlightStrip({ locale, items }: { locale: string; items: Site
   </section>;
 }
 
-export function EnterpriseHome({ locale, company, hero, advantages, categories, featured, bestSelling, newest, discounted, lowStock, brands, industries, capabilities, editorial, certifications, honors }: HomepageInitialData) {
+export function EnterpriseHome({ locale, company, hero, advantages, categories, featured, bestSelling, newest, discounted, lowStock, industries, capabilities, editorial, certifications, honors }: HomepageInitialData) {
   const english = locale === "en";
   const spotlightsAt = (placement: SiteHeroCategorySpotlight["placement"]) => (hero?.category_spotlights || []).filter((item) => item.placement === placement);
   const demo = (value: string) => value.startsWith("[DEMO]") ? <span className="content-demo-indicator" title={english ? "Development content" : "محتوای محیط توسعه"}>{english ? "Demo" : "نمونه"}</span> : null;
@@ -99,7 +97,6 @@ export function EnterpriseHome({ locale, company, hero, advantages, categories, 
     <CategorySpotlightStrip locale={locale} items={spotlightsAt("after_discounts")} />
     <ProductSection locale={locale} title={english ? "Running low" : "محصولات در حال اتمام"} kicker={english ? "Limited remaining inventory" : "موجودی محدود؛ پیش از اتمام تهیه کنید"} products={lowStock} href={`/${locale}/shop?low_stock=true`} empty={english ? "No products currently have limited available stock." : "در حال حاضر محصولی با موجودی محدود ثبت نشده است."} skin="low-stock" />
     <CategorySpotlightStrip locale={locale} items={spotlightsAt("after_low_stock")} />
-    <section className="enterprise-section supply-brands-section site-container"><header className="home-section-heading"><div><div className="section-kicker">{english ? "Supply context" : "شبکه تأمین"}</div><h2>{english ? "Available brands" : "برندهای قابل تأمین"}</h2></div><Link href={`/${locale}/brands`}>{english ? "View all" : "مشاهده همه"} <span aria-hidden="true">←</span></Link></header>{brands.length ? <div className="supply-brand-grid">{brands.slice(0, 6).map((brand) => { const content = <>{brand.logo ? <Image src={brand.logo} alt={`${english ? "Logo of" : "لوگوی"} ${brand.name}`} width={120} height={64} /> : <span aria-hidden="true">{brand.name.slice(0, 1)}</span>}<b>{brand.name}</b></>; return brand.website ? <a key={brand.id} href={brand.website} target="_blank" rel="noreferrer">{content}</a> : <article key={brand.id}>{content}</article>; })}</div> : <div className="home-section-empty">{english ? "No supply brands are available yet." : "فهرست برندهای قابل تأمین به‌زودی تکمیل می‌شود."}</div>}</section>
     <CompanyPromotionStrip locale={locale} promotions={(hero?.home_promotions || []).filter((promotion) => promotion.placement === "home_bottom")} />
     <EditorialPreview articles={editorial} locale={locale} href={`/${locale}/knowledge`} />
     <section className="home-quote-cta site-container"><div><span>{english ? "Industrial purchasing" : "ویژه پیمانکاران، شرکت‌ها و همکاران"}</span><h2>{english ? "Contact us about availability and pricing" : "برای خرید پروژه‌ای، مسیر جدا داریم."}</h2><p>{english ? "Send the technical specification or product code you need." : "فهرست نیازتان را آماده کنید؛ درخواست پیش‌فاکتور و بررسی فنی از همین‌جا شروع می‌شود."}</p></div><div><Link className="primary" href={`/${locale}/rfq`}>{english ? "Request an inquiry" : "درخواست پیش‌فاکتور"}</Link><Link className="secondary" href={`/${locale}/shop`}>{english ? "Browse products" : "مشاهده محصولات"}</Link></div></section>
