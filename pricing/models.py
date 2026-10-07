@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from django.db import models
+from core.palette import DANGER, MUTED, OK, WARN
 
 LIST_KINDS = [
     ("list", "لیست عمومی"),
@@ -53,15 +54,15 @@ class PriceList(models.Model):
     @property
     def status_label(self) -> tuple[str, str]:
         if not self.is_active:
-            return "غیرفعال", "#64748b"
+            return "غیرفعال", MUTED
         if self.is_expired:
-            return "منقضی", "#c02626"
+            return "منقضی", DANGER
         days = self.days_to_expiry
         if days is not None and days <= 14:
             from core.utils import num as _num
 
-            return f"{_num(days, 0)} روز تا انقضا", "#b45309"
-        return "فعال", "#12855f"
+            return f"{_num(days, 0)} روز تا انقضا", WARN
+        return "فعال", OK
 
 
 class PriceListItem(models.Model):

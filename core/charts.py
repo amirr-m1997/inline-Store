@@ -4,6 +4,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from .utils import fa, num
+from core.palette import ACCENT
 
 
 def sparkline(values, width: int = 120, height: int = 30, padding: int = 4) -> str:
@@ -82,7 +83,7 @@ def donut(segments: list[dict], *, size=170, thickness=20, center_title="", cent
         slices.append({
             "dasharray": f"{length:.2f} {circumference - length:.2f}",
             "offset": f"{-offset:.2f}",
-            "color": segment.get("color", "#0e7490"),
+            "color": segment.get("color", ACCENT),
         })
         offset += length
     return {
@@ -95,7 +96,7 @@ def donut(segments: list[dict], *, size=170, thickness=20, center_title="", cent
         "legend": [
             {
                 "label": segment.get("label", ""),
-                "color": segment.get("color", "#0e7490"),
+                "color": segment.get("color", ACCENT),
                 "pct": round(float(segment.get("value") or 0) * 100 / total),
                 "value": segment.get("value", 0),
             }

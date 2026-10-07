@@ -21,6 +21,7 @@ from finance.models import Cheque, Invoice, Payment
 from inventory.models import StockItem
 from orders.models import Approval, Order, OrderLine
 from quotes.models import Quote
+from core.palette import ACCENT, ACCENT_2, DANGER, INFO, MUTED, OK, WARN
 
 MONEY = BigIntegerField()
 
@@ -125,14 +126,14 @@ def sales_series(days: int = 30) -> dict:
 def status_breakdown() -> list[dict]:
     """تفکیک وضعیت سفارش‌ها برای دونات."""
     colors = {
-        "draft": "#64748b", "pending_approval": "#b45309", "approved": "#0e7490",
-        "reserved": "#0891b2", "ready": "#22a5c0", "shipped": "#1d4ed8",
-        "delivered": "#12855f", "closed": "#64748b", "cancelled": "#c02626",
+        "draft": MUTED, "pending_approval": WARN, "approved": ACCENT,
+        "reserved": ACCENT_2, "ready": ACCENT_2, "shipped": INFO,
+        "delivered": OK, "closed": MUTED, "cancelled": DANGER,
     }
     rows = Order.objects.values("status").annotate(count=Count("id")).order_by("-count")
     return [
         {"label": dict(Order._meta.get_field("status").choices)[row["status"]],
-         "value": row["count"], "color": colors.get(row["status"], "#64748b")}
+         "value": row["count"], "color": colors.get(row["status"], MUTED)}
         for row in rows
     ]
 
@@ -146,10 +147,10 @@ def funnel_counts(days: int = 30) -> list[dict]:
     offered = quotes.filter(status__in=["sent", "negotiation", "won", "converted"]).count()
     converted = quotes.filter(status="converted").count()
     return [
-        {"label": "استعلام ثبت‌شده", "value": created, "color": "#155e75"},
-        {"label": "پاسخ‌داده‌شده", "value": responded, "color": "#0e7490"},
-        {"label": "پیش‌فاکتور صادرشده", "value": offered, "color": "#0891b2"},
-        {"label": "تبدیل به سفارش", "value": converted, "color": "#22a5c0"},
+        {"label": "استعلام ثبت‌شده", "value": created, "color": "var(--panel-step-1)"},
+        {"label": "پاسخ‌داده‌شده", "value": responded, "color": "var(--panel-step-2)"},
+        {"label": "پیش‌فاکتور صادرشده", "value": offered, "color": "var(--panel-step-3)"},
+        {"label": "تبدیل به سفارش", "value": converted, "color": "var(--panel-step-4)"},
     ]
 
 

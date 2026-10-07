@@ -49,23 +49,23 @@
         <svg viewBox="0 0 {{ sales_chart.width }} {{ sales_chart.height }}" class="panel-chart">
           <defs>
             <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#0891b2" stop-opacity=".30"/>
-              <stop offset="100%" stop-color="#0891b2" stop-opacity="0"/>
+              <stop offset="0%" stop-color="var(--panel-accent-2)" stop-opacity=".30"/>
+              <stop offset="100%" stop-color="var(--panel-accent-2)" stop-opacity="0"/>
             </linearGradient>
           </defs>
           {% for g in sales_chart.grid %}
-            <line x1="54" x2="{{ sales_chart.width|add:-14 }}" y1="{{ g.y }}" y2="{{ g.y }}" stroke="#eef2f8"/>
-            <text x="46" y="{{ g.y|add:4 }}" font-size="11.5" fill="#5b6b82" text-anchor="end">{{ g.label }}</text>
+            <line x1="54" x2="{{ sales_chart.width|add:-14 }}" y1="{{ g.y }}" y2="{{ g.y }}" stroke="var(--panel-border)"/>
+            <text x="46" y="{{ g.y|add:4 }}" font-size="11.5" fill="var(--panel-text-muted)" text-anchor="end">{{ g.label }}</text>
           {% endfor %}
           <path d="{{ sales_chart.area }}" fill="url(#salesGrad)"/>
-          <path d="{{ sales_chart.line }}" fill="none" stroke="#0e7490" stroke-width="2.4"
+          <path d="{{ sales_chart.line }}" fill="none" stroke="var(--panel-accent)" stroke-width="2.4"
                 stroke-linejoin="round" stroke-linecap="round"/>
           {% for lbl in sales_chart.x_labels %}
             <text x="{{ lbl.x }}" y="{{ sales_chart.height|add:-8 }}" font-size="11.5"
-                  fill="#5b6b82" text-anchor="middle">{{ lbl.label }}</text>
+                  fill="var(--panel-text-muted)" text-anchor="middle">{{ lbl.label }}</text>
           {% endfor %}
           <circle cx="{{ sales_chart.last.x }}" cy="{{ sales_chart.last.y }}" r="4.5" fill="#fff"
-                  stroke="#0e7490" stroke-width="2.5"/>
+                  stroke="var(--panel-accent)" stroke-width="2.5"/>
         </svg>
         <div class="panel-chart-caption">آخرین مقدار: <b>{{ sales_chart.last.label }}</b> میلیون تومان</div>
         {% else %}
@@ -85,8 +85,8 @@
                     stroke-width="20" stroke-dasharray="{{ slice.dasharray }}"
                     stroke-dashoffset="{{ slice.offset }}" transform="rotate(-90 80 80)"/>
           {% endfor %}
-          <text x="80" y="76" text-anchor="middle" font-size="21" font-weight="700" fill="#0f1b2d">{{ status_donut.center_title }}</text>
-          <text x="80" y="95" text-anchor="middle" font-size="11.5" fill="#5b6b82">{{ status_donut.center_sub }}</text>
+          <text x="80" y="76" text-anchor="middle" font-size="21" font-weight="700" fill="var(--panel-text)">{{ status_donut.center_title }}</text>
+          <text x="80" y="95" text-anchor="middle" font-size="11.5" fill="var(--panel-text-muted)">{{ status_donut.center_sub }}</text>
         </svg>
         <ul class="panel-legend">
           {% for item in status_donut.legend %}
@@ -104,10 +104,12 @@
       <header class="panel-card-head"><div><b>قیف استعلام → سفارش</b><span class="panel-sub">۳۰ روز گذشته</span></div></header>
       <div class="panel-card-body">
         {% for step in funnel_steps %}
-          <div class="panel-funnel" style="width:{{ step.width_pct }}%;background:{{ step.color }}">
-            <span>{{ step.label }}</span>
-            <span class="panel-funnel-rate">{{ step.rate|pct_unfilled }}٪</span>
-            <b>{{ step.value|fa_digits }}</b>
+          <div class="panel-funnel-row">
+            <span class="panel-funnel-label">{{ step.label }}</span>
+            <div class="panel-funnel" style="width:{{ step.width_pct }}%;background:{{ step.color }}">
+              <span class="panel-funnel-rate">{{ step.rate|pct_unfilled }}٪</span>
+              <b>{{ step.value|fa_digits }}</b>
+            </div>
           </div>
         {% endfor %}
         <p class="panel-sub" style="margin-top:6px">
@@ -175,9 +177,9 @@
               <td>{{ quote.assigned_to.get_full_name|default:"تخصیص نیافته" }}</td>
               <td class="panel-mono">{% if quote.lines.count %}{{ quote.total|money_s }}{% else %}—{% endif %}</td>
               <td>
-                {% if quote.is_sla_overdue %}{% badge "منقضی" "#c02626" %}
-                {% elif quote.sla_remaining_hours <= 8 %}{% badge quote.sla_remaining_hours|num_fa "#b45309" %}
-                {% else %}{% badge quote.sla_remaining_hours|num_fa "#12855f" %}{% endif %}
+                {% if quote.is_sla_overdue %}{% badge "منقضی" "danger" %}
+                {% elif quote.sla_remaining_hours <= 8 %}{% badge quote.sla_remaining_hours|num_fa "warn" %}
+                {% else %}{% badge quote.sla_remaining_hours|num_fa "ok" %}{% endif %}
               </td>
               <td>{% badge quote.get_status_display quote.status_color %}</td>
             </tr>
@@ -203,10 +205,10 @@
               <td><a href="/admin/orders/approval/{{ approval.pk }}/change/" class="panel-mono">{{ approval.order.number|fa_digits }}</a></td>
               <td>{{ approval.order.company.name }}</td>
               <td class="panel-mono">{{ approval.amount_snapshot|money_s }}</td>
-              <td>{% badge approval.get_required_role_display "#6d28d9" %}</td>
+              <td>{% badge approval.get_required_role_display "violet" %}</td>
               <td>
-                {% if approval.order.credit_info.exceeded %}{% badge "عبور از سقف اعتبار" "#c02626" %}
-                {% else %}{% badge "در محدوده مجاز" "#12855f" %}{% endif %}
+                {% if approval.order.credit_info.exceeded %}{% badge "عبور از سقف اعتبار" "danger" %}
+                {% else %}{% badge "در محدوده مجاز" "ok" %}{% endif %}
               </td>
             </tr>
           {% empty %}

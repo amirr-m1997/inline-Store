@@ -6,6 +6,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from core.palette import ACCENT, DANGER, INFO, MUTED, OK, SLATE, WARN
 
 ORDER_STATUS = [
     ("draft", "پیش‌نویس"),
@@ -138,10 +139,10 @@ class Order(models.Model):
     @property
     def status_color(self) -> str:
         return {
-            "draft": "#64748b", "pending_approval": "#b45309", "approved": "#12855f",
-            "reserved": "#0e7490", "ready": "#0891b2", "shipped": "#1d4ed8",
-            "delivered": "#12855f", "closed": "#475569", "cancelled": "#c02626",
-        }.get(self.status, "#64748b")
+            "draft": MUTED, "pending_approval": WARN, "approved": OK,
+            "reserved": ACCENT, "ready": ACCENT, "shipped": INFO,
+            "delivered": OK, "closed": SLATE, "cancelled": DANGER,
+        }.get(self.status, MUTED)
 
     @property
     def credit_info(self) -> dict:
@@ -293,8 +294,8 @@ class Approval(models.Model):
 
     @property
     def status_color(self) -> str:
-        return {"pending": "#b45309", "approved": "#12855f", "rejected": "#c02626",
-                "skipped": "#64748b"}.get(self.status, "#64748b")
+        return {"pending": WARN, "approved": OK, "rejected": DANGER,
+                "skipped": MUTED}.get(self.status, MUTED)
 
 
 class OrderEvent(models.Model):

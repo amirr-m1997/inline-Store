@@ -14,6 +14,7 @@ from core.utils import jalali, num
 
 from .models import Company, CompanyAddress, CompanyUser
 from .services import aging_report, credit_snapshot
+from core.palette import ACCENT, DANGER, INFO, OK, VIOLET, WARN
 
 
 class CompanyUserInline(TabularInline):
@@ -110,7 +111,7 @@ class CompanyAdmin(ModelHelpMixin, ImportExportModelAdmin, ModelAdmin):
         if not obj.credit_limit:
             return "—"
         pct = obj.credit_usage_pct
-        color = "#c02626" if pct >= 100 else ("#b45309" if pct >= 80 else "#0e7490")
+        color = DANGER if pct >= 100 else (WARN if pct >= 80 else ACCENT)
         return progress_bar(pct, color)
 
     @admin.display(description="KYC", ordering="kyc_status")
@@ -193,8 +194,8 @@ class CompanyUserAdmin(PanelModelAdmin, ModelAdmin):
 
     @admin.display(description="نقش", ordering="role")
     def role_badge(self, obj):
-        color = {"buyer": "#0e7490", "approver": "#6d28d9", "finance": "#12855f",
-                 "admin": "#1d4ed8"}.get(obj.role)
+        color = {"buyer": ACCENT, "approver": VIOLET, "finance": OK,
+                 "admin": INFO}.get(obj.role)
         return badge(obj.get_role_display(), color=color)
 
     @admin.display(description="سقف تأیید", ordering="approval_limit")

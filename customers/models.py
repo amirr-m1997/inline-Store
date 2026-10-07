@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from django.conf import settings
 from django.db import models
+from core.palette import DANGER, MUTED, OK, WARN
 
 LEGAL_TYPES = [("legal", "شخص حقوقی"), ("person", "شخص حقیقی")]
 KYC_STATUS = [("pending", "در انتظار بررسی"), ("approved", "تأییدشده"), ("rejected", "ردشده")]
@@ -127,18 +128,18 @@ class Company(models.Model):
     @property
     def credit_status(self) -> tuple[str, str]:
         if not self.credit_limit:
-            return "بدون سقف اعتبار", "#64748b"
+            return "بدون سقف اعتبار", MUTED
         pct = self.credit_usage_pct
         if pct >= 100:
-            return "عبور از سقف اعتبار", "#c02626"
+            return "عبور از سقف اعتبار", DANGER
         if pct >= 80:
-            return "نزدیک سقف اعتبار", "#b45309"
-        return "در محدوده مجاز", "#12855f"
+            return "نزدیک سقف اعتبار", WARN
+        return "در محدوده مجاز", OK
 
     @property
     def kyc_color(self) -> str:
-        return {"approved": "#12855f", "pending": "#b45309", "rejected": "#c02626"}.get(
-            self.kyc_status, "#64748b")
+        return {"approved": OK, "pending": WARN, "rejected": DANGER}.get(
+            self.kyc_status, MUTED)
 
     @property
     def is_legal(self) -> bool:

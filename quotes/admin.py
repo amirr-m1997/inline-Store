@@ -85,7 +85,7 @@ class QuoteAdmin(PanelModelAdmin, ModelAdmin):
     def items_summary(self, obj):
         count = obj.lines.count()
         return format_html(
-            '<span style="font-size:12px">{}</span><div style="font-size:11px;color:#5b6b82">{} قلم</div>',
+            '<span style="font-size:12px">{}</span><div style="font-size:11px;color:var(--panel-text-muted)">{} قلم</div>',
             (obj.items_summary or "—")[:60], num(count),
         )
 

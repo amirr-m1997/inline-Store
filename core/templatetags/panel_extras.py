@@ -4,6 +4,7 @@ from __future__ import annotations
 from django import template
 from django.utils.safestring import mark_safe
 
+from core.palette import ACCENT, DANGER, INFO, MUTED, OK, VIOLET, WARN
 from core.utils import fa, jalali, jalali_dt, money, money_short, num
 
 register = template.Library()
@@ -75,20 +76,21 @@ def label_for(value, choices):
 
 
 BADGE_COLORS = {
-    "ok": "#12855f", "success": "#12855f", "warn": "#b45309", "warning": "#b45309",
-    "danger": "#c02626", "error": "#c02626", "info": "#1d4ed8", "violet": "#6d28d9",
-    "primary": "#0e7490", "muted": "#64748b",
+    "ok": OK, "success": OK, "warn": WARN, "warning": WARN,
+    "danger": DANGER, "error": DANGER, "info": INFO, "violet": VIOLET,
+    "primary": ACCENT, "muted": MUTED,
 }
 
 
 @register.simple_tag
-def badge(text, color="#64748b"):
-    """برچسب رنگی؛ هم رنگ هگز و هم کلید واژگانی (ok/warn/danger/info/…) را می‌پذیرد."""
+def badge(text, color="muted"):
+    """برچسب رنگی؛ هم رنگ هگز و هم کلید واژگانی (ok/warn/danger/info/…) را می‌پذیرد.
+
+    رنگ به‌صورت متغیر CSS به کلاس `.panel-badge` داده می‌شود؛ در تم تیره
+    خودِ CSS آن را روشن می‌کند تا کنتراست متن ≥ ۴٫۵:۱ بماند.
+    """
     color = BADGE_COLORS.get(str(color).lower(), color)
-    return mark_safe(
-        f'<span style="background:{color}1a;color:{color};padding:2px 8px;border-radius:999px;'
-        f'font-size:11px;font-weight:600;white-space:nowrap">{text}</span>'
-    )
+    return mark_safe(f'<span class="panel-badge" style="--badge:{color}">{text}</span>')
 
 
 @register.inclusion_tag("core/partials/kpi_card.html")

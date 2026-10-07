@@ -18,6 +18,7 @@ from core.utils import jalali, jalali_dt, num
 from core.jalali_filters import JalaliRangeDateFilter as RangeDateFilter
 
 from .models import Approval, ApprovalRule, Order, OrderEvent, OrderLine
+from core.palette import ACCENT, DANGER
 
 
 class OrderLineInline(TabularInline):
@@ -126,7 +127,7 @@ class OrderAdmin(PanelModelAdmin, ModelAdmin):
         if info["exceeded"]:
             return badge("عبور از سقف اعتبار", key="danger")
         return progress_bar(info["usage_pct"],
-                            "#c02626" if info["usage_pct"] >= 100 else "#0e7490")
+                            DANGER if info["usage_pct"] >= 100 else ACCENT)
 
     @admin.display(description="تأیید")
     def approval_col(self, obj):
@@ -150,7 +151,7 @@ class OrderAdmin(PanelModelAdmin, ModelAdmin):
             return "—"
         name = obj.sales_rep.get_full_name() or obj.sales_rep.username
         if obj.placed_by_rep_for_company:
-            return format_html("{} <span style='font-size:11.5px;color:#5b6b82'>(به‌نیابت)</span>", name)
+            return format_html("{} <span style='font-size:11.5px;color:var(--panel-text-muted)'>(به‌نیابت)</span>", name)
         return name
 
     @admin.display(description="تاریخ ثبت", ordering="ordered_at")
@@ -187,8 +188,8 @@ class OrderAdmin(PanelModelAdmin, ModelAdmin):
         note = ""
         if info["exceeded"]:
             note = format_html(
-                '<div style="margin-top:8px;padding:8px 10px;background:#fdecec;border:1px solid #f6d3d3;'
-                'border-radius:10px;color:#8f1d1d;font-size:12px">مبلغ سفارش از اعتبار آزاد بیشتر است؛ '
+                '<div class="panel-callout panel-callout--danger" style="margin-top:8px">'
+                'مبلغ سفارش از اعتبار آزاد بیشتر است؛ '
                 'نیاز به تأیید مالی یا دریافت پیش‌پرداخت دارد.</div>')
         return format_html("{}<div style='margin-top:8px'>{}</div>{}", badge(label, color=color),
                            html_table(["شرح", "مبلغ (تومان)"], rows), note)

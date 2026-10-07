@@ -14,6 +14,7 @@ from core.admin_utils import ModelHelpMixin, PanelModelAdmin, badge, diff_cell, 
 from core.utils import jalali, num
 
 from .models import PriceList, PriceListItem, QuantityPriceBreak
+from core.palette import ACCENT, ACCENT_2, INFO, MUTED, VIOLET, WARN
 
 
 class PriceListItemInline(TabularInline):
@@ -59,8 +60,8 @@ class PriceListAdmin(PanelModelAdmin, ModelAdmin):
 
     @admin.display(description="نوع", ordering="kind")
     def kind_badge(self, obj):
-        color = {"list": "#64748b", "partner": "#0e7490", "project": "#6d28d9",
-                 "contractor": "#1d4ed8", "export": "#b45309", "internal": "#0891b2"}.get(obj.kind)
+        color = {"list": MUTED, "partner": ACCENT, "project": VIOLET,
+                 "contractor": INFO, "export": WARN, "internal": ACCENT_2}.get(obj.kind)
         return badge(obj.get_kind_display(), color=color)
 
     @admin.display(description="مشتریان")

@@ -6,6 +6,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from core.palette import ACCENT, DANGER, INFO, MUTED, OK, SLATE, WARN
 
 INVOICE_STATUS = [
     ("draft", "پیش‌نویس"),
@@ -117,17 +118,17 @@ class Invoice(models.Model):
     @property
     def status_color(self) -> str:
         return {
-            "draft": "#64748b", "issued": "#1d4ed8", "sent": "#0e7490",
-            "accepted": "#12855f", "rejected": "#c02626", "partially_paid": "#b45309",
-            "paid": "#12855f", "overdue": "#c02626", "cancelled": "#475569",
-        }.get(self.status, "#64748b")
+            "draft": MUTED, "issued": INFO, "sent": ACCENT,
+            "accepted": OK, "rejected": DANGER, "partially_paid": WARN,
+            "paid": OK, "overdue": DANGER, "cancelled": SLATE,
+        }.get(self.status, MUTED)
 
     @property
     def moadian_color(self) -> str:
         return {
-            "not_sent": "#64748b", "pending": "#b45309", "submitted": "#0e7490",
-            "accepted": "#12855f", "failed": "#c02626",
-        }.get(self.moadian_status, "#64748b")
+            "not_sent": MUTED, "pending": WARN, "submitted": ACCENT,
+            "accepted": OK, "failed": DANGER,
+        }.get(self.moadian_status, MUTED)
 
     @property
     def days_overdue(self) -> int | None:
@@ -261,9 +262,9 @@ class Cheque(models.Model):
     @property
     def status_color(self) -> str:
         return {
-            "in_hand": "#0e7490", "deposited": "#1d4ed8", "cleared": "#12855f",
-            "bounced": "#c02626", "returned": "#b45309",
-        }.get(self.status, "#64748b")
+            "in_hand": ACCENT, "deposited": INFO, "cleared": OK,
+            "bounced": DANGER, "returned": WARN,
+        }.get(self.status, MUTED)
 
     @property
     def is_overdue(self) -> bool:
@@ -273,14 +274,14 @@ class Cheque(models.Model):
     def urgency(self) -> tuple[str, str]:
         """(برچسب، رنگ) برای هشدار سررسید."""
         if self.status in ("cleared", "returned"):
-            return self.get_status_display(), "#12855f"
+            return self.get_status_display(), OK
         days = self.days_to_due
         from core.utils import num as _num
 
         if days < 0:
-            return f"{_num(abs(days), 0)} روز معوق", "#c02626"
+            return f"{_num(abs(days), 0)} روز معوق", DANGER
         if days == 0:
-            return "سررسید امروز", "#c02626"
+            return "سررسید امروز", DANGER
         if days <= 7:
-            return f"{_num(days, 0)} روز دیگر", "#b45309"
-        return f"{_num(days, 0)} روز دیگر", "#0e7490"
+            return f"{_num(days, 0)} روز دیگر", WARN
+        return f"{_num(days, 0)} روز دیگر", ACCENT

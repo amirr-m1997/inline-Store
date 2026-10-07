@@ -5,6 +5,7 @@ from django.conf import settings
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
+from core.palette import ACCENT, DANGER, INFO, MUTED, OK, VIOLET, WARN
 
 UOM_CHOICES = [
     ("device", "دستگاه"),
@@ -229,9 +230,9 @@ class Product(models.Model):
     @property
     def availability_color(self) -> str:
         return {
-            "in_stock": "#12855f", "ready": "#12855f", "made_to_order": "#b45309",
-            "used": "#1d4ed8", "needs_quote": "#b45309", "discontinued": "#c02626",
-        }.get(self.availability, "#64748b")
+            "in_stock": OK, "ready": OK, "made_to_order": WARN,
+            "used": INFO, "needs_quote": WARN, "discontinued": DANGER,
+        }.get(self.availability, MUTED)
 
     @property
     def free_qty(self) -> float:
@@ -254,13 +255,13 @@ class Product(models.Model):
     def stock_status(self) -> tuple[str, str, str]:
         """(کلید، عنوان، رنگ) وضعیت موجودی برای نمایش در پنل."""
         if not self.stock_items.exists():
-            return "none", "بدون رکورد انبار", "#64748b"
+            return "none", "بدون رکورد انبار", MUTED
         free = self.free_qty
         if free <= 0:
-            return "out", "ناموجود", "#c02626"
+            return "out", "ناموجود", DANGER
         if free <= self.reorder_point:
-            return "low", "زیر نقطه سفارش", "#b45309"
-        return "ok", "متعادل", "#12855f"
+            return "low", "زیر نقطه سفارش", WARN
+        return "ok", "متعادل", OK
 
     def apply_packaging(self, qty: float) -> float:
         """گرد کردن تعداد به مضرب بسته‌بندی."""
@@ -333,10 +334,10 @@ class ProductDocument(models.Model):
     @property
     def kind_color(self) -> str:
         return {
-            "datasheet": "#c02626", "drawing": "#1d4ed8", "cad": "#1d4ed8",
-            "bim": "#6d28d9", "manual": "#64748b", "cert": "#12855f",
-            "price": "#0e7490",
-        }.get(self.kind, "#64748b")
+            "datasheet": DANGER, "drawing": INFO, "cad": INFO,
+            "bim": VIOLET, "manual": MUTED, "cert": OK,
+            "price": ACCENT,
+        }.get(self.kind, MUTED)
 
 
 class ProductRelation(models.Model):

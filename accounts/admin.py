@@ -8,6 +8,7 @@ from core.admin_utils import ModelHelpMixin
 
 from .models import Profile
 from .roles import ROLE_MATRIX
+from core.palette import ACCENT, ACCENT_2, INFO, MUTED, OK, WARN
 
 admin.site.unregister(User)
 admin.site.unregister(Group)
@@ -43,11 +44,11 @@ class UserAdmin(ModelHelpMixin, BaseUserAdmin, ModelAdmin):
         if not profile:
             return "—"
         colors = {
-            "sysadmin": "#7c3aed", "sales_manager": "#0e7490", "sales": "#0891b2",
-            "warehouse": "#b45309", "finance": "#12855f", "content": "#64748b",
-            "support": "#1d4ed8",
+            "sysadmin": "var(--panel-violet)", "sales_manager": ACCENT, "sales": ACCENT_2,
+            "warehouse": WARN, "finance": OK, "content": MUTED,
+            "support": INFO,
         }
-        color = colors.get(profile.role, "#64748b")
+        color = colors.get(profile.role, MUTED)
         return format_html(
             '<span style="background:{}1a;color:{};padding:2px 9px;border-radius:999px;font-size:11.5px">{}</span>',
             color, color, profile.get_role_display(),

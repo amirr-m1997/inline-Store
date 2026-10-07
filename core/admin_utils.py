@@ -4,27 +4,24 @@ from __future__ import annotations
 from django.contrib import admin
 from django.utils.html import format_html
 
+from .palette import ACCENT, DANGER, INFO, MUTED, OK, VIOLET, WARN
 from .utils import fa, jalali, jalali_dt, money_short, num
 
 COLORS = {
-    "ok": "#12855f",
-    "warn": "#b45309",
-    "danger": "#c02626",
-    "info": "#1d4ed8",
-    "violet": "#6d28d9",
-    "primary": "#0e7490",
-    "muted": "#64748b",
+    "ok": OK,
+    "warn": WARN,
+    "danger": DANGER,
+    "info": INFO,
+    "violet": VIOLET,
+    "primary": ACCENT,
+    "muted": MUTED,
 }
 
 
 def badge(text, color: str | None = None, key: str = "muted"):
     """نمایش یک برچسب رنگی (badge) در لیست‌های ادمین."""
     color = color or COLORS.get(key, COLORS["muted"])
-    return format_html(
-        '<span style="background:{}1a;color:{};padding:2px 8px;border-radius:999px;'
-        'font-size:11px;font-weight:600;white-space:nowrap">{}</span>',
-        color, color, text,
-    )
+    return format_html('<span class="panel-badge" style="--badge:{}">{}</span>', color, text)
 
 
 def status_badge(text, key: str = "muted"):
@@ -51,10 +48,10 @@ def progress_bar(pct: int, color: str | None = None):
     pct = max(min(int(pct or 0), 100), 0)
     color = color or COLORS["primary"]
     return format_html(
-        '<div style="display:flex;align-items:center;gap:8px">'
-        '<div style="flex:1;min-width:70px;height:7px;background:#eef2f8;border-radius:6px;overflow:hidden">'
-        '<div style="width:{}%;height:100%;background:{}"></div></div>'
-        '<span style="font-size:11px;color:#64748b">{}</span></div>',
+        '<div class="panel-progress">'
+        '<div class="panel-progress-track">'
+        '<div class="panel-progress-fill" style="width:{}%;--fill:{}"></div></div>'
+        '<span class="panel-progress-label">{}</span></div>',
         pct, color, fa(f"{pct}٪"),
     )
 
@@ -62,10 +59,10 @@ def progress_bar(pct: int, color: str | None = None):
 def diff_cell(old, new, fmt=str):
     """نمایش «قبل ← بعد» با رنگ."""
     return format_html(
-        '<span style="font-variant-numeric:tabular-nums">'
-        '<span style="color:#c02626;text-decoration:line-through;opacity:.75">{}</span>'
-        ' <span style="color:#64748b">←</span> '
-        '<b style="color:#12855f">{}</b></span>',
+        '<span class="panel-diff">'
+        '<span class="panel-diff-old">{}</span>'
+        ' <span class="panel-diff-arrow">←</span> '
+        '<b class="panel-diff-new">{}</b></span>',
         fmt(old) if old not in (None, "") else "—", fmt(new) if new not in (None, "") else "—",
     )
 
@@ -88,21 +85,15 @@ def jalali_col(description: str):
 
 def html_table(headers: list[str], rows: list[list], title: str = "") -> str:
     """ساخت جدول HTML کوچک برای فیلدهای readonly."""
-    head = "".join(
-        f'<th style="padding:6px 10px;text-align:right;font-size:11px;color:#64748b;'
-        f'border-bottom:1px solid #e6eaf2;font-weight:600">{h}</th>' for h in headers
-    )
+    head = "".join(f"<th>{h}</th>" for h in headers)
     body = ""
     for row in rows:
-        cells = "".join(
-            f'<td style="padding:6px 10px;font-size:12px;border-bottom:1px solid #eef2f8">{c}</td>'
-            for c in row
-        )
+        cells = "".join(f"<td>{c}</td>" for c in row)
         body += f"<tr>{cells}</tr>"
-    title_html = f'<div style="margin-bottom:6px;font-weight:600">{title}</div>' if title else ""
+    title_html = f'<div class="panel-inline-table__title">{title}</div>' if title else ""
     return format_html(
-        '{}<table style="width:100%;border-collapse:collapse;background:#fff;border-radius:10px;'
-        'overflow:hidden"><thead><tr>{}</tr></thead><tbody>{}</tbody></table>',
+        '{}<div class="panel-inline-table"><table><thead><tr>{}</tr></thead>'
+        '<tbody>{}</tbody></table></div>',
         title_html, format_html(head), format_html(body),
     )
 

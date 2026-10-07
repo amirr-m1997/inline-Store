@@ -6,6 +6,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from core.palette import ACCENT, DANGER, INFO, MUTED, OK, VIOLET, WARN
 
 WAREHOUSE_KINDS = [
     ("central", "انبار مرکزی"),
@@ -87,14 +88,14 @@ class StockItem(models.Model):
         """(کلید، برچسب، رنگ)"""
         free = self.free_qty
         if free < 0:
-            return "error", "کسری رزرو", "#c02626"
+            return "error", "کسری رزرو", DANGER
         if free <= 0:
-            return "out", "ناموجود", "#c02626"
+            return "out", "ناموجود", DANGER
         if float(self.min_level) and free <= float(self.min_level):
-            return "critical", "بحرانی", "#c02626"
+            return "critical", "بحرانی", DANGER
         if float(self.reorder_point) and free <= float(self.reorder_point):
-            return "low", "زیر نقطه سفارش", "#b45309"
-        return "ok", "متعادل", "#12855f"
+            return "low", "زیر نقطه سفارش", WARN
+        return "ok", "متعادل", OK
 
     @property
     def shortage_to_reorder(self) -> float:
@@ -147,10 +148,10 @@ class StockMove(models.Model):
     @property
     def kind_color(self) -> str:
         return {
-            "receipt": "#12855f", "issue": "#c02626", "reserve": "#b45309",
-            "release": "#0891b2", "adjust": "#6d28d9", "transfer": "#1d4ed8",
-            "return": "#b45309",
-        }.get(self.kind, "#64748b")
+            "receipt": OK, "issue": DANGER, "reserve": WARN,
+            "release": ACCENT, "adjust": VIOLET, "transfer": INFO,
+            "return": WARN,
+        }.get(self.kind, MUTED)
 
 
 class PurchaseRequest(models.Model):
@@ -191,6 +192,6 @@ class PurchaseRequest(models.Model):
     @property
     def status_color(self) -> str:
         return {
-            "draft": "#64748b", "submitted": "#1d4ed8", "approved": "#12855f",
-            "ordered": "#0e7490", "received": "#12855f", "cancelled": "#c02626",
-        }.get(self.status, "#64748b")
+            "draft": MUTED, "submitted": INFO, "approved": OK,
+            "ordered": ACCENT, "received": OK, "cancelled": DANGER,
+        }.get(self.status, MUTED)

@@ -73,7 +73,7 @@ body, .font-sans, input, select, textarea, button, .material-symbols-outlined {
   font-variant-numeric: tabular-nums; direction: rtl;
 }
 .panel-kpi-foot { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #64748b; margin-top: 4px; }
-.panel-chip { background: #e3f6ee; color: #12855f; border-radius: 6px; padding: 0 6px; font-weight: 600; }
+.panel-chip { background: color-mix(in srgb, var(--panel-ok) 12%, transparent); color: var(--panel-ok); border-radius: 6px; padding: 0 6px; font-weight: 600; }
 .panel-spark { width: 100%; height: 28px; margin-top: 4px; }
 
 /* ------------------------------------------------------ چیدمان کارت‌ها */
@@ -128,12 +128,16 @@ body, .font-sans, input, select, textarea, button, .material-symbols-outlined {
 .panel-bar > i { display: block; height: 100%; background: linear-gradient(90deg, #0e7490, #22a5c0); }
 
 /* ------------------------------------------------------ قیف */
+.panel-funnel-row { margin-bottom: 9px; }
+.panel-funnel-label {
+  display: block; font-size: 11.5px; color: var(--panel-text-muted); margin-bottom: 3px;
+}
 .panel-funnel {
   display: flex; align-items: center; gap: 10px; color: #fff; border-radius: 11px;
-  padding: 10px 13px; margin-bottom: 8px; font-size: 12.3px;
+  padding: 9px 13px; min-width: 96px; font-size: 12.3px;
 }
 .panel-funnel b { margin-inline-start: auto; font-size: 15px; font-variant-numeric: tabular-nums; }
-.panel-funnel-rate { background: rgba(255, 255, 255, .22); border-radius: 20px; padding: 1px 7px; font-size: 11px; }
+.panel-funnel-rate { background: rgba(9, 30, 41, .62); color: #fff; border-radius: 20px; padding: 1px 7px; font-size: 11px; font-variant-numeric: tabular-nums; }
 
 /* ------------------------------------------------------ جدول‌ها */
 .panel-table { width: 100%; border-collapse: collapse; font-size: 12.3px; }
@@ -294,9 +298,16 @@ body, .font-sans, input, select, textarea, button, .material-symbols-outlined {
   --panel-text-muted: #5b6b82;   /* ۵٫۸:۱ روی سطح روشن */
   --panel-accent: #0e7490;       /* ۴٫۹:۱ روی سطح روشن */
   --panel-accent-weak: #e8f4f8;  /* پس‌زمینه‌ی ملایم فیروزه‌ای */
-  --panel-ok: #12855f;
-  --panel-warn: #b45309;
-  --panel-danger: #c02626;
+  --panel-ok: #0f7350;
+  --panel-warn: #92400e;
+  --panel-danger: #b91c1c;
+  --panel-violet: #5b21b6;
+  --panel-accent-2: #0891b2;   /* پلهٔ دوم نمودارها */
+  /* پله‌های قیف (تیره→روشن): متن سفیدِ درشت روی همه‌شان ≥ ۳:۱ است */
+  --panel-step-1: #155e75;
+  --panel-step-2: #0e7490;
+  --panel-step-3: #0f8fa8;
+  --panel-step-4: #0891b2;
   --panel-focus: #0e7490;
   --panel-on-accent: #ffffff;    /* متن روی زمینهٔ فیروزه‌ای پررنگ */
   --panel-target: 32px;          /* کمینه‌ی هدف لمسی (WCAG 2.5.8) */
@@ -312,6 +323,8 @@ body, .font-sans, input, select, textarea, button, .material-symbols-outlined {
   --panel-ok: #4ade80;
   --panel-warn: #fbbf24;
   --panel-danger: #fca5a5;
+  --panel-violet: #c4b5fd;
+  --panel-accent-2: #7ddfef;
   --panel-focus: #3ec3dd;
   --panel-on-accent: #06212c;
 }
@@ -451,4 +464,80 @@ body, .font-sans, input, select, textarea, button, .material-symbols-outlined {
   .panel-row-actions a { padding: 0 10px; }
   .panel-list-hint { font-size: 12px; }
   .panel-sub { font-size: 12px; }
+}
+
+
+/* ==================================================================
+   ۱۵) اجزای مشترکِ ادمین (بج، نوار پیشرفت، جدول درون‌خطی، هشدار، «قبل←بعد»)
+   رنگ‌های متن از core/palette.py می‌آیند؛ در تم تیره خودکار روشن می‌شوند تا
+   کنتراست متنِ بج در هر دو تم ≥ ۴٫۵:۱ بماند (سنجیده‌شده با مرورگر واقعی).
+   ================================================================== */
+.panel-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 999px;
+  font-size: 11px; font-weight: 600; white-space: nowrap;
+  color: var(--badge, var(--panel-text-muted));
+  background: color-mix(in srgb, var(--badge, currentColor) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--badge, currentColor) 26%, transparent);
+}
+.dark .panel-badge {
+  color: color-mix(in srgb, var(--badge, white) 58%, white);
+  background: color-mix(in srgb, var(--badge, white) 20%, transparent);
+  border-color: color-mix(in srgb, var(--badge, white) 36%, transparent);
+}
+
+.panel-progress { display: flex; align-items: center; gap: 8px; }
+.panel-progress-track {
+  flex: 1; min-width: 70px; height: 7px; border-radius: 6px; overflow: hidden;
+  background: var(--panel-surface-2); border: 1px solid var(--panel-border);
+}
+.panel-progress-fill { height: 100%; background: var(--fill, var(--panel-accent)); }
+.panel-progress-label {
+  font-size: 11px; color: var(--panel-text-muted); font-variant-numeric: tabular-nums;
+}
+
+.panel-inline-table {
+  border: 1px solid var(--panel-border); border-radius: 10px; overflow: hidden;
+  background: var(--panel-surface);
+}
+.panel-inline-table__title {
+  padding: 8px 10px; font-size: 12px; font-weight: 600;
+  border-bottom: 1px solid var(--panel-border);
+}
+.panel-inline-table table { width: 100%; border-collapse: collapse; }
+.panel-inline-table th {
+  padding: 6px 10px; text-align: start; font-size: 11.5px; font-weight: 600;
+  color: var(--panel-text-muted); border-bottom: 1px solid var(--panel-border);
+}
+.panel-inline-table td {
+  padding: 6px 10px; font-size: 12.3px; border-bottom: 1px solid var(--panel-border);
+}
+.panel-inline-table tr:last-child td { border-bottom: 0; }
+
+.panel-diff { font-variant-numeric: tabular-nums; }
+.panel-diff-old { color: var(--panel-danger); text-decoration: line-through; opacity: .85; }
+.panel-diff-arrow { color: var(--panel-text-muted); }
+.panel-diff-new { color: var(--panel-ok); }
+
+.panel-callout {
+  padding: 9px 11px; border-radius: 10px; font-size: 12.3px; line-height: 1.65;
+}
+.panel-callout--danger {
+  color: var(--panel-danger);
+  background: color-mix(in srgb, var(--panel-danger) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--panel-danger) 30%, transparent);
+}
+.dark .panel-callout--danger {
+  color: color-mix(in srgb, var(--panel-danger) 60%, white);
+  background: color-mix(in srgb, var(--panel-danger) 18%, transparent);
+  border-color: color-mix(in srgb, var(--panel-danger) 36%, transparent);
+}
+
+/* دکمه‌ها و پیوندهای پوستهٔ Unfold در تم روشن: سفید روی فیروزه‌ایِ روشن
+   فقط ۳٫۵:۱ بود؛ با تیره‌کردن رنگ اصلی به ≥ ۵:۱ می‌رسد. در تم تیره
+   رنگ‌های خود پوسته کنتراست کافی دارند و دست‌نخورده می‌مانند. */
+:root:root:not(.dark) {
+  --color-primary-600: #0e7490;
+  --color-primary-700: #155e75;
+  --color-red-600: #b91c1c;
+  --color-red-700: #991b1b;
 }

@@ -208,7 +208,7 @@ class ProductAdmin(ModelHelpMixin, ImportExportModelAdmin, ModelAdmin):
     @admin.display(description="MOQ / بسته")
     def sales_rules(self, obj):
         return format_html(
-            '<span style="font-size:11.5px;color:#64748b">MOQ {} / مضرب {}</span>',
+            '<span style="font-size:11.5px;color:var(--panel-text-muted)">MOQ {} / مضرب {}</span>',
             num(obj.min_order_qty, 0), num(obj.packaging_multiple, 0),
         )
 
@@ -269,7 +269,7 @@ class ProductAdmin(ModelHelpMixin, ImportExportModelAdmin, ModelAdmin):
             for row in price_levels_for(obj, company=company)
         ]
         note = format_html(
-            '<div style="margin-top:8px;font-size:11.5px;color:#64748b">'
+            '<div style="margin-top:8px;font-size:11.5px;color:var(--panel-text-muted)">'
             'نمونه بر اساس سبد قیمت مشتری «{}»</div>',
             company.name if company else "بدون سبد اختصاصی (قیمت پایه)",
         )

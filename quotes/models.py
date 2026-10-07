@@ -6,6 +6,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from core.palette import ACCENT, DANGER, INFO, MUTED, OK, VIOLET, WARN
 
 QUOTE_STATUS = [
     ("new", "جدید"),
@@ -128,10 +129,10 @@ class Quote(models.Model):
     @property
     def status_color(self) -> str:
         return {
-            "new": "#64748b", "tech_review": "#1d4ed8", "pricing": "#6d28d9",
-            "sent": "#12855f", "negotiation": "#b45309", "won": "#12855f",
-            "converted": "#0e7490", "lost": "#c02626", "expired": "#c02626",
-        }.get(self.status, "#64748b")
+            "new": MUTED, "tech_review": INFO, "pricing": VIOLET,
+            "sent": OK, "negotiation": WARN, "won": OK,
+            "converted": ACCENT, "lost": DANGER, "expired": DANGER,
+        }.get(self.status, MUTED)
 
     @property
     def days_to_expiry(self) -> int | None:

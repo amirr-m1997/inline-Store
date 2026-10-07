@@ -205,6 +205,69 @@
   }
 
   var countersBusy = false;
+  /* پیام‌های متنی خود جنگو (مثل «شما 3.5 ساعت از زمان سرور جلوتر هستید») */
+  /* آیکون‌های کم‌رنگ پوسته (زیر ۳:۱) با اندازه‌گیری کنتراست پررنگ‌تر می‌شوند */
+  function fixLowContrastIcons() {
+    /* رنگ‌های محاسبه‌شده می‌توانند oklch/color-mix باشند؛ با بوم تبدیل می‌شوند */
+    var cvs = document.createElement("canvas");
+    cvs.width = cvs.height = 1;
+    var cx = cvs.getContext("2d", { willReadFrequently: true });
+    var parse = function (c) {
+      if (!c || c === "transparent" || c === "rgba(0, 0, 0, 0)") return null;
+      var m = (c || "").match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)/);
+      if (m) return [+m[1], +m[2], +m[3], m[4] === undefined ? 1 : +m[4]];
+      try {
+        cx.clearRect(0, 0, 1, 1);
+        cx.fillStyle = "#000";
+        cx.fillStyle = c;
+        if (cx.fillStyle === "#000" && !/^#000/.test(c)) return null;
+        cx.fillRect(0, 0, 1, 1);
+        var d = cx.getImageData(0, 0, 1, 1).data;
+        return [d[0], d[1], d[2], d[3] / 255];
+      } catch (e) {
+        return null;
+      }
+    };
+    var lum = function (r) {
+      var f = function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+      return 0.2126 * f(r[0]) + 0.7152 * f(r[1]) + 0.0722 * f(r[2]);
+    };
+    var bgOf = function (el) {
+      var stack = [], n = el, bg = [255, 255, 255];
+      while (n && n.nodeType === 1) {
+        var c = parse(getComputedStyle(n).backgroundColor);
+        if (c && c[3] > 0) stack.push(c);
+        n = n.parentElement;
+      }
+      stack.reverse().forEach(function (c) {
+        bg = c[3] === 1 ? c.slice(0, 3) : [0, 1, 2].map(function (i) {
+          return Math.round(c[i] * c[3] + bg[i] * (1 - c[3]));
+        });
+      });
+      return bg;
+    };
+    document.querySelectorAll(".material-symbols-outlined").forEach(function (ic) {
+      if (ic.dataset.panelIconFixed === "1") return;
+      var fg = parse(getComputedStyle(ic).color);
+      if (!fg) return;
+      var l1 = lum(fg), l2 = lum(bgOf(ic));
+      var ratio = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+      if (ratio >= 3) return;
+      ic.dataset.panelIconFixed = "1";
+      ic.style.color = l2 > 0.4 ? "#64748b" : "#94a3b8";
+    });
+  }
+
+  function persianizeNotices() {
+    var en = "0123456789";
+    var fa = "۰۱۲۳۴۵۶۷۸۹";
+    document.querySelectorAll(".timezonewarning, .help.timezonewarning, p.errornote, ul.messagelist li").forEach(function (el) {
+      if (el.dataset.panelFaDone === "1") return;
+      el.dataset.panelFaDone = "1";
+      el.innerHTML = el.innerHTML.replace(/[0-9]/g, function (d) { return fa[en.indexOf(d)]; });
+    });
+  }
+
   function persianizeCounters() {
     if (countersBusy) return;
     countersBusy = true;
@@ -235,6 +298,8 @@
       timer = setTimeout(function () {
         if (observer) observer.disconnect();
         persianizeCounters();
+      persianizeNotices();
+      fixLowContrastIcons();
         if (observer) observer.observe(scope, { childList: true, subtree: true, characterData: true });
       }, 40);
     });

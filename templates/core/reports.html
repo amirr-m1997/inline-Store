@@ -19,36 +19,36 @@
     </header>
     <div class="panel-card-body">
       <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
-        <label style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:#5b6b82">
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--panel-text-muted)">
           از تاریخ (شمسی)
           <input type="text" name="from" value="{{ from_jalali }}" dir="ltr"
-                 style="padding:8px 10px;border:1px solid #e6eaf2;border-radius:10px;font:inherit">
+                 style="padding:8px 10px;border:1px solid var(--panel-border);border-radius:10px;font:inherit">
         </label>
-        <label style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:#5b6b82">
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--panel-text-muted)">
           تا تاریخ (شمسی)
           <input type="text" name="to" value="{{ to_jalali }}" dir="ltr"
-                 style="padding:8px 10px;border:1px solid #e6eaf2;border-radius:10px;font:inherit">
+                 style="padding:8px 10px;border:1px solid var(--panel-border);border-radius:10px;font:inherit">
         </label>
-        <label style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:#5b6b82">
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--panel-text-muted)">
           گروه‌بندی
-          <select name="dimension" style="padding:8px 10px;border:1px solid #e6eaf2;border-radius:10px;font:inherit">
+          <select name="dimension" style="padding:8px 10px;border:1px solid var(--panel-border);border-radius:10px;font:inherit">
             {% for key, label in dimensions %}
               <option value="{{ key }}" {% if filters.dimension == key %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
           </select>
         </label>
-        <label style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:#5b6b82">
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--panel-text-muted)">
           مشتری
-          <select name="company" style="padding:8px 10px;border:1px solid #e6eaf2;border-radius:10px;font:inherit">
+          <select name="company" style="padding:8px 10px;border:1px solid var(--panel-border);border-radius:10px;font:inherit">
             <option value="">همه مشتریان</option>
             {% for c in companies %}
               <option value="{{ c.pk }}" {% if filters.company_id == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
             {% endfor %}
           </select>
         </label>
-        <label style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:#5b6b82">
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--panel-text-muted)">
           وضعیت سفارش
-          <select name="status" style="padding:8px 10px;border:1px solid #e6eaf2;border-radius:10px;font:inherit">
+          <select name="status" style="padding:8px 10px;border:1px solid var(--panel-border);border-radius:10px;font:inherit">
             <option value="">همه</option>
             {% for key, label in status_choices %}
               <option value="{{ key }}" {% if filters.status == key %}selected{% endif %}>{{ label }}</option>
@@ -77,21 +77,21 @@
         <svg viewBox="0 0 {{ chart.width }} {{ chart.height }}" class="panel-chart">
           <defs>
             <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#0891b2"/><stop offset="100%" stop-color="#0e7490" stop-opacity=".55"/>
+              <stop offset="0%" stop-color="var(--panel-accent-2)"/><stop offset="100%" stop-color="var(--panel-accent)" stop-opacity=".55"/>
             </linearGradient>
           </defs>
-          <line x1="{{ chart.pad_left }}" x2="{{ chart.width|add:-16 }}" y1="{{ chart.baseline }}" y2="{{ chart.baseline }}" stroke="#e6eaf2"/>
+          <line x1="{{ chart.pad_left }}" x2="{{ chart.width|add:-16 }}" y1="{{ chart.baseline }}" y2="{{ chart.baseline }}" stroke="var(--panel-border)"/>
           {% for rect in chart.rects %}
             <rect x="{{ rect.x }}" y="{{ rect.y }}" width="{{ rect.w }}" height="{{ rect.h }}" rx="7" fill="url(#barGrad)"/>
-            <text x="{{ rect.cx }}" y="{{ rect.y|add:-6 }}" text-anchor="middle" font-size="11.5" fill="#5b6b82">{{ rect.value_label }}</text>
-            <text x="{{ rect.cx }}" y="{{ chart.height|add:-12 }}" text-anchor="middle" font-size="11.5" fill="#5b6b82">{{ rect.label }}</text>
+            <text x="{{ rect.cx }}" y="{{ rect.y|add:-6 }}" text-anchor="middle" font-size="11.5" fill="var(--panel-text-muted)">{{ rect.value_label }}</text>
+            <text x="{{ rect.cx }}" y="{{ chart.height|add:-12 }}" text-anchor="middle" font-size="11.5" fill="var(--panel-text-muted)">{{ rect.label }}</text>
           {% endfor %}
         </svg>
       </div>
     </section>
 
     <section class="panel-card">
-      <header class="panel-card-head"><div><b>ریز گزارش</b><span class="panel-sub">{{ report.rows|length }} ردیف</span></div></header>
+      <header class="panel-card-head"><div><b>ریز گزارش</b><span class="panel-sub">{{ report.rows|length|fa_digits }} ردیف</span></div></header>
       <div class="panel-card-body panel-tight">
         <table class="panel-table">
           <thead><tr><th>#</th><th>{{ report.title }}</th><th>سفارش</th><th>مبلغ</th><th>سهم</th></tr></thead>

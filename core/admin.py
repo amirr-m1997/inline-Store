@@ -11,6 +11,7 @@ from core.utils import jalali_dt, num
 from core.jalali_filters import JalaliRangeDateFilter as RangeDateFilter
 
 from .models import AuditLog, Notification
+from core.palette import ACCENT, ACCENT_2, DANGER, INFO, MUTED, OK, VIOLET, WARN
 
 
 @admin.register(AuditLog)
@@ -41,13 +42,13 @@ class AuditLogAdmin(ModelHelpMixin, ModelAdmin):
     @admin.display(description="اقدام", ordering="action")
     def action_badge(self, obj):
         colors = {
-            "create": "#12855f", "update": "#1d4ed8", "delete": "#c02626",
-            "status": "#0e7490", "price": "#6d28d9", "stock": "#0891b2",
-            "login": "#12855f", "login_failed": "#c02626", "logout": "#64748b",
-            "export": "#b45309", "import": "#b45309", "impersonate": "#6d28d9",
-            "approve": "#12855f", "reject": "#c02626",
+            "create": OK, "update": INFO, "delete": DANGER,
+            "status": ACCENT, "price": VIOLET, "stock": ACCENT_2,
+            "login": OK, "login_failed": DANGER, "logout": MUTED,
+            "export": WARN, "import": WARN, "impersonate": VIOLET,
+            "approve": OK, "reject": DANGER,
         }
-        return badge(obj.get_action_display(), colors.get(obj.action, "#64748b"))
+        return badge(obj.get_action_display(), colors.get(obj.action, MUTED))
 
     @admin.display(description="تغییرات (قبل ← بعد)")
     def diff_col(self, obj):
@@ -56,7 +57,7 @@ class AuditLogAdmin(ModelHelpMixin, ModelAdmin):
             return "—"
         html = ""
         for key, old, new in pairs:
-            html += str(diff_cell(old, new)) + f' <span style="color:#5b6b82;font-size:11px">{key}</span><br>'
+            html += str(diff_cell(old, new)) + f' <span style="color:var(--panel-text-muted);font-size:11px">{key}</span><br>'
         return format_html("{}", format_html(html))
 
     @admin.display(description="جزئیات تغییرات")
@@ -67,7 +68,7 @@ class AuditLogAdmin(ModelHelpMixin, ModelAdmin):
         rows = [[key, str(old), str(new)] for key, old, new in pairs]
         table = html_table(["فیلد", "قبل", "بعد"], rows)
         if obj.note:
-            return format_html("{}<div style='margin-top:8px;color:#5b6b82'>{}</div>", table, obj.note)
+            return format_html("{}<div style='margin-top:8px;color:var(--panel-text-muted)'>{}</div>", table, obj.note)
         return table
 
     # --- قفل کردن همه‌ی عملیات تغییر
@@ -106,12 +107,12 @@ class NotificationAdmin(PanelModelAdmin, ModelAdmin):
 
     @admin.display(description="شدت", ordering="level")
     def level_badge(self, obj):
-        colors = {"info": "#1d4ed8", "success": "#12855f", "warning": "#b45309", "danger": "#c02626"}
-        return badge(obj.get_level_display(), colors.get(obj.level, "#64748b"))
+        colors = {"info": INFO, "success": OK, "warning": WARN, "danger": DANGER}
+        return badge(obj.get_level_display(), colors.get(obj.level, MUTED))
 
     @admin.display(description="نوع", ordering="kind")
     def kind_badge(self, obj):
-        return badge(obj.get_kind_display(), "#0e7490")
+        return badge(obj.get_kind_display(), ACCENT)
 
     @admin.action(description="علامت‌گذاری خوانده‌شده")
     def action_mark_read(self, request, queryset):

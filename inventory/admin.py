@@ -15,6 +15,7 @@ from core.jalali_filters import JalaliRangeDateFilter as RangeDateFilter
 from core.utils import jalali_dt, num
 
 from .models import PurchaseRequest, StockItem, StockMove, Warehouse
+from core.palette import INFO
 
 
 class StockMoveInline(TabularInline):
@@ -124,7 +125,7 @@ class StockItemAdmin(PanelModelAdmin, ModelAdmin):
         html = badge(label, color=color)
         if shortage:
             html = format_html(
-                "{} <span style='font-size:11.5px;color:#b45309'>— کمبود تا نقطه سفارش: {} {}</span>",
+                "{} <span style='font-size:11.5px;color:var(--panel-warn)'>— کمبود تا نقطه سفارش: {} {}</span>",
                 html, num(shortage, 0), obj.product.get_uom_display(),
             )
         return html

@@ -149,8 +149,7 @@ class InvoiceAdmin(PanelModelAdmin, ModelAdmin):
         if errors:
             items = "".join(f"<li>{e}</li>" for e in errors)
             return format_html(
-                '<div style="padding:9px 11px;background:#fdecec;border:1px solid #f6d3d3;'
-                'border-radius:10px;color:#8f1d1d;font-size:12px">'
+                '<div class="panel-callout panel-callout--danger">'
                 '<b>خطاهای اعتبارسنجی پیش از ارسال:</b><ul style="margin:6px 0 0">{}</ul></div>', 
                 format_html(items),
             )
