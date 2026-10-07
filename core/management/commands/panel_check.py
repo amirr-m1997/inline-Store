@@ -69,6 +69,7 @@ class Command(BaseCommand):
                 self._alerts()
                 self._dashboard_and_api()
                 self._write_flow()
+                self._query_budgets()
                 if not self.keep:
                     transaction.set_rollback(True)
         except Exception as exc:  # noqa: BLE001
@@ -347,6 +348,33 @@ class Command(BaseCommand):
             self._ok("ثبت خودکار در لاگ حسابرسی", f"فیلدها: {fields or '—'}")
         else:
             self._fail("ثبت در لاگ حسابرسی", "رخدادی ثبت نشد")
+
+    # ------------------------------------------------ بودجهٔ کوئری (نگهبان N+1)
+    def _query_budgets(self):
+        """سقف کوئری هر صفحه‌ی کلیدی؛ عبور از سقف یعنی N+1 تازه‌ای اضافه شده است.
+
+        اعداد پس از بهینه‌سازی ۱۴۰۵/۰۷ ثبت شده‌اند (داشبورد ۵۱، فهرست سفارش‌ها ۱۰۲).
+        """
+        budgets = [
+            ("داشبورد", "/admin/", 60),
+            ("فهرست سفارش‌ها", "/admin/orders/order/", 120),
+            ("فهرست فاکتورها", "/admin/finance/invoice/", 40),
+            ("فهرست موجودی", "/admin/inventory/stockitem/", 140),
+        ]
+        from django.db import connection
+
+        connection.force_debug_cursor = True
+        for label, url, limit in budgets:
+            connection.queries_log.clear()
+            response = self.client.get(url)
+            count = len(connection.queries)
+            ok = response.status_code == 200 and count <= limit
+            (self._ok if ok else self._fail)(
+                f"بودجهٔ کوئری — {label}",
+                f"{count} کوئری (سقف {limit})" if ok else f"{count} کوئری > سقف {limit}",
+            )
+        connection.force_debug_cursor = False
+
 
     # ------------------------------------------------------------- کمکی
     @staticmethod
