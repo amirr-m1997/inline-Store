@@ -1,24 +1,51 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+
   // Keep the deterministic Playwright server isolated from a developer's running .next instance.
   distDir: process.env.NEXT_TEST_DIST_DIR || ".next",
+
   // Preserve DRF's slash-terminated routes before they reach the local proxy handler.
   skipTrailingSlashRedirect: true,
+
+  // مسیر عمومی assetهای Next؛ برای دور زدن اختلال روی /_next/static
+  assetPrefix: "/assets",
+
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: "/assets/_next/:path*",
+          destination: "/_next/:path*",
+        },
+      ],
+    };
+  },
+
   // `next dev` blocks cross-origin requests to dev-only assets by default.
-  // Allow access from other devices on the local network (LAN IP) so the
-  // static JS chunks hydrate and the theme toggle/interactive UI works there.
-  allowedDevOrigins: (process.env.ALLOWED_DEV_ORIGINS || "localhost,127.0.0.1").split(",").map((item) => item.trim()).filter(Boolean),
+  allowedDevOrigins: (process.env.ALLOWED_DEV_ORIGINS || "localhost,127.0.0.1")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean),
+
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
       { protocol: "http", hostname: "localhost", port: "8000", pathname: "/media/**" },
       { protocol: "http", hostname: "127.0.0.1", port: "8000", pathname: "/media/**" },
-      ...(process.env.NEXT_IMAGE_REMOTE_HOST ? [{ protocol: "https", hostname: process.env.NEXT_IMAGE_REMOTE_HOST, pathname: "/media/**" }] : []),
+      ...(process.env.NEXT_IMAGE_REMOTE_HOST
+        ? [{
+            protocol: "https",
+            hostname: process.env.NEXT_IMAGE_REMOTE_HOST,
+            pathname: "/media/**",
+          }]
+        : []),
     ],
   },
+
   output: "standalone",
   compress: true,
   experimental: { optimizePackageImports: ["@testing-library/react"] },
 };
+
 export default nextConfig;

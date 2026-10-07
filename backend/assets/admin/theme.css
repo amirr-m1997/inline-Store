@@ -1,0 +1,994 @@
+/* MehrAsl admin theme -------------------------------------------------------
+ * Brand layer for django.contrib.admin (Django 4.2 CSS-variable theming).
+ * Loaded last (base_site.html -> extrastyle) so it overrides base.css,
+ * dark_mode.css and the per-page admin stylesheets.
+ * Palette mirrors the storefront tokens in frontend/app/storefront-refresh.css
+ * (light + dark) so the panel and the shop read as one product.
+ *
+ * Virtual paths:
+ *   /static/admin/theme.css  -> backend/assets/admin/theme.css
+ *   /static/fonts/vazir/*    -> backend/assets/fonts/vazir/*
+ */
+
+/* Persian typography (self-hosted: no CDN dependency) */
+@font-face {
+  font-family: "Vazir";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/vazir/Vazir.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Vazir";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/vazir/Vazir-Medium.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Vazir";
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+  src: url("../fonts/vazir/Vazir-Bold.ttf") format("truetype");
+}
+
+/* Light theme ------------------------------------------------------------- */
+:root,
+html[data-theme="light"] {
+  /* Brand primitives */
+  --mehrasl-ink: #16241c;
+  --mehrasl-brand: #2d5a32;
+  --mehrasl-brand-hover: #234928;
+  --mehrasl-brand-active: #1c3b20;
+  --mehrasl-brand-soft: #eaf1e7;
+  --mehrasl-brand-lime: #6da351;
+
+  --mehrasl-page: #f8f9f6;
+  --mehrasl-surface: #ffffff;
+  --mehrasl-surface-muted: #f0f4ec;
+  --mehrasl-text: #1e2d24;
+  --mehrasl-text-secondary: #56675c;
+  --mehrasl-text-muted: #7e8f84;
+  --mehrasl-border: #e1e7de;
+  --mehrasl-border-strong: #c4cdc2;
+
+  --mehrasl-success: #237b4b;
+  --mehrasl-warning: #b7791f;
+  --mehrasl-danger: #c53030;
+
+  --mehrasl-radius-sm: 8px;
+  --mehrasl-radius: 12px;
+  --mehrasl-radius-lg: 16px;
+  --mehrasl-shadow: 0 2px 8px rgba(22, 45, 30, .06);
+  --mehrasl-shadow-lg: 0 14px 34px rgba(22, 45, 30, .14);
+
+  --mehrasl-header-bg: linear-gradient(135deg, #23402c 0%, #14251b 100%);
+  --mehrasl-header-shadow: 0 6px 20px rgba(10, 26, 17, .18);
+
+  /* Django admin token overrides */
+  --primary: var(--mehrasl-brand);
+  --secondary: #1e3527;
+  --accent: #9ec96f;
+  --primary-fg: #ffffff;
+
+  --body-fg: var(--mehrasl-text);
+  --body-bg: var(--mehrasl-page);
+  --body-quiet-color: var(--mehrasl-text-secondary);
+  --body-loud-color: #10201a;
+
+  --header-color: #d5e4cf;
+  --header-branding-color: var(--accent);
+  --header-bg: var(--secondary);
+  --header-link-color: #ffffff;
+
+  --breadcrumbs-fg: #3f5c47;
+  --breadcrumbs-link-fg: var(--mehrasl-brand);
+  --breadcrumbs-bg: var(--mehrasl-brand-soft);
+
+  --link-fg: #2f6b3a;
+  --link-hover-color: #17421f;
+  --link-selected-fg: #3d6e42;
+
+  --hairline-color: #e6ebe3;
+  --border-color: var(--mehrasl-border-strong);
+
+  --error-fg: var(--mehrasl-danger);
+
+  --message-success-bg: #e6f5ea;
+  --message-warning-bg: #fbf2dc;
+  --message-error-bg: #fbe5e2;
+
+  --darkened-bg: var(--mehrasl-surface-muted);
+  --selected-bg: #dfeada;
+  --selected-row: #eef6e8;
+
+  --button-fg: #ffffff;
+  --button-bg: var(--mehrasl-brand);
+  --button-hover-bg: var(--mehrasl-brand-hover);
+  --default-button-bg: #1e3527;
+  --default-button-hover-bg: #16281c;
+  --close-button-bg: #6b7a70;
+  --close-button-hover-bg: #4a564e;
+  --delete-button-bg: #b4402f;
+  --delete-button-hover-bg: #96342a;
+
+  --object-tools-fg: #ffffff;
+  --object-tools-bg: #6b7a70;
+  --object-tools-hover-bg: #4a564e;
+
+  --font-family-primary: "Vazir", "Vazirmatn", Tahoma, "Segoe UI", system-ui, Arial, sans-serif;
+}
+
+/* Dark theme ---------------------------------------------------------------
+ * `data-theme="dark"` is the explicit choice from the built-in theme toggle;
+ * `data-theme="auto"` follows the OS setting. `html:not([data-theme])` covers
+ * the first paint before admin/js/theme.js stamps the attribute.
+ */
+html[data-theme="dark"] {
+  --mehrasl-ink: #e8efe9;
+  --mehrasl-brand: #418b48;
+  --mehrasl-brand-hover: #52a45a;
+  --mehrasl-brand-active: #63b76b;
+  --mehrasl-brand-soft: #1d2f22;
+  --mehrasl-brand-lime: #84cb8b;
+
+  --mehrasl-page: #0d110e;
+  --mehrasl-surface: #141a16;
+  --mehrasl-surface-muted: #1a221d;
+  --mehrasl-text: #f0f4f1;
+  --mehrasl-text-secondary: #a3b2a8;
+  --mehrasl-text-muted: #6f8075;
+  --mehrasl-border: #232e26;
+  --mehrasl-border-strong: #334338;
+
+  --mehrasl-success: #48bb78;
+  --mehrasl-warning: #ecc94b;
+  --mehrasl-danger: #f56565;
+
+  --mehrasl-shadow: 0 2px 10px rgba(0, 0, 0, .35);
+  --mehrasl-shadow-lg: 0 18px 40px rgba(0, 0, 0, .5);
+
+  --mehrasl-header-bg: linear-gradient(135deg, #14231a 0%, #0b120d 100%);
+  --mehrasl-header-shadow: 0 6px 22px rgba(0, 0, 0, .45);
+
+  --primary: #2f6b3a;
+  --secondary: #101a14;
+  --accent: #8fc96a;
+  --primary-fg: #f2f8f3;
+
+  --body-fg: var(--mehrasl-text);
+  --body-bg: var(--mehrasl-page);
+  --body-quiet-color: var(--mehrasl-text-secondary);
+  --body-loud-color: #ffffff;
+
+  --header-color: #cfe0d2;
+  --header-branding-color: var(--accent);
+  --header-bg: var(--secondary);
+  --header-link-color: #f2f8f3;
+
+  --breadcrumbs-fg: #b9cbbd;
+  --breadcrumbs-link-fg: #a8d9ae;
+  --breadcrumbs-bg: var(--mehrasl-surface-muted);
+
+  --link-fg: #8ccf95;
+  --link-hover-color: #b2e2b8;
+  --link-selected-fg: #7fbf88;
+
+  --hairline-color: #1e2821;
+  --border-color: var(--mehrasl-border-strong);
+
+  --error-fg: var(--mehrasl-danger);
+
+  --message-success-bg: #14301f;
+  --message-warning-bg: #33270d;
+  --message-error-bg: #3a1715;
+
+  --darkened-bg: var(--mehrasl-surface-muted);
+  --selected-bg: #24382a;
+  --selected-row: #1d2f22;
+
+  --button-fg: #f2f8f3;
+  --button-bg: var(--mehrasl-brand);
+  --button-hover-bg: var(--mehrasl-brand-hover);
+  --default-button-bg: #52a45a;
+  --default-button-hover-bg: #63b76b;
+  --close-button-bg: #2b352e;
+  --close-button-hover-bg: #3a463c;
+  --delete-button-bg: #a33a2b;
+  --delete-button-hover-bg: #c1493a;
+
+  --object-tools-fg: #f2f8f3;
+  --object-tools-bg: #2b352e;
+  --object-tools-hover-bg: #3a463c;
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-theme="auto"],
+  html:not([data-theme]) {
+    --mehrasl-ink: #e8efe9;
+    --mehrasl-brand: #418b48;
+    --mehrasl-brand-hover: #52a45a;
+    --mehrasl-brand-active: #63b76b;
+    --mehrasl-brand-soft: #1d2f22;
+    --mehrasl-brand-lime: #84cb8b;
+
+    --mehrasl-page: #0d110e;
+    --mehrasl-surface: #141a16;
+    --mehrasl-surface-muted: #1a221d;
+    --mehrasl-text: #f0f4f1;
+    --mehrasl-text-secondary: #a3b2a8;
+    --mehrasl-text-muted: #6f8075;
+    --mehrasl-border: #232e26;
+    --mehrasl-border-strong: #334338;
+
+    --mehrasl-success: #48bb78;
+    --mehrasl-warning: #ecc94b;
+    --mehrasl-danger: #f56565;
+
+    --mehrasl-shadow: 0 2px 10px rgba(0, 0, 0, .35);
+    --mehrasl-shadow-lg: 0 18px 40px rgba(0, 0, 0, .5);
+
+    --mehrasl-header-bg: linear-gradient(135deg, #14231a 0%, #0b120d 100%);
+    --mehrasl-header-shadow: 0 6px 22px rgba(0, 0, 0, .45);
+
+    --primary: #2f6b3a;
+    --secondary: #101a14;
+    --accent: #8fc96a;
+    --primary-fg: #f2f8f3;
+
+    --body-fg: var(--mehrasl-text);
+    --body-bg: var(--mehrasl-page);
+    --body-quiet-color: var(--mehrasl-text-secondary);
+    --body-loud-color: #ffffff;
+
+    --header-color: #cfe0d2;
+    --header-branding-color: var(--accent);
+    --header-bg: var(--secondary);
+    --header-link-color: #f2f8f3;
+
+    --breadcrumbs-fg: #b9cbbd;
+    --breadcrumbs-link-fg: #a8d9ae;
+    --breadcrumbs-bg: var(--mehrasl-surface-muted);
+
+    --link-fg: #8ccf95;
+    --link-hover-color: #b2e2b8;
+    --link-selected-fg: #7fbf88;
+
+    --hairline-color: #1e2821;
+    --border-color: var(--mehrasl-border-strong);
+
+    --error-fg: var(--mehrasl-danger);
+
+    --message-success-bg: #14301f;
+    --message-warning-bg: #33270d;
+    --message-error-bg: #3a1715;
+
+    --darkened-bg: var(--mehrasl-surface-muted);
+    --selected-bg: #24382a;
+    --selected-row: #1d2f22;
+
+    --button-fg: #f2f8f3;
+    --button-bg: var(--mehrasl-brand);
+    --button-hover-bg: var(--mehrasl-brand-hover);
+    --default-button-bg: #52a45a;
+    --default-button-hover-bg: #63b76b;
+    --close-button-bg: #2b352e;
+    --close-button-hover-bg: #3a463c;
+    --delete-button-bg: #a33a2b;
+    --delete-button-hover-bg: #c1493a;
+
+    --object-tools-fg: #f2f8f3;
+    --object-tools-bg: #2b352e;
+    --object-tools-hover-bg: #3a463c;
+  }
+}
+
+/* Shell ------------------------------------------------------------------- */
+body {
+  background: var(--mehrasl-page);
+  color: var(--mehrasl-text);
+  font-family: var(--font-family-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+#container {
+  background: var(--mehrasl-page);
+}
+
+/* Header + branding ------------------------------------------------------ */
+#header {
+  background: var(--mehrasl-header-bg);
+  border-bottom: 3px solid var(--mehrasl-brand-lime);
+  box-shadow: var(--mehrasl-header-shadow);
+  padding: 12px 32px;
+  gap: 18px;
+  align-items: center;
+}
+
+#branding {
+  align-items: center;
+  flex: 0 1 auto;
+}
+
+.mehrasl-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.mehrasl-brand__mark {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(158, 201, 111, .55);
+  border-radius: var(--mehrasl-radius);
+  background: linear-gradient(135deg, var(--mehrasl-brand-lime), var(--mehrasl-brand));
+  color: #0f2214;
+  font-size: 20px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.mehrasl-brand__text {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.mehrasl-brand__text b {
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.mehrasl-brand__text b a:link,
+.mehrasl-brand__text b a:visited {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.mehrasl-brand__text b a:focus,
+.mehrasl-brand__text b a:hover {
+  color: var(--accent);
+}
+
+.mehrasl-brand__text small {
+  color: var(--header-color);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+#user-tools {
+  color: var(--header-color);
+  font-size: 12px;
+  gap: 8px;
+}
+
+#user-tools a:link,
+#user-tools a:visited {
+  color: #ffffff;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 999px;
+}
+
+#user-tools a:focus,
+#user-tools a:hover {
+  border-color: var(--mehrasl-brand-lime);
+  color: var(--accent);
+  text-decoration: none;
+}
+
+#logout-form button {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.theme-toggle svg {
+  height: 1.25rem;
+  width: 1.25rem;
+}
+
+/* Breadcrumbs ------------------------------------------------------------ */
+div.breadcrumbs {
+  padding: 10px 32px;
+  border-bottom: 1px solid var(--mehrasl-border);
+  font-size: 12px;
+}
+
+div.breadcrumbs a:link,
+div.breadcrumbs a:visited {
+  font-weight: 700;
+}
+
+/* Content spacing -------------------------------------------------------- */
+/* Stock admin paints app-section links and collapse toggles white through
+ * --header-link-color, which we keep white for the dark header. Those tokens
+ * land on light card surfaces too, so restore readable colors there.
+ */
+a.section:link,
+a.section:visited {
+  color: var(--mehrasl-brand);
+  font-weight: 700;
+}
+
+a.section:focus,
+a.section:hover {
+  color: var(--link-hover-color);
+}
+
+fieldset .collapse-toggle {
+  color: var(--mehrasl-text-secondary);
+}
+
+.selector-chosen .list-footer-display__clear {
+  color: #ffffff;
+}
+
+#content {
+  padding: 24px 32px;
+}
+
+#content h1 {
+  color: var(--mehrasl-ink);
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 18px;
+}
+
+/* Cards: modules, fieldsets, inlines ------------------------------------ */
+.module,
+.inline-group {
+  border: 1px solid var(--mehrasl-border);
+  border-radius: var(--mehrasl-radius);
+  background: var(--mehrasl-surface);
+  box-shadow: var(--mehrasl-shadow);
+  overflow: hidden;
+}
+
+.module h2,
+.module caption,
+.inline-group h2 {
+  padding: 12px 16px;
+  background: var(--mehrasl-surface-muted);
+  border-bottom: 1px solid var(--mehrasl-border);
+  color: var(--mehrasl-ink);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.module h2 a:link,
+.module caption a:link,
+.inline-group h2 a:link,
+.module h2 a:visited,
+.module caption a:visited,
+.inline-group h2 a:visited {
+  color: var(--mehrasl-brand);
+  text-decoration: none;
+}
+
+.module h2 a:focus,
+.module h2 a:hover,
+.inline-group h2 a:hover {
+  color: var(--link-hover-color);
+  text-decoration: underline;
+}
+
+.module h3,
+.module h4 {
+  color: var(--mehrasl-text-secondary);
+}
+
+fieldset.module {
+  padding: 0;
+}
+
+fieldset.module .form-row {
+  padding: 12px 16px;
+}
+
+fieldset.module > h2:first-child,
+.inline-group > h2:first-child {
+  margin: 0;
+}
+
+.aligned label {
+  color: var(--mehrasl-text-secondary);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.aligned .help,
+.form-row .help,
+p.help,
+.helptext {
+  color: var(--mehrasl-text-muted);
+  font-size: 11px;
+}
+
+.inline-related h3 {
+  background: var(--mehrasl-surface-muted);
+  color: var(--mehrasl-ink);
+  font-size: 13px;
+}
+
+/* Index app list ---------------------------------------------------------- */
+#content-main .module caption a:link,
+#content-main .module caption a:visited {
+  color: var(--mehrasl-brand);
+  font-weight: 800;
+}
+
+#content-main .module caption a:hover {
+  color: var(--link-hover-color);
+}
+
+#content-main .module table th,
+#content-main .module table td {
+  border-bottom: 1px solid var(--hairline-color);
+  padding: 10px 16px;
+}
+
+#content-main .module table tr:last-child th,
+#content-main .module table tr:last-child td {
+  border-bottom: 0;
+}
+
+#content-main .module table tbody tr:hover {
+  background: var(--mehrasl-brand-soft);
+}
+
+/* Recent actions sidebar ------------------------------------------------- */
+#content-related .actionlist li {
+  border-bottom: 1px solid var(--hairline-color);
+  padding: 9px 16px;
+}
+
+#content-related .actionlist li:last-child {
+  border-bottom: 0;
+}
+
+/* Tables / changelist ---------------------------------------------------- */
+#changelist {
+  gap: 18px;
+}
+
+#changelist-form .actions {
+  padding: 8px 12px;
+  border: 1px solid var(--mehrasl-border);
+  border-radius: var(--mehrasl-radius);
+  background: var(--mehrasl-surface-muted);
+}
+
+#result_list {
+  border: 1px solid var(--mehrasl-border);
+  border-radius: var(--mehrasl-radius);
+  background: var(--mehrasl-surface);
+  box-shadow: var(--mehrasl-shadow);
+  overflow: hidden;
+}
+
+#result_list thead th {
+  background: var(--mehrasl-surface-muted);
+  border-bottom: 1px solid var(--mehrasl-border);
+  color: var(--mehrasl-text-secondary);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 11px 12px;
+}
+
+#result_list thead th a:link,
+#result_list thead th a:visited {
+  color: var(--mehrasl-text-secondary);
+}
+
+#result_list thead th.sorted {
+  color: var(--mehrasl-ink);
+}
+
+#result_list td,
+#result_list th {
+  border-bottom: 1px solid var(--hairline-color);
+  padding: 10px 12px;
+}
+
+#result_list tbody tr:last-child td,
+#result_list tbody tr:last-child th {
+  border-bottom: 0;
+}
+
+#result_list tbody tr:hover {
+  background: var(--mehrasl-brand-soft);
+}
+
+#result_list tbody tr.selected {
+  background: var(--selected-row);
+}
+
+/* Filters, search, pagination ------------------------------------------- */
+#changelist-filter {
+  border: 1px solid var(--mehrasl-border);
+  border-radius: var(--mehrasl-radius);
+  background: var(--mehrasl-surface);
+  box-shadow: var(--mehrasl-shadow);
+  overflow: hidden;
+}
+
+#changelist-filter h2 {
+  background: var(--mehrasl-surface-muted);
+  color: var(--mehrasl-ink);
+  border-bottom: 1px solid var(--mehrasl-border);
+  padding: 12px 14px;
+  border-radius: 0;
+  font-size: 13px;
+}
+
+#changelist-filter h3 {
+  color: var(--mehrasl-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+#changelist-filter li.selected a:link,
+#changelist-filter li.selected a:visited {
+  color: var(--mehrasl-brand);
+  font-weight: 800;
+}
+
+.toplinks {
+  font-size: 12px;
+}
+
+.toplinks a:link,
+.toplinks a:visited {
+  display: inline-block;
+  padding: 6px 12px;
+  border: 1px solid var(--mehrasl-border);
+  border-radius: 999px;
+  background: var(--mehrasl-surface);
+}
+
+.toplinks a:hover {
+  border-color: var(--mehrasl-brand);
+  text-decoration: none;
+}
+
+#changelist-search .button {
+  background: var(--mehrasl-brand);
+  border-color: transparent;
+  color: #ffffff;
+}
+
+.paginator {
+  border: 1px solid var(--mehrasl-border);
+  border-radius: var(--mehrasl-radius);
+  background: var(--mehrasl-surface);
+  padding: 8px 14px;
+  font-size: 12px;
+}
+
+/* Forms ------------------------------------------------------------------ */
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="url"],
+input[type="number"],
+input[type="tel"],
+input[type="search"],
+textarea,
+select,
+.vTextField {
+  box-sizing: border-box;
+  min-height: 40px;
+  padding: 8px 11px;
+  border: 1px solid var(--mehrasl-border-strong);
+  border-radius: 10px;
+  background: var(--mehrasl-surface);
+  color: var(--mehrasl-text);
+  font-family: var(--font-family-primary);
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus,
+input[type="url"]:focus,
+input[type="number"]:focus,
+input[type="tel"]:focus,
+input[type="search"]:focus,
+textarea:focus,
+select:focus,
+.vTextField:focus {
+  border-color: var(--mehrasl-brand);
+  box-shadow: 0 0 0 3px var(--mehrasl-brand-soft);
+  outline: 0;
+}
+
+.readonly {
+  border: 1px solid var(--mehrasl-border);
+  border-radius: 10px;
+  background: var(--mehrasl-surface-muted);
+  padding: 8px 11px;
+}
+
+.submit-row {
+  border: 1px solid var(--mehrasl-border);
+  border-radius: var(--mehrasl-radius);
+  background: var(--mehrasl-surface);
+  box-shadow: var(--mehrasl-shadow);
+  padding: 12px 16px;
+  gap: 10px;
+}
+
+.submit-row a.deletelink {
+  border-radius: 10px;
+  height: auto;
+  padding: 10px 16px;
+  line-height: 1.4;
+}
+
+.form-multiline .form-row {
+  border-bottom: 1px solid var(--hairline-color);
+}
+
+/* Buttons ---------------------------------------------------------------- */
+.button,
+input[type="submit"],
+input[type="button"],
+button,
+a.button {
+  background-image: none;
+  border-radius: 10px;
+  padding: 9px 15px;
+  min-height: 38px;
+  font-family: var(--font-family-primary);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.button:link,
+.button:visited,
+a.button {
+  background: var(--mehrasl-surface);
+  border: 1px solid var(--mehrasl-border-strong);
+  color: var(--mehrasl-text);
+}
+
+.button:hover,
+.button:focus,
+a.button:hover,
+a.button:focus {
+  border-color: var(--mehrasl-brand);
+  background: var(--mehrasl-brand-soft);
+  color: var(--mehrasl-ink);
+  text-decoration: none;
+}
+
+input[type="submit"],
+input[type="button"] {
+  background: var(--button-bg);
+  color: var(--button-fg);
+  border: 1px solid transparent;
+}
+
+input[type="submit"]:hover,
+input[type="button"]:hover {
+  background: var(--button-hover-bg);
+}
+
+.submit-row input.default,
+input[type="submit"].default,
+.button.default {
+  background: var(--default-button-bg);
+  color: var(--primary-fg);
+}
+
+.submit-row input.default:hover,
+input[type="submit"].default:hover,
+.button.default:hover {
+  background: var(--default-button-hover-bg);
+}
+
+.object-tools a:link,
+.object-tools a:visited {
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Messages -------------------------------------------------------------- */
+ul.messagelist li {
+  border: 1px solid var(--mehrasl-border);
+  border-inline-start-width: 4px;
+  border-radius: var(--mehrasl-radius);
+  box-shadow: var(--mehrasl-shadow);
+  padding: 12px 16px;
+  margin-bottom: 10px;
+}
+
+ul.messagelist li.success {
+  border-inline-start-color: var(--mehrasl-success);
+}
+
+ul.messagelist li.warning {
+  border-inline-start-color: var(--mehrasl-warning);
+}
+
+ul.messagelist li.error {
+  border-inline-start-color: var(--mehrasl-danger);
+}
+
+/* Nav sidebar ----------------------------------------------------------- */
+#nav-sidebar {
+  border-inline-end: 1px solid var(--mehrasl-border);
+  background: var(--mehrasl-surface);
+}
+
+#nav-sidebar .current-app .section:link,
+#nav-sidebar .current-app .section:visited,
+#nav-sidebar .current-model .current-model-link {
+  color: var(--mehrasl-brand);
+}
+
+.toggle-nav-sidebar {
+  border-inline-end: 1px solid var(--mehrasl-border);
+  background: var(--mehrasl-surface-muted);
+  color: var(--mehrasl-brand);
+}
+
+#nav-filter {
+  border-radius: 10px;
+}
+
+/* Footer ---------------------------------------------------------------- */
+#footer.mehrasl-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 26px;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--mehrasl-border);
+  color: var(--mehrasl-text-muted);
+  font-size: 11px;
+}
+
+.mehrasl-footer a:link,
+.mehrasl-footer a:visited {
+  color: var(--mehrasl-brand);
+}
+
+.mehrasl-env {
+  padding: 4px 11px;
+  border: 1px solid var(--mehrasl-border-strong);
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.mehrasl-env--dev {
+  background: var(--message-warning-bg);
+  border-color: var(--mehrasl-warning);
+  color: var(--mehrasl-warning);
+}
+
+.mehrasl-env--prod {
+  background: var(--message-success-bg);
+  border-color: var(--mehrasl-success);
+  color: var(--mehrasl-success);
+}
+
+/* Login page ------------------------------------------------------------ */
+body.login {
+  background:
+    radial-gradient(circle at 15% 12%, var(--mehrasl-brand-soft), transparent 55%),
+    radial-gradient(circle at 82% 88%, var(--mehrasl-surface-muted), transparent 60%),
+    var(--mehrasl-page);
+  min-height: 100vh;
+}
+
+body.login #container {
+  width: min(30em, calc(100vw - 32px));
+  min-width: 0;
+  margin: 72px auto;
+  border: 1px solid var(--mehrasl-border);
+  border-radius: var(--mehrasl-radius-lg);
+  background: var(--mehrasl-surface);
+  box-shadow: var(--mehrasl-shadow-lg);
+}
+
+body.login #header {
+  justify-content: center;
+  padding: 26px 24px;
+  border-bottom: 0;
+  border-radius: var(--mehrasl-radius-lg) var(--mehrasl-radius-lg) 0 0;
+}
+
+body.login #branding {
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+body.login .theme-toggle {
+  margin-inline-start: 0;
+  margin-top: 2px;
+}
+
+body.login .mehrasl-brand {
+  flex-direction: column;
+  gap: 12px;
+  text-align: center;
+}
+
+body.login .mehrasl-brand__text {
+  justify-items: center;
+}
+
+body.login #content {
+  padding: 24px 28px 28px;
+}
+
+body.login .form-row label {
+  color: var(--mehrasl-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+body.login .submit-row input[type="submit"] {
+  width: 100%;
+  min-height: 44px;
+  font-size: 13px;
+}
+
+body.login .password-reset-link {
+  padding-bottom: 8px;
+}
+
+body.login .password-reset-link a:link,
+body.login .password-reset-link a:visited {
+  color: var(--mehrasl-text-secondary);
+  font-size: 12px;
+}
+
+/* Responsive ------------------------------------------------------------ */
+@media (max-width: 767px) {
+  #header {
+    padding: 10px 16px;
+  }
+
+  #content,
+  div.breadcrumbs {
+    padding-inline: 16px;
+  }
+
+  .mehrasl-brand__text small {
+    display: none;
+  }
+
+  #user-tools a:link,
+  #user-tools a:visited {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
+  body.login #container {
+    margin: 32px auto;
+  }
+}
+
+/* Users who ask for less motion get an instantly-theming panel. */
+@media (prefers-reduced-motion: reduce) {
+  #header,
+  .module,
+  .button,
+  #result_list tbody tr {
+    transition: none !important;
+  }
+}

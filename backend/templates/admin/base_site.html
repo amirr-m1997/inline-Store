@@ -1,0 +1,26 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('MehrAsl') }}{% endblock %}
+
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/theme.css' %}">{% endblock %}
+
+{% block branding %}
+<div class="mehrasl-brand">
+  <a class="mehrasl-brand__mark" href="{% url 'admin:index' %}" aria-hidden="true" tabindex="-1">م</a>
+  <span class="mehrasl-brand__text">
+    <b><a href="{% url 'admin:index' %}">{{ site_header|default:_('MehrAsl administration') }}</a></b>
+    <small>کنسول مدیریت فروشگاه</small>
+  </span>
+</div>
+{% if user.is_anonymous %}
+  {% include "admin/color_theme_toggle.html" %}
+{% endif %}
+{% endblock %}
+
+{% block footer %}
+<div id="footer" class="mehrasl-footer">
+  <span>مهر اصل — پنل مدیریت · امروز: {{ mehrasl_today_jalali }}</span>
+  <span class="mehrasl-env mehrasl-env--{{ mehrasl_environment_slug }}">{{ mehrasl_environment_label }}</span>
+</div>
+{% endblock %}

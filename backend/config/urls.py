@@ -5,6 +5,13 @@ from django.urls import include, path
 from rest_framework.schemas import get_schema_view
 from .api import ApiRootView
 
+# Branded admin console: titles shown in the header/footer of every admin page,
+# and "View site" pointing at the storefront instead of the API host.
+admin.site.site_header = "پنل مدیریت مهر اصل"
+admin.site.site_title = "مهر اصل"
+admin.site.index_title = "داشبورد مدیریت"
+admin.site.site_url = settings.FRONTEND_URL
+
 schema_view = get_schema_view(title="Company Store API", description="Versioned API foundation", version="1.0.0")
 urlpatterns = [
     path("admin/", admin.site.urls),

@@ -31,5 +31,5 @@ export default async function LocaleLayout({ children, params }: { children: Rea
   if (!isLocale(localeName)) notFound();
   const locale = getLocaleConfig(localeName);
   const company = await getCompanyServer<CompanyInfo>().catch(() => null);
-  return <html lang={locale.lang} dir={locale.dir}><body><Script id="theme-init" strategy="beforeInteractive">{`(() => { try { const saved = localStorage.getItem("theme"); const dark = saved === "dark"; document.documentElement.classList.toggle("dark", dark); } catch (_) {} })();`}</Script><SiteHeader initialCompany={company} />{children}<ProductCompareTray locale={localeName} /><FloatingActions locale={localeName} phone={company?.phone || company?.mobile || null} /><SiteFooter locale={localeName} /></body></html>;
+  return <html lang={locale.lang} dir={locale.dir} suppressHydrationWarning><body><Script id="theme-init" strategy="beforeInteractive">{`(() => { try { const saved = localStorage.getItem("theme"); const dark = saved === "dark"; document.documentElement.classList.toggle("dark", dark); } catch (_) {} })();`}</Script><SiteHeader initialCompany={company} />{children}<ProductCompareTray locale={localeName} /><FloatingActions locale={localeName} phone={company?.phone || company?.mobile || null} /><SiteFooter locale={localeName} /></body></html>;
 }

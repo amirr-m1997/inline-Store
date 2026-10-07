@@ -731,3 +731,16 @@ a.trust-cert-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-card-
 .not-found-cats>div{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
 .not-found-cats a{padding:7px 14px;border-radius:999px;background:var(--surface-secondary);color:var(--text-primary);text-decoration:none;font-size:11px;font-weight:700}
 @media(max-width:640px){.not-found-page{padding-block:36px 48px}.not-found-card{padding:40px 22px}.not-found-search{flex-direction:column}.not-found-search button{width:100%}}
+
+/* The company logo uses a transparent PNG, so the regular header has no separate fill. */
+.reference-header,.reference-main-header,.reference-category-nav{background:transparent!important}
+.reference-header{box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.reference-brand--logo img{background:transparent!important;border-radius:0!important}
+.reference-topbar{background:transparent!important;border-bottom:1px solid color-mix(in srgb,var(--mehrasl-line) 72%,transparent);color:var(--mehrasl-ink)}
+.reference-topbar a{color:var(--mehrasl-ink)}
+.reference-topbar-inner b{color:var(--mehrasl-green-strong)}
+html:not(.dark) .reference-topbar,html:not(.dark) .reference-topbar a,html:not(.dark) .reference-topbar .reference-contact,html:not(.dark) .reference-topbar .customer-menu>button{color:#111b14!important}
+html:not(.dark) .reference-topbar-inner b{color:#111b14!important}
+.reference-category-nav{border-bottom:1px solid color-mix(in srgb,var(--mehrasl-line) 72%,transparent)}
+html.dark .reference-header,html.dark .reference-main-header,html.dark .reference-category-nav,html.dark .reference-topbar{background:transparent!important}
+@media(max-width:900px){.reference-category-nav.mobile-open{background:var(--color-surface)!important;box-shadow:var(--shadow-overlay)}}
