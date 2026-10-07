@@ -16,8 +16,13 @@ SECRET_KEY = os.environ.get(
 )
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 
-# در محیط پیش‌نمایش باید همه‌ی هاست‌ها مجاز باشند تا از طریق پراکسی باز شود
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "*").split(",")
+# در محیط توسعه/پیش‌نمایش همه‌ی هاست‌ها مجازند تا از طریق پراکسی باز شود؛
+# در محیط عملیاتی باید فهرست دامنه‌ها با DJANGO_ALLOWED_HOSTS داده شود (پیش‌فرض: خالی = بستن).
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "*" if DEBUG else "").split(",")
+    if host.strip()
+]
 CSRF_TRUSTED_ORIGINS = [
     "https://*.e2b.app",
     "http://localhost:8000",

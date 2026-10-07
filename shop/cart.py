@@ -93,17 +93,9 @@ class Cart:
 
     # ------------------------------------------------------------------ وضعیت
     @property
-    def is_empty(self) -> bool:
-        return not self.data["items"]
-
-    @property
     def count(self) -> int:
         """تعداد کل اقلام (جمع تعدادها) برای نشانگر سربرگ."""
         return int(min(sum(safe_stored_qty(q) for q in self.data["items"].values()), 10 ** 9))
-
-    @property
-    def distinct_count(self) -> int:
-        return len(self.data["items"])
 
     def raw_items(self) -> list[tuple[str, float]]:
         """[(code, qty)] برای عبور از همان لایهٔ اعتبارسنجی/قیمت‌گذاری پنل."""

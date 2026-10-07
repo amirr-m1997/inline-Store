@@ -30,12 +30,12 @@ from finance.models import Invoice
 from finance.services import register_payment
 from inventory.services import stock_check
 from orders.models import Order
-from orders.services import create_order
 from pricing.services import price_levels_for, resolve_price
 from quotes.models import Quote, QuoteLine
 
 from . import forms as shop_forms
 from .cart import cart_for, clean_qty, membership_of
+from .services import credit_snapshot, over_credit, place_order
 
 # ------------------------------------------------------------------ کمکی‌ها
 
@@ -268,16 +268,8 @@ def checkout(request):
     membership = membership_of(request.user)
     form = shop_forms.CheckoutForm(request.POST or None, company=company, user=request.user)
 
-    credit = None
-    if company is not None and company.credit_limit:
-        credit = {
-            "used": company.credit_used,
-            "limit": company.credit_limit,
-            "available": company.credit_available,
-            "pct": company.credit_usage_pct,
-            "status": company.credit_status,
-        }
-    over_limit = bool(credit and totals["total"] > credit["available"])
+    credit = credit_snapshot(company)
+    over_limit = over_credit(credit, totals["total"])
 
     if request.method == "POST" and gate_error is None and form.is_valid():
         needs_credit = form.cleaned_data["payment_method"] in ("credit", "cheque")
@@ -288,20 +280,19 @@ def checkout(request):
                 "یا سبد را به‌عنوان درخواست قیمت برای کارشناس فروش بفرستید.",
             )
         else:
-            order = create_order(
+            order, invoice = place_order(
                 company=company,
+                membership=membership,
+                user=request.user,
                 rows=[_row_object(r) for r in rows if r["ok"]],
-                actor=request.user,
                 po_number=form.cleaned_data["po_number"],
                 project_name=form.cleaned_data["project_name"],
                 customer_note=form.cleaned_data["customer_note"],
-                contact=membership,
                 shipping_address=form.save_address(),
                 shipping_method="pickup" if form.cleaned_data["shipping_method"] == "pickup" else "freight",
                 payment_method="gateway" if form.cleaned_data["payment_method"] == "online"
                 else ("cheque" if form.cleaned_data["payment_method"] == "cheque" else "credit"),
             )
-            invoice = _issue_invoice(order, request.user)
             cart.clear()
             messages.success(request, f"سفارش {order.number} با موفقیت ثبت شد.")
             if form.cleaned_data["payment_method"] == "online":
@@ -330,12 +321,6 @@ class _Row:
 
 def _row_object(data) -> _Row:
     return _Row(data)
-
-
-def _issue_invoice(order, user):
-    from orders.services import create_invoice
-
-    return create_invoice(order, user=user, kind="proforma")
 
 
 @require_POST
@@ -450,6 +435,10 @@ def invoice_pay(request, number):
     )
     if invoice.balance <= 0:
         messages.info(request, "این فاکتور قبلاً تسویه شده است.")
+        return redirect("shop:invoice", number=invoice.number)
+    if not settings.SHOP_MOCK_GATEWAY:
+        messages.warning(request, "پرداخت آنلاین در حال حاضر فعال نیست؛ برای تسویهٔ فاکتور "
+                                  "با کارشناس فروش تماس بگیرید.")
         return redirect("shop:invoice", number=invoice.number)
 
     form = shop_forms.PaymentForm(request.POST or None)
