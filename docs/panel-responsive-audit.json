@@ -1,0 +1,219 @@
+{
+  "viewports": [],
+  "issues": [
+    {
+      "viewport": "موبایل کوچک ۳۶۰",
+      "page": "فهرست سفارش‌ها",
+      "kind": "smallTargetsChrome",
+      "items": [
+        {
+          "el": "div.flex.items-center.w-full > div.flex.flex-row.grow > h1.overflow-hidden.leading-5.text-important > a.align-middle.inline-block.leading-5",
+          "w": 38,
+          "h": 20,
+          "text": "سفارش‌ها"
+        },
+        {
+          "el": "div.lg:flex.lg:items-center > div.flex.flex-row.grow > div.pr-4 > a",
+          "w": 17,
+          "h": 32,
+          "text": "۲"
+        },
+        {
+          "el": "div.lg:flex.lg:items-center > div.flex.flex-row.grow > div.pr-4 > a",
+          "w": 19,
+          "h": 32,
+          "text": "۳"
+        }
+      ]
+    },
+    {
+      "viewport": "موبایل ۳۹۰",
+      "page": "فهرست سفارش‌ها",
+      "kind": "smallTargetsChrome",
+      "items": [
+        {
+          "el": "div.flex.items-center.w-full > div.flex.flex-row.grow > h1.overflow-hidden.leading-5.text-important > a.align-middle.inline-block.leading-5",
+          "w": 47,
+          "h": 20,
+          "text": "سفارش‌ها"
+        },
+        {
+          "el": "div.lg:flex.lg:items-center > div.flex.flex-row.grow > div.pr-4 > a",
+          "w": 17,
+          "h": 32,
+          "text": "۲"
+        },
+        {
+          "el": "div.lg:flex.lg:items-center > div.flex.flex-row.grow > div.pr-4 > a",
+          "w": 19,
+          "h": 32,
+          "text": "۳"
+        }
+      ]
+    },
+    {
+      "viewport": "موبایل بزرگ ۴۳۰",
+      "page": "فهرست سفارش‌ها",
+      "kind": "smallTargetsChrome",
+      "items": [
+        {
+          "el": "div.flex.items-center.w-full > div.flex.flex-row.grow > h1.overflow-hidden.leading-5.text-important > a.align-middle.inline-block.leading-5",
+          "w": 134,
+          "h": 20,
+          "text": "سفارش‌ها و گردش تأیید"
+        },
+        {
+          "el": "div.flex.items-center.w-full > div.flex.flex-row.grow > h1.overflow-hidden.leading-5.text-important > a.align-middle.inline-block.leading-5",
+          "w": 57,
+          "h": 20,
+          "text": "سفارش‌ها"
+        },
+        {
+          "el": "div.lg:flex.lg:items-center > div.flex.flex-row.grow > div.pr-4 > a",
+          "w": 17,
+          "h": 32,
+          "text": "۲"
+        },
+        {
+          "el": "div.lg:flex.lg:items-center > div.flex.flex-row.grow > div.pr-4 > a",
+          "w": 19,
+          "h": 32,
+          "text": "۳"
+        }
+      ]
+    },
+    {
+      "viewport": "تبلت ۷۶۸",
+      "page": "فهرست سفارش‌ها",
+      "kind": "smallTargetsChrome",
+      "items": [
+        {
+          "el": "div.flex.items-center.w-full > div.flex.flex-row.grow > h1.overflow-hidden.leading-5.text-important > a.align-middle.inline-block.leading-5",
+          "w": 134,
+          "h": 20,
+          "text": "سفارش‌ها و گردش تأیید"
+        },
+        {
+          "el": "div.flex.items-center.w-full > div.flex.flex-row.grow > h1.overflow-hidden.leading-5.text-important > a.align-middle.inline-block.leading-5",
+          "w": 57,
+          "h": 20,
+          "text": "سفارش‌ها"
+        },
+        {
+          "el": "div.lg:flex.lg:items-center > div.flex.flex-row.grow > div.pr-4 > a",
+          "w": 17,
+          "h": 32,
+          "text": "۲"
+        },
+        {
+          "el": "div.lg:flex.lg:items-center > div.flex.flex-row.grow > div.pr-4 > a",
+          "w": 19,
+          "h": 32,
+          "text": "۳"
+        }
+      ]
+    },
+    {
+      "viewport": "تبلت ۷۶۸",
+      "page": "فرم ویرایش فاکتور",
+      "kind": "smallTargetsChrome",
+      "items": [
+        {
+          "el": "div.flex.items-center.w-full > div.flex.flex-row.grow > h1.overflow-hidden.leading-5.text-important > a.align-middle.inline-block.leading-5",
+          "w": 101,
+          "h": 20,
+          "text": "مالی، فاکتور و چک"
+        },
+        {
+          "el": "div.flex.items-center.w-full > div.flex.flex-row.grow > h1.overflow-hidden.leading-5.text-important > a.align-middle.inline-block.leading-5",
+          "w": 131,
+          "h": 20,
+          "text": "فاکتورها و پیش‌فاکتورها"
+        },
+        {
+          "el": "div.flex.items-center.w-full > div.flex.flex-row.grow > h1.overflow-hidden.leading-5.text-important > a.align-middle.inline-block.leading-5",
+          "w": 216,
+          "h": 20,
+          "text": "INV-1405-00001 — پتروشیم"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "page": "داشبورد",
+      "width": 390,
+      "path": "/tmp/panel-shots/dashboard-390.jpg"
+    },
+    {
+      "page": "فهرست سفارش‌ها",
+      "width": 390,
+      "path": "/tmp/panel-shots/orders-390.jpg"
+    },
+    {
+      "page": "اعلان‌ها",
+      "width": 390,
+      "path": "/tmp/panel-shots/alerts-390.jpg"
+    },
+    {
+      "page": "سفارش سریع",
+      "width": 390,
+      "path": "/tmp/panel-shots/quick-order-390.jpg"
+    },
+    {
+      "page": "فرم ویرایش فاکتور",
+      "width": 390,
+      "path": "/tmp/panel-shots/invoice-form-390.jpg"
+    },
+    {
+      "page": "داشبورد",
+      "width": 768,
+      "path": "/tmp/panel-shots/dashboard-768.jpg"
+    },
+    {
+      "page": "فهرست سفارش‌ها",
+      "width": 768,
+      "path": "/tmp/panel-shots/orders-768.jpg"
+    },
+    {
+      "page": "اعلان‌ها",
+      "width": 768,
+      "path": "/tmp/panel-shots/alerts-768.jpg"
+    },
+    {
+      "page": "سفارش سریع",
+      "width": 768,
+      "path": "/tmp/panel-shots/quick-order-768.jpg"
+    },
+    {
+      "page": "فرم ویرایش فاکتور",
+      "width": 768,
+      "path": "/tmp/panel-shots/invoice-form-768.jpg"
+    },
+    {
+      "page": "داشبورد",
+      "width": 1440,
+      "path": "/tmp/panel-shots/dashboard-1440.jpg"
+    },
+    {
+      "page": "فهرست سفارش‌ها",
+      "width": 1440,
+      "path": "/tmp/panel-shots/orders-1440.jpg"
+    },
+    {
+      "page": "اعلان‌ها",
+      "width": 1440,
+      "path": "/tmp/panel-shots/alerts-1440.jpg"
+    },
+    {
+      "page": "سفارش سریع",
+      "width": 1440,
+      "path": "/tmp/panel-shots/quick-order-1440.jpg"
+    },
+    {
+      "page": "فرم ویرایش فاکتور",
+      "width": 1440,
+      "path": "/tmp/panel-shots/invoice-form-1440.jpg"
+    }
+  ]
+}

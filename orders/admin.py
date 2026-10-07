@@ -150,7 +150,7 @@ class OrderAdmin(PanelModelAdmin, ModelAdmin):
             return "—"
         name = obj.sales_rep.get_full_name() or obj.sales_rep.username
         if obj.placed_by_rep_for_company:
-            return format_html("{} <span style='font-size:10.5px;color:#5b6b82'>(به‌نیابت)</span>", name)
+            return format_html("{} <span style='font-size:11.5px;color:#5b6b82'>(به‌نیابت)</span>", name)
         return name
 
     @admin.display(description="تاریخ ثبت", ordering="ordered_at")

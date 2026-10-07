@@ -89,14 +89,14 @@
         <table class="panel-table">
           <thead>
             <tr>
-              <th style="width:34px"><input type="checkbox" onclick="document.querySelectorAll('.al-row').forEach(c=>c.checked=this.checked)"></th>
+              <th style="width:46px" class="panel-check-col"><input type="checkbox" onclick="document.querySelectorAll('.al-row').forEach(c=>c.checked=this.checked)"></th>
               <th>شدت</th><th>نوع</th><th>عنوان</th><th>توضیح</th><th>مشتری</th><th>زمان</th><th>وضعیت</th>
             </tr>
           </thead>
           <tbody>
           {% for note in notifications %}
             <tr>
-              <td><input class="al-row" type="checkbox" name="ids" value="{{ note.pk }}"></td>
+              <td class="panel-check-cell"><input class="al-row" type="checkbox" name="ids" value="{{ note.pk }}"></td>
               <td>
                 {% if note.level == "danger" %}{% badge note.get_level_display "#c02626" %}
                 {% elif note.level == "warning" %}{% badge note.get_level_display "#b45309" %}

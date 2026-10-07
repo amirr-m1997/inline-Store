@@ -128,7 +128,7 @@
     {
       "label": "کمینه‌ی اندازه‌ی لمس ۳۲px تعریف و استفاده شده",
       "ok": true,
-      "extra": "2 کاربرد"
+      "extra": "12 کاربرد"
     },
     {
       "label": "پیوند «پرش به محتوای اصلی» در CSS هست",
@@ -237,7 +237,7 @@
     }
   ],
   "metrics": {
-    "stray_hex": 102,
+    "stray_hex": 101,
     "important": 11,
     "hard_left_right": 0,
     "models_with_help": 34

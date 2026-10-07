@@ -145,7 +145,7 @@ SLA_WORK_HOURS = (8, 17)
 UNFOLD = {
     "SITE_TITLE": "پنل مدیریت مهراصل",
     "SITE_HEADER": "مرکز عملیات فروش B2B",
-    "SITE_SUBHEADER": "سایت صنعتی مهراصل — تهویه مطبوع و تبرید صنعتی",
+    "SITE_SUBHEADER": "تهویه مطبوع و تبرید",
     "SITE_URL": "/",
     "SITE_SYMBOL": "ac_unit",
     "SHOW_HISTORY": True,

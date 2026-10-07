@@ -374,6 +374,49 @@
         + "(" + toFa(total) + " ردیف در این صفحه)";
   }
 
+
+  /* ----------------------------- راهنمای اسکرول افقی جدول‌ها (فقط اگر واقعاً سرریز باشد) */
+  function addScrollHints() {
+    document.querySelectorAll(".panel-card-body.panel-tight").forEach(function (box) {
+      var previous = box.previousElementSibling;
+      var hint = previous && previous.classList && previous.classList.contains("panel-scroll-hint")
+        ? previous : null;
+      var scrollable = box.scrollWidth > box.clientWidth + 4;
+      if (!scrollable) {
+        if (hint) hint.remove();
+        return;
+      }
+      if (hint) return;
+      var el = document.createElement("p");
+      el.className = "panel-scroll-hint";
+      el.setAttribute("role", "note");
+      el.innerHTML = "<b>↔</b> برای دیدن ستون‌های بیشتر، جدول را افقی بکشید.";
+      box.parentNode.insertBefore(el, box);
+    });
+  }
+
+  /* ----------------------------- سلول چک‌باکس هم کلیک‌پذیر شود (هدف لمسی بزرگ‌تر) */
+  function clickableCheckboxCells() {
+    document.querySelectorAll(
+      'input[type="checkbox"][name="_selected_action"], input[type="checkbox"].al-row, td.action-checkbox input, thead input[type="checkbox"]'
+    ).forEach(function (box) {
+      var cell = box.closest("td, th");
+      if (!cell || cell.dataset.panelCellClick === "1") return;
+      cell.dataset.panelCellClick = "1";
+      cell.style.cursor = "pointer";
+      cell.addEventListener("click", function (evt) {
+        if (evt.target === box || (evt.target.closest && evt.target.closest("a, label, button"))) return;
+        if (box.id === "action-toggle" || box.closest("thead")) {
+          /* «انتخاب همه»: کلیک واقعی تا منطق خود جنگو هم اجرا شود */
+          box.click();
+          return;
+        }
+        box.checked = !box.checked;
+        box.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+    });
+  }
+
   function boot() {
     try {
       labelSearch();
@@ -386,6 +429,8 @@
       addSearchHint();
       addRowActions();
       addListHint();
+      addScrollHints();
+      clickableCheckboxCells();
     } catch (e) {
       /* در صورت خطا، پنل باید دست‌نخورده کار کند */
       if (window.console && console.warn) console.warn("panel.js:", e);

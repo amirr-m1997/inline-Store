@@ -260,7 +260,7 @@ body, .font-sans, input, select, textarea, button, .material-symbols-outlined {
 
 /* ---------------------------------------------- ۷) راهنمای تاریخ شمسی زیر ورودی‌ها (panel.js) */
 .panel-jalali-hint {
-  display: block; width: 100%; font-size: 10.5px; color: #64748b; margin-top: 2px; line-height: 1.6;
+  display: block; width: 100%; font-size: 11.5px; color: var(--panel-text-muted); margin-top: 2px; line-height: 1.6;
 }
 .panel-jalali-hint--ok { color: #0e7490; font-weight: 600; }
 .dark .panel-jalali-hint { color: #9fb0c6; }
@@ -371,5 +371,84 @@ body, .font-sans, input, select, textarea, button, .material-symbols-outlined {
   color: var(--panel-text-muted);
 }
 @media print {
-  .panel-skip-link, .panel-search-hint, .panel-row-actions, .panel-list-hint { display: none !important; }
+  .panel-skip-link, .panel-search-hint, .panel-row-actions, .panel-list-hint,
+  .panel-scroll-hint { display: none !important; }
+}
+
+/* ==================================================================
+   ۱۴) ریسپانسیو و لمس (موبایل/تبلت)
+   هدف: هیچ سرریز افقی صفحه‌ای، هدف لمسی ≥ ۳۲px، و متن‌های ریز خوانا.
+   همه‌ی اندازه‌ها با مرورگر واقعی سنجیده شده‌اند (scripts/panel_responsive_audit.py).
+   ================================================================== */
+/* برچسب نمودارها و راهنمای تاریخ: کوچک‌تر از ۱۱٫۵px نشود */
+.panel-chart text { font-size: 11.5px; }
+.panel-jalali-hint { font-size: 11.5px; }
+
+/* زیرعنوان سایدبار: اگر بلند بود بشکند، نه اینکه بُرش بخورد */
+#nav-sidebar-inner div[class*="text-subtle"] { white-space: normal; line-height: 1.7; }
+
+/* راهنمای اسکرول افقی جدول‌ها — panel.js در صورت نیاز می‌سازد */
+.panel-scroll-hint {
+  display: flex; align-items: center; gap: 6px; margin: 0 0 6px;
+  font-size: 11.5px; color: var(--panel-text-muted);
+}
+.panel-scroll-hint b { font-weight: 600; color: var(--panel-text); }
+
+/* متن‌های توضیحی چندخطی: فاصلهٔ خط بازتر برای خوانایی فارسی (همهٔ عرض‌ها) */
+#panel-list-hint, .panel-footnote, .panel-empty, .panel-sub { line-height: 1.65; }
+
+@media (max-width: 1024px) {
+  /* هدف لمسی: پیوندهای جدول‌ها و سرستون‌های مرتب‌سازی */
+  .panel-table td a, .panel-feed a, #result_list td a, #result_list th a {
+    display: inline-flex; align-items: center; min-height: var(--panel-target);
+  }
+  .toplinks a, .breadcrumbs a { display: inline-flex; align-items: center; min-height: 24px; }
+  #toolbar #changelist-search button, #searchbar-submit {
+    min-width: var(--panel-target); min-height: var(--panel-target);
+  }
+  /* چک‌باکس‌ها: بزرگ‌تر و پررنگ‌تر؛ سلول میزبان هم کلیک‌پذیر می‌شود (panel.js) */
+  input[type="checkbox"], input[type="radio"] {
+    width: 18px; height: 18px; accent-color: var(--panel-accent);
+  }
+  td.action-checkbox { padding: 8px 10px; }
+  .panel-check-col { width: 46px; }
+  .panel-check-cell { padding: 8px 12px; }
+  /* «انتخاب همهٔ اشیاء» و برچسبش: هدف لمسی ≥ ۳۲px */
+  #action-toggle { min-width: var(--panel-target); min-height: var(--panel-target); }
+  div.actions label, thead th label { padding: 6px; }
+  /* برچسب‌های چک‌باکس و کنترل‌های مرتب‌سازی سرستون‌ها: هدف ≥ ۳۲px */
+  th.action-checkbox-column label, td.action-checkbox label {
+    padding: 7px 6px; display: inline-flex; align-items: center;
+  }
+  #result_list th a, #result_list th .sortoptions a {
+    min-width: var(--panel-target); justify-content: center;
+  }
+  /* شماره‌های صفحه‌بندی در سرصفحهٔ فهرست (پوستهٔ Unfold) */
+  div.pr-4 > a {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: var(--panel-target); padding-inline: 5px;
+  }
+  /* صفحه‌بندی و مسیر راهنمای خود دjango (کلاس‌های پایدار جنگو) */
+  .paginator a, .paginator span, ul.toplinks a, a.end, a.start, a.showall {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: var(--panel-target); min-width: var(--panel-target);
+  }
+  /* نوار زبانه‌های فرم‌های ادمین: اسکرول افقی به‌جای سرریز صفحه */
+  #tabs-wrapper > div { overflow-x: auto; scrollbar-width: thin; max-width: 100%; }
+  #tabs-items { flex-wrap: nowrap; }
+  #tabs-items > a { flex: 0 0 auto; min-height: var(--panel-target); }
+  /* تیتر و مسیر راهنما: بشکنند، نه بُرش */
+  h1, h1 a { white-space: normal; }
+  h1.overflow-hidden, h1 .overflow-hidden { overflow: visible; text-overflow: clip; }
+  .panel-search-hint { display: none; }
+  .panel-row-actions { margin-top: 4px; }
+}
+@media (max-width: 640px) {
+  .panel-card { border-radius: 12px; }
+  .panel-card-head b { font-size: 13px; }
+  .panel-kpi-value { font-size: 19px; }
+  .panel-table { min-width: 520px; }
+  .panel-row-actions a { padding: 0 10px; }
+  .panel-list-hint { font-size: 12px; }
+  .panel-sub { font-size: 12px; }
 }
