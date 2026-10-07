@@ -1,0 +1,113 @@
+{% extends "shop/base.html" %}
+{% load panel_extras shop_extras %}
+{% block title %}سفارش‌ها و صورت‌حساب‌ها — فروشگاه مهراصل{% endblock %}
+
+{% block content %}
+<div class="row-between" style="margin-top:16px">
+  <h1 style="margin:0">سفارش‌ها و صورت‌حساب‌ها</h1>
+  <div class="row" style="gap:8px">
+    <a class="btn btn-sm" href="{% url 'shop:cart' %}">سبد خرید</a>
+    <a class="btn btn-sm btn-ghost" href="{% url 'shop:home' %}">ادامهٔ خرید</a>
+  </div>
+</div>
+
+{% if membership %}
+  <div class="card" style="margin-top:12px">
+    <div class="card__body row-between">
+      <div>
+        <b>{{ membership.company.name }}</b>
+        <span class="text-sm text-muted">
+          • نقش شما: {{ membership.get_role_display }}
+          {% if membership.company.credit_limit %}
+            • اعتبار قابل استفاده: <span class="mono">{{ membership.company.credit_available|money_fa }} تومان</span>
+          {% endif %}
+        </span>
+      </div>
+      {% if membership.company.sales_rep %}
+        <span class="text-sm text-muted">کارشناس فروش: {{ membership.company.sales_rep.get_full_name|default:membership.company.sales_rep.username }}</span>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+
+<div class="stack" style="margin-top:16px">
+  <div class="card">
+    <div class="card__head"><b>سفارش‌های من</b><span class="text-sm text-muted">({{ orders|length|num_fa }} سفارش اخیر)</span></div>
+    {% if orders %}
+      <div class="card__body table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>شماره</th><th>تاریخ ثبت</th><th>پروژه / PO</th>
+              <th class="num">اقلام</th><th class="num">مبلغ کل</th><th>وضعیت</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for order in orders %}
+              <tr>
+                <td class="mono"><a href="{% url 'shop:order-detail' order.number %}">{{ order.number }}</a></td>
+                <td class="mono">{{ order.ordered_at|jdate }}</td>
+                <td>
+                  {{ order.project_name|default:"—" }}
+                  {% if order.po_number %}<div class="text-sm text-muted">PO: <span class="mono">{{ order.po_number }}</span></div>{% endif %}
+                </td>
+                <td class="num">{{ order.lines.all|length|num_fa }}</td>
+                <td class="num">{{ order.total|money_fa }}</td>
+                <td><span class="badge {{ order.get_status_display|status_tone }}">{{ order.get_status_display }}</span></td>
+                <td><a class="btn btn-sm btn-ghost" href="{% url 'shop:order-detail' order.number %}">جزئیات</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty">
+        {% include "shop/partials/empty.svg" %}
+        <p>هنوز سفارشی ثبت نکرده‌اید.</p>
+        <a class="btn btn-primary btn-sm" href="{% url 'shop:home' %}">شروع خرید</a>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card__head">
+      <b>صورت‌حساب‌ها و پیش‌فاکتورها</b>
+      {% if not can_view_invoices %}
+        <span class="badge badge-warn" style="margin-inline-start:auto">دسترسی این نقش محدود است</span>
+      {% endif %}
+    </div>
+    {% if not can_view_invoices %}
+      <div class="card__body">
+        <p class="text-muted" style="margin:0">نمایش صورت‌حساب‌ها برای نقش شما فعال نیست. برای دسترسی، با مدیر حساب شرکت خود تماس بگیرید.</p>
+      </div>
+    {% elif invoices %}
+      <div class="card__body table-wrap">
+        <table class="table">
+          <thead>
+            <tr><th>شماره</th><th>نوع</th><th>تاریخ صدور</th><th>سررسید</th><th class="num">مبلغ</th><th class="num">مانده</th><th>وضعیت</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for inv in invoices %}
+              <tr>
+                <td class="mono"><a href="{% url 'shop:invoice' inv.number %}">{{ inv.number }}</a></td>
+                <td>{{ inv.get_kind_display }}</td>
+                <td class="mono">{{ inv.issued_at|jdate }}</td>
+                <td class="mono">{{ inv.due_date|jdate }}</td>
+                <td class="num">{{ inv.total|money_fa }}</td>
+                <td class="num">{% if inv.balance %}{{ inv.balance|money_fa }}{% else %}<span class="text-ok">تسویه</span>{% endif %}</td>
+                <td><span class="badge {{ inv.get_status_display|status_tone }}">{{ inv.get_status_display }}</span></td>
+                <td class="row" style="gap:6px">
+                  <a class="btn btn-sm btn-ghost" href="{% url 'shop:invoice' inv.number %}">مشاهده</a>
+                  {% if inv.balance %}<a class="btn btn-sm btn-primary" href="{% url 'shop:invoice-pay' inv.number %}">پرداخت</a>{% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty"><p>صورت‌حسابی برای این حساب ثبت نشده است.</p></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

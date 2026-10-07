@@ -1,0 +1,42 @@
+{% extends "shop/base.html" %}
+{% block title %}ورود به حساب — فروشگاه مهراصل{% endblock %}
+
+{% block content %}
+<div class="grid grid-2" style="margin-top:22px;align-items:start">
+  <div class="card">
+    <div class="card__head"><b>ورود مشتریان مهراصل</b></div>
+    <div class="card__body">
+      {% if form.errors %}
+        <div class="alert alert-error">
+          <span>نام کاربری یا گذرواژه نادرست است، یا تعداد تلاش‌های ناموفق زیاد بوده و حساب موقتاً قفل شده است.</span>
+        </div>
+      {% endif %}
+      <form method="post" class="stack">
+        {% csrf_token %}
+        {% include "shop/partials/field.html" with f=form.username %}
+        {% include "shop/partials/field.html" with f=form.password %}
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+        <div class="row-between">
+          <label class="checkline"><input type="checkbox" name="remember" value="1"> ماندن در حساب</label>
+          <a class="text-sm" href="{% url 'shop:password-reset' %}">گذرواژه را فراموش کرده‌اید؟</a>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">ورود به حساب</button>
+      </form>
+      <p class="text-sm text-muted" style="margin-top:12px">
+        حساب سازمانی ندارید؟ <a href="{% url 'shop:signup' %}">ثبت‌نام شرکت جدید</a>
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card__head"><b>چرا ثبت‌نام سازمانی؟</b></div>
+    <div class="card__body text-sm text-muted">
+      <p>• قیمت اختصاصی شرکت شما روی همهٔ کالاها</p>
+      <p>• خرید اعتباری تا سقف توافق‌شده</p>
+      <p>• پیش‌فاکتور و فاکتور رسمی با امکان پرداخت آنلاین</p>
+      <p>• پیگیری سفارش، بارنامه و سوابق خرید</p>
+      <p style="margin-bottom:0">• ثبت درخواست قیمت (RFQ) و دریافت پاسخ کارشناس فروش</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "shop/base.html" %}
+{% load panel_extras %}
+{% block title %}پرداخت {{ invoice.number }} — فروشگاه مهراصل{% endblock %}
+
+{% block content %}
+<div class="steps">
+  <span class="step"><b>۱</b> سبد خرید</span>
+  <span class="step"><b>۲</b> ثبت سفارش</span>
+  <span class="step is-active"><b>۳</b> پرداخت</span>
+  <span class="step"><b>۴</b> تأیید و تسویه</span>
+</div>
+
+<div class="grid-side">
+  <div class="card">
+    <div class="card__head"><b>درگاه پرداخت (محیط آزمایشی)</b></div>
+    <div class="card__body">
+      <div class="alert alert-info">
+        <span>
+          این درگاه <b>شبیه‌سازی‌شده</b> است و هیچ تراکنش بانکی واقعی انجام نمی‌شود؛ برای اتصال به درگاه واقعی
+          (زرین‌پال/سامان/پارسیان) تنظیمات <span class="mono">SHOP_MOCK_GATEWAY</span> و کلید درگاه در فایل تنظیمات جایگزین می‌شود.
+        </span>
+      </div>
+
+      <form method="post" class="stack">
+        {% csrf_token %}
+        {% include "shop/partials/form_errors.html" %}
+        {% include "shop/partials/field.html" with f=form.gateway %}
+        {% include "shop/partials/check.html" with f=form.confirm %}
+        <div class="row" style="gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" type="submit">پرداخت مبلغ فاکتور</button>
+          <a class="btn btn-ghost" href="{% url 'shop:invoice' invoice.number %}">انصراف و بازگشت به فاکتور</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <aside class="card">
+    <div class="card__head"><b>خلاصهٔ پرداخت</b></div>
+    <div class="card__body">
+      <table class="specs">
+        <tr><th>شمارهٔ فاکتور</th><td class="mono">{{ invoice.number }}</td></tr>
+        <tr><th>نوع سند</th><td>{{ invoice.get_kind_display }}</td></tr>
+        <tr><th>شرکت</th><td>{{ invoice.company.name }}</td></tr>
+        <tr><th>تاریخ صدور</th><td class="mono">{{ invoice.issued_at|jdate }}</td></tr>
+        <tr><th>سررسید</th><td class="mono">{{ invoice.due_date|jdate }}</td></tr>
+        {% if invoice.order %}<tr><th>سفارش</th><td class="mono">{{ invoice.order.number }}</td></tr>{% endif %}
+      </table>
+      <div class="summary-row total" style="margin-top:10px"><span>مبلغ قابل پرداخت</span><span class="mono">{{ invoice.balance|money_fa }} تومان</span></div>
+    </div>
+  </aside>
+</div>
+{% endblock %}

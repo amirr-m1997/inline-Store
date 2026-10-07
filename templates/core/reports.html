@@ -1,0 +1,120 @@
+{% extends "admin/base.html" %}
+{% load panel_extras %}
+
+{% block title %}گزارش‌ها و خروجی اکسل{% endblock %}
+
+{% block content %}
+<div class="panel-wrap" dir="rtl">
+
+  <section class="panel-card">
+    <header class="panel-card-head">
+      <div>
+        <b>گزارش‌ساز فروش</b>
+        <span class="panel-sub">بازه‌ی شمسی، بُعد گروه‌بندی و خروجی اکسل/CSV</span>
+      </div>
+      <div class="panel-card-actions">
+        <a class="panel-btn panel-btn-primary" href="{% url 'panel-report-export' %}?{{ query_string }}">خروجی XLSX</a>
+        <a class="panel-btn" href="{{ links.reports|default:'/admin/reports/' }}">بازه پیش‌فرض</a>
+      </div>
+    </header>
+    <div class="panel-card-body">
+      <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:#5b6b82">
+          از تاریخ (شمسی)
+          <input type="text" name="from" value="{{ from_jalali }}" dir="ltr"
+                 style="padding:8px 10px;border:1px solid #e6eaf2;border-radius:10px;font:inherit">
+        </label>
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:#5b6b82">
+          تا تاریخ (شمسی)
+          <input type="text" name="to" value="{{ to_jalali }}" dir="ltr"
+                 style="padding:8px 10px;border:1px solid #e6eaf2;border-radius:10px;font:inherit">
+        </label>
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:#5b6b82">
+          گروه‌بندی
+          <select name="dimension" style="padding:8px 10px;border:1px solid #e6eaf2;border-radius:10px;font:inherit">
+            {% for key, label in dimensions %}
+              <option value="{{ key }}" {% if filters.dimension == key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:#5b6b82">
+          مشتری
+          <select name="company" style="padding:8px 10px;border:1px solid #e6eaf2;border-radius:10px;font:inherit">
+            <option value="">همه مشتریان</option>
+            {% for c in companies %}
+              <option value="{{ c.pk }}" {% if filters.company_id == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:#5b6b82">
+          وضعیت سفارش
+          <select name="status" style="padding:8px 10px;border:1px solid #e6eaf2;border-radius:10px;font:inherit">
+            <option value="">همه</option>
+            {% for key, label in status_choices %}
+              <option value="{{ key }}" {% if filters.status == key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <button class="panel-btn panel-btn-primary" type="submit">اعمال فیلتر</button>
+      </form>
+    </div>
+  </section>
+
+  <div class="panel-kpi-row">
+    {% include "core/partials/kpi_card.html" with title="فروش دوره" value=summary.sales|money_fa hint="پس از تخفیف، بدون ارزش افزوده" icon="trending_up" %}
+    {% include "core/partials/kpi_card.html" with title="سود ناخالص" value=summary.gross_profit|money_fa hint=summary.margin_pct|pct icon="insights" %}
+    {% include "core/partials/kpi_card.html" with title="تعداد سفارش" value=summary.orders|fa_digits hint="میانگین سبد" icon="shopping_cart" %}
+    {% include "core/partials/kpi_card.html" with title="تخفیف اعطاشده" value=summary.discount|money_fa hint=summary.discount_pct|pct icon="sell" %}
+    {% include "core/partials/kpi_card.html" with title="وصول‌شده" value=summary.collected|money_fa hint="مشتریان فعال دوره" icon="payments" %}
+  </div>
+
+  <div class="panel-grid panel-grid-2-1">
+    <section class="panel-card">
+      <header class="panel-card-head">
+        <div><b>نمودار {{ report.title }}</b><span class="panel-sub">{{ from_jalali }} تا {{ to_jalali }}</span></div>
+      </header>
+      <div class="panel-card-body">
+        <svg viewBox="0 0 {{ chart.width }} {{ chart.height }}" class="panel-chart">
+          <defs>
+            <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#0891b2"/><stop offset="100%" stop-color="#0e7490" stop-opacity=".55"/>
+            </linearGradient>
+          </defs>
+          <line x1="{{ chart.pad_left }}" x2="{{ chart.width|add:-16 }}" y1="{{ chart.baseline }}" y2="{{ chart.baseline }}" stroke="#e6eaf2"/>
+          {% for rect in chart.rects %}
+            <rect x="{{ rect.x }}" y="{{ rect.y }}" width="{{ rect.w }}" height="{{ rect.h }}" rx="7" fill="url(#barGrad)"/>
+            <text x="{{ rect.cx }}" y="{{ rect.y|add:-6 }}" text-anchor="middle" font-size="10.5" fill="#5b6b82">{{ rect.value_label }}</text>
+            <text x="{{ rect.cx }}" y="{{ chart.height|add:-12 }}" text-anchor="middle" font-size="10.5" fill="#5b6b82">{{ rect.label }}</text>
+          {% endfor %}
+        </svg>
+      </div>
+    </section>
+
+    <section class="panel-card">
+      <header class="panel-card-head"><div><b>ریز گزارش</b><span class="panel-sub">{{ report.rows|length }} ردیف</span></div></header>
+      <div class="panel-card-body panel-tight">
+        <table class="panel-table">
+          <thead><tr><th>#</th><th>{{ report.title }}</th><th>سفارش</th><th>مبلغ</th><th>سهم</th></tr></thead>
+          <tbody>
+          {% for row in report.rows %}
+            <tr>
+              <td class="panel-mono">{{ forloop.counter|fa_digits }}</td>
+              <td>{{ row.label }}</td>
+              <td class="panel-mono">{{ row.orders|fa_digits }}</td>
+              <td class="panel-mono">{{ row.amount|money_s }}</td>
+              <td class="panel-mono">{{ row.share_pct|pct }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5" class="panel-empty">داده‌ای در این بازه یافت نشد.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <p class="panel-footnote">
+    خروجی اکسل شامل همین جدول + خلاصه دوره است و برای ارسال به حسابداری آماده می‌شود.
+  </p>
+</div>
+{% endblock %}

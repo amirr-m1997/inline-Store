@@ -1,0 +1,282 @@
+/* استایل اختصاصی پنل مهراصل — هم‌راستا با پیش‌نمایش تاییدشده (سرمه‌ای/فیروزه‌ای) */
+
+/* ------------------------------------------------------ فونت وزیرمتن (محلی، بدون CDN)
+   فایل‌ها در static/fonts/ و تحت مجوز OFL (پیوست: Vazirmatn-OFL.txt). */
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/static/fonts/Vazirmatn-Regular.woff2") format("woff2");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/static/fonts/Vazirmatn-Medium.woff2") format("woff2");
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/static/fonts/Vazirmatn-SemiBold.woff2") format("woff2");
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/static/fonts/Vazirmatn-Bold.woff2") format("woff2");
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+
+/* اعمال فونت و ارقام هم‌عرض روی همه‌ی اجزای پنل */
+.panel-wrap, .panel-wrap button, .panel-wrap input, .panel-wrap select, .panel-wrap textarea {
+  font-family: "Vazirmatn", "IRANSansX", Tahoma, system-ui, sans-serif;
+}
+
+/* فونت فارسی در کل پنل ادمین (سایدبار، چک‌لیست‌ها و صفحه ورود هم شامل می‌شود) */
+body, .font-sans, input, select, textarea, button, .material-symbols-outlined {
+  font-family: "Vazirmatn", "IRANSansX", Tahoma, system-ui, sans-serif !important;
+}
+.material-symbols-outlined { font-family: "Material Symbols Outlined" !important; }
+.panel-wrap .panel-mono, .panel-wrap .panel-kpi-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.panel-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 24px;
+}
+
+/* ------------------------------------------------------ کارت‌های KPI */
+.panel-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+@media (max-width: 1200px) { .panel-kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px)  { .panel-kpi-row { grid-template-columns: 1fr; } }
+
+.panel-kpi {
+  background: #fff;
+  border: 1px solid #e6eaf2;
+  border-radius: 14px;
+  padding: 14px 15px 10px;
+  box-shadow: 0 1px 2px rgba(15, 27, 45, .05), 0 8px 24px -14px rgba(15, 27, 45, .18);
+  position: relative;
+  overflow: hidden;
+}
+.panel-kpi-top { display: flex; align-items: center; gap: 8px; }
+.panel-kpi-label { font-size: 12px; color: #5b6b82; }
+.panel-kpi-icon {
+  margin-inline-start: auto; width: 32px; height: 32px; border-radius: 10px;
+  background: #e6f6fa; color: #0e7490; display: grid; place-items: center; font-size: 16px;
+}
+.panel-kpi-value {
+  font-size: 21px; font-weight: 700; color: #0f1b2d; margin-top: 6px;
+  font-variant-numeric: tabular-nums; direction: rtl;
+}
+.panel-kpi-foot { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #64748b; margin-top: 4px; }
+.panel-chip { background: #e3f6ee; color: #12855f; border-radius: 6px; padding: 0 6px; font-weight: 600; }
+.panel-spark { width: 100%; height: 28px; margin-top: 4px; }
+
+/* ------------------------------------------------------ چیدمان کارت‌ها */
+.panel-grid { display: grid; gap: 16px; }
+.panel-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.panel-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.panel-grid-2-1 { grid-template-columns: minmax(0, 7fr) minmax(0, 3fr); }
+@media (max-width: 1100px) {
+  .panel-grid-2, .panel-grid-3, .panel-grid-2-1 { grid-template-columns: 1fr; }
+}
+
+.panel-card {
+  background: #fff; border: 1px solid #e6eaf2; border-radius: 14px; overflow: hidden;
+  box-shadow: 0 1px 2px rgba(15, 27, 45, .05), 0 8px 24px -14px rgba(15, 27, 45, .18);
+}
+.panel-card-head {
+  display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #eef2f8;
+  flex-wrap: wrap;
+}
+.panel-card-head b { font-size: 13.5px; color: #0f1b2d; display: block; }
+.panel-sub { font-size: 11.5px; color: #64748b; display: block; }
+.panel-card-actions { margin-inline-start: auto; display: flex; gap: 8px; }
+.panel-card-body { padding: 16px; }
+.panel-card-body.panel-tight { padding: 6px 8px; }
+.panel-center { display: flex; flex-direction: column; align-items: center; }
+
+.panel-btn {
+  border: 1px solid #e6eaf2; background: #fff; color: #0f1b2d; border-radius: 10px;
+  padding: 6px 11px; font-size: 12px; text-decoration: none; white-space: nowrap;
+}
+.panel-btn:hover { border-color: #cfd9e8; background: #fbfcfe; }
+.panel-btn-primary { background: #0e7490; border-color: #0e7490; color: #fff; }
+.panel-btn-primary:hover { background: #0b6276; color: #fff; }
+
+/* ------------------------------------------------------ نمودارها */
+.panel-chart { width: 100%; height: 250px; }
+.panel-chart-caption { font-size: 11.5px; color: #64748b; margin-top: 6px; }
+.panel-donut { width: 175px; height: 175px; }
+.panel-legend { list-style: none; margin: 10px 0 0; padding: 0; width: 100%; }
+.panel-legend li {
+  display: flex; align-items: center; gap: 8px; font-size: 12px; color: #5b6b82;
+  padding: 4px 0; border-bottom: 1px dashed #eef2f8;
+}
+.panel-legend li b { margin-inline-start: auto; color: #0f1b2d; }
+.panel-legend i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+
+.panel-hbar { margin-bottom: 12px; }
+.panel-hbar-head { display: flex; gap: 8px; font-size: 12.2px; color: #334155; margin-bottom: 5px; }
+.panel-hbar-head span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.panel-hbar-head b { margin-inline-start: auto; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.panel-bar { height: 8px; background: #eef2f8; border-radius: 6px; overflow: hidden; }
+.panel-bar > i { display: block; height: 100%; background: linear-gradient(90deg, #0e7490, #22a5c0); }
+
+/* ------------------------------------------------------ قیف */
+.panel-funnel {
+  display: flex; align-items: center; gap: 10px; color: #fff; border-radius: 11px;
+  padding: 10px 13px; margin-bottom: 8px; font-size: 12.3px;
+}
+.panel-funnel b { margin-inline-start: auto; font-size: 15px; font-variant-numeric: tabular-nums; }
+.panel-funnel-rate { background: rgba(255, 255, 255, .22); border-radius: 20px; padding: 1px 7px; font-size: 11px; }
+
+/* ------------------------------------------------------ جدول‌ها */
+.panel-table { width: 100%; border-collapse: collapse; font-size: 12.3px; }
+.panel-table thead th {
+  text-align: right; font-size: 11px; color: #5b6b82; font-weight: 600;
+  padding: 8px 10px; border-bottom: 1px solid #e6eaf2; background: #f8fafd; white-space: nowrap;
+}
+.panel-table td { padding: 9px 10px; border-bottom: 1px solid #eef2f8; vertical-align: middle; }
+.panel-table tr:last-child td { border-bottom: none; }
+.panel-table tr:hover td { background: #fbfcfe; }
+.panel-table a { color: #0e7490; text-decoration: none; }
+.panel-table a:hover { text-decoration: underline; }
+.panel-mono { font-variant-numeric: tabular-nums; }
+
+/* ------------------------------------------------------ فید */
+.panel-feed { list-style: none; margin: 0; padding: 0; }
+.panel-feed li {
+  display: flex; gap: 10px; align-items: flex-start; padding: 9px 10px;
+  border-bottom: 1px dashed #eef2f8; font-size: 12.3px;
+}
+.panel-feed li:last-child { border-bottom: none; }
+.panel-feed time { margin-inline-start: auto; color: #64748b; font-size: 11px; white-space: nowrap; }
+.panel-feed-dot { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; margin-top: 6px; flex: 0 0 auto; }
+.panel-feed-info, .panel-feed-create, .panel-feed-login { background: #1d4ed8; }
+.panel-feed-warning, .panel-feed-low_stock, .panel-feed-price_expiring { background: #b45309; }
+.panel-feed-danger, .panel-feed-login_failed, .panel-feed-reject, .panel-feed-delete { background: #c02626; }
+.panel-feed-success, .panel-feed-approve, .panel-feed-update { background: #12855f; }
+.panel-feed-price { background: #6d28d9; }
+.panel-feed-stock { background: #0891b2; }
+.panel-feed-status { background: #0e7490; }
+
+.panel-empty { color: #64748b; font-size: 12.3px; padding: 12px 8px; text-align: center; }
+.panel-footnote { text-align: center; color: #64748b; font-size: 11.5px; }
+.panel-footnote a { color: #0e7490; }
+
+/* ------------------------------------------------------ ریسپانسیو مودال‌ها */
+@media (max-width: 900px) {
+  .panel-chart { height: 200px; }
+  .panel-card-head { flex-direction: column; align-items: flex-start; }
+  .panel-card-actions { margin-inline-start: 0; }
+}
+
+
+/* ============================================================ ارتقای UX/UI (بازبینی ۱۴۰۵/۰۷/۱۵)
+   این بخش یافته‌های بازبینی رابط کاربری را اعمال می‌کند:
+   فوکوس کیبوردی، اندازه‌ی لمس، اسکرول جدول‌های پهن، جداسازی دوسویه‌ی کدها و دارک‌مود. */
+
+/* ---------------------------------------------- ۱) فوکوس قابل‌دیدن (WCAG 2.4.7) */
+.panel-wrap a:focus-visible,
+.panel-wrap button:focus-visible,
+.panel-wrap input:focus-visible,
+.panel-wrap select:focus-visible,
+.panel-wrap textarea:focus-visible,
+.panel-wrap [tabindex]:focus-visible {
+  outline: 2px solid #0e7490;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* ---------------------------------------------- ۲) اندازه‌ی لمس (هدف ≥ ۳۲px) */
+.panel-btn { padding: 7px 12px; min-height: 32px; display: inline-flex; align-items: center; gap: 5px; }
+.panel-card-actions { align-items: center; }
+.panel-table a { display: inline-block; padding-block: 2px; }
+
+/* ---------------------------------------------- ۳) جدول‌های پهن: اسکرول راحت + ستون چسبان */
+.panel-card-body.panel-tight { overflow-x: auto; overscroll-behavior-x: contain; }
+.panel-card-body.panel-tight::-webkit-scrollbar { height: 8px; }
+.panel-card-body.panel-tight::-webkit-scrollbar-thumb { background: #cfd9e8; border-radius: 999px; }
+.panel-table { min-width: 640px; }
+
+/* ستون انتخاب/آیکون در چک‌لیست‌های ادمین هنگام اسکرول افقی ثابت می‌ماند */
+.result-list td.action-checkbox,
+.result-list th.action-checkbox-column {
+  position: sticky; inset-inline-start: 0; z-index: 2; background: #fff;
+}
+.result-list thead th.action-checkbox-column { background: #f8fafd; }
+.result-list tr:hover td.action-checkbox { background: #fbfcfe; }
+
+/* ---------------------------------------------- ۴) جداسازی دوسویه برای کدها و اعداد لاتین */
+.panel-mono { unicode-bidi: isolate; }
+.panel-table td, .panel-kpi-value { font-variant-numeric: tabular-nums; }
+
+/* ---------------------------------------------- ۵) دارک‌مود (هم‌راستا با دکمه‌ی تم unfold) */
+.dark .panel-wrap { color: #e6eef8; }
+.dark .panel-card, .dark .panel-kpi {
+  background: #0f1b2d; border-color: #1e2f47;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 10px 26px -18px rgba(0, 0, 0, .6);
+}
+.dark .panel-card-head { border-color: #1b2a40; }
+.dark .panel-card-head b { color: #e6eef8; }
+.dark .panel-sub, .dark .panel-kpi-label, .dark .panel-kpi-foot, .dark .panel-chart-caption,
+.dark .panel-empty, .dark .panel-footnote, .dark .panel-feed time, .dark .panel-kpi-icon {
+  color: #9fb0c6;
+}
+.dark .panel-table th { background: #132239; color: #a9bcd2; border-color: #1e2f47; }
+.dark .panel-table td { border-color: #1b2a40; }
+.dark .panel-table tr:hover td { background: #132239; }
+.dark .panel-table a { color: #3ec3dd; }
+.dark .panel-btn { background: #132239; border-color: #24374f; color: #dbe6f3; }
+.dark .panel-btn:hover { background: #172942; border-color: #2f4664; }
+.dark .panel-btn-primary { background: #0891b2; border-color: #0891b2; color: #fff; }
+.dark .panel-btn-primary:hover { background: #0e7490; }
+.dark .panel-chip { background: #172942; color: #cfe0ef; }
+.dark .panel-bar { background: #1b2a40; }
+.dark .panel-feed li { border-color: #1b2a40; }
+.dark .panel-feed-dot { background: #3b5578; }
+.dark .panel-wrap input, .dark .panel-wrap select, .dark .panel-wrap textarea {
+  background: #0f1b2d !important; color: #e6eef8 !important; border-color: #24374f !important;
+}
+.dark .panel-wrap label { color: #9fb0c6 !important; }
+.dark .panel-wrap svg text { fill: #9fb0c6 !important; }
+.dark .panel-wrap svg line, .dark .panel-wrap svg .grid line { stroke: #1e2f47 !important; }
+
+/* ---------------------------------------------- ۶) چاپ (گزارش‌ها و فهرست‌ها) */
+@media print {
+  /* فقط عناصر پیمایشی پنهان می‌شوند؛ فرم اصلی رکورد نباید حذف شود */
+  .panel-card-actions, .panel-btn, nav, aside, header,
+  #changelist-filter, .changelist-filter, #searchbar, .actions { display: none !important; }
+  .panel-wrap { gap: 10px; }
+  .panel-card { box-shadow: none; border-color: #ccc; break-inside: avoid; }
+  .panel-table { min-width: 0; font-size: 10.5px; }
+  .panel-kpi-row { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ---------------------------------------------- ۷) راهنمای تاریخ شمسی زیر ورودی‌ها (panel.js) */
+.panel-jalali-hint {
+  display: block; width: 100%; font-size: 10.5px; color: #64748b; margin-top: 2px; line-height: 1.6;
+}
+.panel-jalali-hint--ok { color: #0e7490; font-weight: 600; }
+.dark .panel-jalali-hint { color: #9fb0c6; }
+.dark .panel-jalali-hint--ok { color: #3ec3dd; }
+
+/* ---------------------------------------------- ۸) کارت «این بخش چیست؟» بالای فهرست/فرم مدل */
+.model-help {
+  display: flex; gap: 9px; align-items: flex-start;
+  background: #f0f9fb; border: 1px solid #cdeaf1; border-radius: 12px;
+  padding: 10px 12px; margin: 0 0 12px;
+}
+.model-help__icon { font-size: 18px; line-height: 1.4; color: #0e7490; flex: 0 0 auto; }
+.model-help__body { display: block; }
+.model-help__title { display: block; font-size: 12.5px; color: #0e7490; margin-bottom: 2px; }
+.model-help__text { display: block; font-size: 12.3px; line-height: 1.9; color: #334155; }
+.dark .model-help { background: #0f2433; border-color: #1d4457; }
+.dark .model-help__icon, .dark .model-help__title { color: #3ec3dd; }
+.dark .model-help__text { color: #c9d7e6; }
+@media print { .model-help { display: none !important; } }

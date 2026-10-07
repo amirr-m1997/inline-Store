@@ -1,0 +1,136 @@
+{% extends "admin/base.html" %}
+{% load panel_extras %}
+
+{% block title %}اعلان‌ها و هشدارها{% endblock %}
+
+{% block content %}
+<div class="panel-wrap" dir="rtl">
+
+  <div class="panel-kpi-row">
+    <div class="panel-kpi">
+      <div class="panel-kpi-top"><span class="panel-kpi-label">خوانده‌نشده</span>
+        <span class="panel-kpi-icon"><span class="material-symbols-outlined">notifications_active</span></span></div>
+      <div class="panel-kpi-value">{{ unread_count|fa_digits }}</div>
+      <div class="panel-kpi-foot"><span>از مجموع {{ total_count|fa_digits }} اعلان</span></div>
+    </div>
+    <div class="panel-kpi">
+      <div class="panel-kpi-top"><span class="panel-kpi-label">بحرانی (باز)</span>
+        <span class="panel-kpi-icon"><span class="material-symbols-outlined">priority_high</span></span></div>
+      <div class="panel-kpi-value">{{ level_counts.danger|fa_digits }}</div>
+      <div class="panel-kpi-foot"><span>نیازمند اقدام فوری</span></div>
+    </div>
+    <div class="panel-kpi">
+      <div class="panel-kpi-top"><span class="panel-kpi-label">هشدار (باز)</span>
+        <span class="panel-kpi-icon"><span class="material-symbols-outlined">warning</span></span></div>
+      <div class="panel-kpi-value">{{ level_counts.warning|fa_digits }}</div>
+      <div class="panel-kpi-foot"><span>در آستانه عبور از حد</span></div>
+    </div>
+    <div class="panel-kpi">
+      <div class="panel-kpi-top"><span class="panel-kpi-label">اطلاع‌رسانی (باز)</span>
+        <span class="panel-kpi-icon"><span class="material-symbols-outlined">info</span></span></div>
+      <div class="panel-kpi-value">{{ level_counts.info|fa_digits }}</div>
+      <div class="panel-kpi-foot"><span>بدون اقدام فوری</span></div>
+    </div>
+  </div>
+
+  <section class="panel-card">
+    <header class="panel-card-head">
+      <div><b>اعلان‌های درون‌پنلی</b>
+        <span class="panel-sub">{{ notifications|length|fa_digits }} رکورد در این نما — {{ unread_count|fa_digits }} خوانده‌نشده</span></div>
+      <div class="panel-card-actions">
+        <a class="panel-btn" href="{% url 'panel-alerts' %}?state=all">همه</a>
+        <a class="panel-btn" href="{% url 'panel-alerts' %}?state=read">خوانده‌شده‌ها</a>
+        <a class="panel-btn" href="{% url 'panel-alerts' %}?state=unread">خوانده‌نشده‌ها</a>
+      </div>
+    </header>
+
+    <div class="panel-card-body">
+      <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <label style="display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:#5b6b82">
+          شدت
+          <select name="level" style="padding:8px 10px;border:1px solid #e6eaf2;border-radius:10px;font:inherit">
+            <option value="">همه</option>
+            {% for key, label in levels %}
+              <option value="{{ key }}" {% if filters.level == key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:#5b6b82">
+          نوع
+          <select name="kind" style="padding:8px 10px;border:1px solid #e6eaf2;border-radius:10px;font:inherit">
+            <option value="">همه</option>
+            {% for key, label in kinds %}
+              <option value="{{ key }}" {% if filters.kind == key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:#5b6b82">
+          وضعیت
+          <select name="state" style="padding:8px 10px;border:1px solid #e6eaf2;border-radius:10px;font:inherit">
+            <option value="unread" {% if filters.state == "unread" %}selected{% endif %}>خوانده‌نشده</option>
+            <option value="read" {% if filters.state == "read" %}selected{% endif %}>خوانده‌شده</option>
+            <option value="all" {% if filters.state == "all" %}selected{% endif %}>همه</option>
+          </select>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:#5b6b82;min-width:220px">
+          جست‌وجو
+          <input type="search" name="q" value="{{ filters.q }}" placeholder="عنوان یا متن اعلان…"
+                 style="padding:8px 10px;border:1px solid #e6eaf2;border-radius:10px;font:inherit">
+        </label>
+        <button class="panel-btn panel-btn-primary" type="submit">اعمال فیلتر</button>
+        <a class="panel-btn" href="{% url 'panel-alerts' %}">پاک‌کردن</a>
+      </form>
+    </div>
+
+    <form method="post" action="{% url 'panel-alerts' %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <div class="panel-card-body panel-tight">
+        <table class="panel-table">
+          <thead>
+            <tr>
+              <th style="width:34px"><input type="checkbox" onclick="document.querySelectorAll('.al-row').forEach(c=>c.checked=this.checked)"></th>
+              <th>شدت</th><th>نوع</th><th>عنوان</th><th>توضیح</th><th>مشتری</th><th>زمان</th><th>وضعیت</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for note in notifications %}
+            <tr>
+              <td><input class="al-row" type="checkbox" name="ids" value="{{ note.pk }}"></td>
+              <td>
+                {% if note.level == "danger" %}{% badge note.get_level_display "#c02626" %}
+                {% elif note.level == "warning" %}{% badge note.get_level_display "#b45309" %}
+                {% elif note.level == "success" %}{% badge note.get_level_display "#12855f" %}
+                {% else %}{% badge note.get_level_display "#1d4ed8" %}{% endif %}
+              </td>
+              <td>{% badge note.get_kind_display "#0e7490" %}</td>
+              <td>
+                {% if note.url %}<a href="{{ note.url }}"><b>{{ note.title }}</b></a>
+                {% else %}<b>{{ note.title }}</b>{% endif %}
+              </td>
+              <td>{{ note.body|truncatechars:150 }}</td>
+              <td>{{ note.company.name|default:"—" }}</td>
+              <td class="panel-mono">{{ note.created_at|jdatetime_fa }}</td>
+              <td>{% if note.is_read %}{% badge "خوانده‌شده" "#64748b" %}{% else %}{% badge "جدید" "#c02626" %}{% endif %}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="8" class="panel-empty">اعلانی با این فیلترها وجود ندارد.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="panel-card-body" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="panel-btn panel-btn-primary" type="submit" name="action" value="mark_read">خوانده‌شده کردن انتخاب‌شده‌ها</button>
+        <button class="panel-btn" type="submit" name="action" value="mark_unread">خوانده‌نشده کردن</button>
+        <button class="panel-btn" type="submit" name="action" value="mark_read"
+                onclick="document.querySelectorAll('.al-row').forEach(c=>c.checked=false)">خوانده‌شده کردن همه</button>
+      </div>
+    </form>
+
+    <p class="panel-footnote">
+      تولید هشدارها: <code>python manage.py check_alerts</code> — قواعد پوشش‌داده‌شده: موجودی کم، تأخیر SLA استعلام،
+      سفارش معطل تأیید، چک نزدیک سررسید، قیمت در آستانه انقضا، عبور از سقف اعتبار.
+    </p>
+  </section>
+</div>
+{% endblock %}

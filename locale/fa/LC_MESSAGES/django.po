@@ -1,0 +1,320 @@
+# ترجمه فارسی رابط پنل مدیریت مهراصل
+# دامنه: رشته‌های django-unfold (که بسته‌ی اصلی فایل ترجمه ندارد) + چند رشته‌ی سفارشی پنل
+# کامپایل: python3 manage.py compile_po
+msgid ""
+msgstr ""
+"Project-Id-Version: mehrasl-panel 1.0\n"
+"Report-Msgid-Bugs-To: dev@mehrasl.ir\n"
+"POT-Creation-Date: 2026-10-07 00:00+0330\n"
+"PO-Revision-Date: 2026-10-07 00:00+0330\n"
+"Language: fa\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid " By %(filter_title)s "
+msgstr " بر اساس %(filter_title)s "
+
+msgid "%(class_name)s %(instance)s"
+msgstr "%(class_name)s %(instance)s"
+
+msgid "Action"
+msgstr "عملیات"
+
+msgid "Add"
+msgstr "افزودن"
+
+msgid "Add row"
+msgstr "افزودن ردیف"
+
+msgid "After you've created a user, you’ll be able to edit more user options."
+msgstr "پس از ساخت کاربر، گزینه‌های بیشتری برای ویرایش در دسترس خواهد بود."
+
+msgid "All"
+msgstr "همه"
+
+msgid "All applications"
+msgstr "همه‌ی بخش‌ها"
+
+msgid "Apply Filters"
+msgstr "اعمال فیلترها"
+
+msgid "Available shortcuts"
+msgstr "میان‌برهای موجود"
+
+msgid "Cancel"
+msgstr "انصراف"
+
+msgid "Change"
+msgstr "ویرایش"
+
+msgid "Change password"
+msgstr "تغییر گذرواژه"
+
+msgid "Changelist shortcuts"
+msgstr "میان‌برهای فهرست"
+
+msgid "Choose file to upload"
+msgstr "انتخاب فایل برای بارگذاری"
+
+msgid "Clear"
+msgstr "پاک‌کردن"
+
+msgid "Clear all filters"
+msgstr "پاک‌کردن همه‌ی فیلترها"
+
+msgid "Click to cancel"
+msgstr "برای لغو کلیک کنید"
+
+msgid "Click to download"
+msgstr "برای دانلود کلیک کنید"
+
+msgid "Close"
+msgstr "بستن"
+
+msgid "Command tool shortcuts"
+msgstr "میان‌برهای جست‌وجوی سریع"
+
+msgid "Create new record"
+msgstr "ایجاد رکورد جدید"
+
+msgid "Dark"
+msgstr "تیره"
+
+msgid "Dataset not found. No action performed."
+msgstr "مجموعه‌داده پیدا نشد؛ هیچ عملیاتی انجام نشد."
+
+msgid "Date"
+msgstr "تاریخ"
+
+msgid "Date from"
+msgstr "از تاریخ"
+
+msgid "Date to"
+msgstr "تا تاریخ"
+
+msgid "Date/time"
+msgstr "تاریخ و زمان"
+
+msgid "Delete"
+msgstr "حذف"
+
+msgid "False"
+msgstr "خیر"
+
+msgid "Filters"
+msgstr "فیلترها"
+
+msgid "From"
+msgstr "از"
+
+msgid "General"
+msgstr "عمومی"
+
+msgid "Global shortcuts"
+msgstr "میان‌برهای سراسری"
+
+msgid "Go back"
+msgstr "بازگشت"
+
+msgid "Hide counts"
+msgstr "پنهان‌کردن شمارش"
+
+msgid "History"
+msgstr "تاریخچه"
+
+msgid "Home"
+msgstr "خانه"
+
+msgid "Image preview"
+msgstr "پیش‌نمایش تصویر"
+
+msgid "Light"
+msgstr "روشن"
+
+msgid "Log in again"
+msgstr "ورود مجدد"
+
+msgid "Log out"
+msgstr "خروج"
+
+msgid "Navigate"
+msgstr "پیمایش"
+
+msgid "Next"
+msgstr "بعدی"
+
+msgid "No"
+msgstr "خیر"
+
+msgid "No data"
+msgstr "داده‌ای موجود نیست"
+
+msgid "No results found"
+msgstr "نتیجه‌ای یافت نشد"
+
+msgid "No, take me back"
+msgstr "نه، بازگردان"
+
+msgid "Nothing matched your search"
+msgstr "چیزی با جست‌وجوی شما مطابقت نداشت"
+
+msgid "Open command tool"
+msgstr "بازکردن جست‌وجوی سریع"
+
+msgid "Open selection"
+msgstr "بازکردن انتخاب"
+
+msgid "Open selection in new tab"
+msgstr "بازکردن انتخاب در زبانه‌ی جدید"
+
+msgid "Open shortcuts list"
+msgstr "نمایش فهرست میان‌برها"
+
+msgid "Previous"
+msgstr "قبلی"
+
+msgid "Recent actions"
+msgstr "عملیات اخیر"
+
+msgid "Recent searches"
+msgstr "جست‌وجوهای اخیر"
+
+msgid "Record picture"
+msgstr "تصویر رکورد"
+
+msgid "Reset filters"
+msgstr "بازنشانی فیلترها"
+
+msgid "Return to site"
+msgstr "بازگشت به سایت"
+
+msgid "Run"
+msgstr "اجرا"
+
+msgid "Run the selected action"
+msgstr "اجرای عملیات انتخاب‌شده"
+
+msgid "Save"
+msgstr "ذخیره"
+
+msgid "Save and add another"
+msgstr "ذخیره و افزودن یکی دیگر"
+
+msgid "Save and continue editing"
+msgstr "ذخیره و ادامه‌ی ویرایش"
+
+msgid "Save and view"
+msgstr "ذخیره و مشاهده"
+
+msgid "Save as new"
+msgstr "ذخیره به‌عنوان رکورد جدید"
+
+msgid "Search apps and models..."
+msgstr "جست‌وجوی بخش‌ها و مدل‌ها…"
+
+msgid "Select"
+msgstr "انتخاب"
+
+msgid "Select action"
+msgstr "انتخاب عملیات"
+
+msgid "Select action to run"
+msgstr "عملیات موردنظر برای اجرا را انتخاب کنید"
+
+msgid "Select currency"
+msgstr "انتخاب واحد پول"
+
+msgid "Select format"
+msgstr "انتخاب قالب"
+
+msgid "Select record"
+msgstr "انتخاب رکورد"
+
+msgid "Select value"
+msgstr "انتخاب مقدار"
+
+msgid "Show counts"
+msgstr "نمایش شمارش"
+
+msgid "Submit"
+msgstr "ثبت"
+
+msgid "System"
+msgstr "سیستم"
+
+msgid "Thanks for spending some quality time with the web site today."
+msgstr "از این‌که امروز زمانی را در پنل گذراندید سپاسگزاریم."
+
+msgid "This item will be deleted."
+msgstr "این رکورد حذف خواهد شد."
+
+msgid "This object doesn’t have a change history. It probably wasn’t added via this admin site."
+msgstr "این رکورد تاریخچه‌ی تغییر ندارد؛ احتمالاً از طریق پنل مدیریت ساخته نشده است."
+
+msgid "This page yielded into no results. Create a new item or reset your filters."
+msgstr "این صفحه نتیجه‌ای ندارد؛ یک رکورد جدید بسازید یا فیلترها را بازنشانی کنید."
+
+msgid "Time"
+msgstr "ساعت"
+
+msgid "To"
+msgstr "تا"
+
+msgid "Toggle dark/light mode"
+msgstr "تغییر حالت روشن/تیره"
+
+msgid "Toggle filter"
+msgstr "نمایش/پنهان‌کردن فیلتر"
+
+msgid "Toggle password visibility"
+msgstr "نمایش/پنهان‌کردن گذرواژه"
+
+msgid "Toggle sidebar"
+msgstr "نمایش/پنهان‌کردن نوار کنار"
+
+msgid "True"
+msgstr "بله"
+
+msgid "Type to search"
+msgstr "برای جست‌وجو تایپ کنید"
+
+msgid "Unknown"
+msgstr "نامشخص"
+
+msgid "Unknown content"
+msgstr "محتوای نامشخص"
+
+msgid "User"
+msgstr "کاربر"
+
+msgid "Value"
+msgstr "مقدار"
+
+msgid "View"
+msgstr "مشاهده"
+
+msgid "View on site"
+msgstr "مشاهده در سایت"
+
+msgid "View site"
+msgstr "مشاهده‌ی سایت"
+
+msgid "Yes"
+msgstr "بله"
+
+msgid "Yes, I’m sure"
+msgstr "بله، مطمئنم"
+
+msgid "You can not create nested object without parent"
+msgstr "بدون رکورد والد نمی‌توان رکورد تودرتو ساخت"
+
+msgid "You don’t have permission to view or edit anything."
+msgstr "شما مجوز مشاهده یا ویرایش هیچ رکوردی را ندارید."
+
+msgid "You have been successfully logged out from the administration"
+msgstr "با موفقیت از پنل مدیریت خارج شدید"
+
+msgid "and"
+msgstr "و"

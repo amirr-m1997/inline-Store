@@ -1,0 +1,27 @@
+{% load i18n %}
+{# بازنویسی قالی فیلتر بازه‌ی تاریخ unfold: افزودن راهنمای «قالب شمسی» زیر فیلدها #}
+{% with choices.0 as choice %}
+    <div class="flex flex-col">
+        <h3 class="font-semibold mb-2 text-font-important-light dark:text-font-important-dark">
+            {% blocktranslate with filter_title=title %} By {{ filter_title }} {% endblocktranslate %}
+        </h3>
+
+        <div class="flex flex-col space-y-2">
+            {% for field in choice.form %}
+                <div class="flex flex-row flex-wrap group relative{% if field.errors %} errors{% endif %}">
+                    {{ field }}
+                    {% if field.errors %}
+                        {% for error in field.errors %}
+                            <p class="text-red-600 text-xs mt-1">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <p class="text-xs text-base-400 dark:text-base-500 mt-2 leading-5">
+            قالب: <span dir="ltr">۱۴۰۵/۰۷/۱۵</span> شمسی
+            <span class="text-base-400">(تاریخ میلادی هم پذیرفته می‌شود)</span>
+        </p>
+    </div>
+{% endwith %}

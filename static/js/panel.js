@@ -1,0 +1,260 @@
+/* ============================================================ panel.js
+   ارتقاهای دسترس‌پذیری و تجربه‌ی کاربری پنل مهراصل (۱۴۰۵/۰۷/۱۵)
+   ۱) برچسب و راهنمای کادر جست‌وجوی فهرست‌ها (aria-label + placeholder)
+   ۲) برچسب دسترس‌پذیر برای چک‌باکس‌های انتخاب ردیف
+   ۳) مشخص‌کردن گزینه‌ی فعال سایدبار برای صفحه‌خوان‌ها (aria-current)
+   ۴) تبدیل دوطرفه‌ی تاریخ شمسی/میلادی در ورودی‌های تاریخ + راهنمای زیر فیلد
+*/
+(function () {
+  "use strict";
+
+  /* ---------------------------------------------------------- تبدیل تاریخ */
+  var gDaysInMonth = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+
+  function gregorianToJalali(gy, gm, gd) {
+    var jy = gy <= 1600 ? 0 : 979;
+    gy -= gy <= 1600 ? 621 : 1600;
+    var gy2 = gm > 2 ? gy + 1 : gy;
+    var days =
+      365 * gy +
+      Math.floor((gy2 + 3) / 4) -
+      Math.floor((gy2 + 99) / 100) +
+      Math.floor((gy2 + 399) / 400) -
+      80 +
+      gd +
+      gDaysInMonth[gm - 1];
+    jy += 33 * Math.floor(days / 12053);
+    days %= 12053;
+    jy += 4 * Math.floor(days / 1461);
+    days %= 1461;
+    if (days > 365) {
+      jy += Math.floor((days - 1) / 365);
+      days = (days - 1) % 365;
+    }
+    var jm = days < 186 ? 1 + Math.floor(days / 31) : 7 + Math.floor((days - 186) / 30);
+    var jd = 1 + (days < 186 ? days % 31 : (days - 186) % 30);
+    return [jy, jm, jd];
+  }
+
+  function jalaliToGregorian(jy, jm, jd) {
+    var gy = jy <= 979 ? 621 : 1600;
+    jy -= jy <= 979 ? 0 : 979;
+    var days =
+      365 * jy +
+      Math.floor(jy / 33) * 8 +
+      Math.floor(((jy % 33) + 3) / 4) +
+      78 +
+      jd +
+      (jm < 7 ? (jm - 1) * 31 : (jm - 7) * 30 + 186);
+    gy += 400 * Math.floor(days / 146097);
+    days %= 146097;
+    if (days > 36524) {
+      gy += 100 * Math.floor(--days / 36524);
+      days %= 36524;
+      if (days >= 365) days++;
+    }
+    gy += 4 * Math.floor(days / 1461);
+    days %= 1461;
+    if (days > 365) {
+      gy += Math.floor((days - 1) / 365);
+      days = (days - 1) % 365;
+    }
+    var gd = days + 1;
+    var leap = (gy % 4 === 0 && gy % 100 !== 0) || gy % 400 === 0;
+    var mDays = [0, 31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    var gm;
+    for (gm = 0; gm < 13 && gd > mDays[gm]; gm++) gd -= mDays[gm];
+    return [gy, gm, gd];
+  }
+
+  var FA = "۰۱۲۳۴۵۶۷۸۹";
+  function toFa(text) {
+    return String(text).replace(/[0-9]/g, function (d) {
+      return FA[+d];
+    });
+  }
+  function toEn(text) {
+    return String(text).replace(/[۰-۹٠-٩]/g, function (d) {
+      var i = FA.indexOf(d);
+      if (i > -1) return String(i);
+      return String("٠١٢٣٤٥٦٧٨٩".indexOf(d));
+    });
+  }
+  function pad2(n) {
+    return (n < 10 ? "0" : "") + n;
+  }
+
+  /* تاریخ ورودی کاربر → [سال، ماه، روز] میلادی؛ null اگر قابل تبدیل نباشد */
+  function normaliseDateValue(raw) {
+    var text = toEn(String(raw || "")).trim().replace(/[.\-\\]/g, "/");
+    if (!text) return null;
+    if (/^\d{8}$/.test(text)) text = text.slice(0, 4) + "/" + text.slice(4, 6) + "/" + text.slice(6);
+    var parts = text.split("/");
+    if (parts.length !== 3) return null;
+    var y = parseInt(parts[0], 10),
+      m = parseInt(parts[1], 10),
+      d = parseInt(parts[2], 10);
+    if (!y || !m || !d || m > 12 || d > 31) return null;
+    if (y >= 1200 && y <= 1599) return jalaliToGregorian(y, m, d);
+    if (y >= 1700 && y <= 2200) return [y, m, d];
+    return null;
+  }
+
+  /* ------------------------------------------------------ برچسب‌های دسترس‌پذیری */
+  function labelSearch() {
+    document.querySelectorAll('input[name="q"]:not([aria-label])').forEach(function (el) {
+      el.setAttribute("aria-label", "جست‌وجو در این فهرست");
+      if (!el.placeholder) el.placeholder = "جست‌وجو…";
+      var form = el.closest("form");
+      if (form && !form.getAttribute("role")) form.setAttribute("role", "search");
+    });
+    var submit = document.querySelector("#searchbar-submit");
+    if (submit && !submit.getAttribute("aria-label")) submit.setAttribute("aria-label", "جست‌وجو");
+  }
+
+  function labelCheckboxes() {
+    document.querySelectorAll('input[name="action-toggle"]:not([aria-label])').forEach(function (el) {
+      el.setAttribute("aria-label", "انتخاب همه‌ی ردیف‌های این صفحه");
+    });
+    document.querySelectorAll('#result_list input[type="checkbox"][name="_selected_action"]:not([aria-label])').forEach(function (el) {
+      el.setAttribute("aria-label", "انتخاب این ردیف");
+    });
+  }
+
+  function markCurrentNav() {
+    var path = location.pathname.replace(/\/$/, "");
+    document.querySelectorAll("a[href]").forEach(function (a) {
+      var href = a.getAttribute("href") || "";
+      if (href.charAt(0) !== "/") return;
+      var clean = href.split("?")[0].replace(/\/$/, "");
+      if (clean && clean === path && !a.getAttribute("aria-current")) {
+        a.setAttribute("aria-current", "page");
+      }
+    });
+  }
+
+  /* ------------------------------------------------- تاریخ شمسی در ورودی‌ها */
+  function hintFor(input) {
+    var hint = input.parentElement && input.parentElement.querySelector(".panel-jalali-hint");
+    if (hint) return hint;
+    hint = document.createElement("span");
+    hint.className = "panel-jalali-hint";
+    hint.dir = "rtl";
+    input.insertAdjacentElement("afterend", hint);
+    return hint;
+  }
+
+  function refreshHint(input) {
+    var hint = hintFor(input);
+    var iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(toEn(input.value).trim());
+    if (iso) {
+      var j = gregorianToJalali(+iso[1], +iso[2], +iso[3]);
+      hint.textContent = "= " + toFa(j[0] + "/" + pad2(j[1]) + "/" + pad2(j[2])) + " شمسی";
+      hint.className = "panel-jalali-hint panel-jalali-hint--ok";
+      return;
+    }
+    var parsed = normaliseDateValue(input.value);
+    if (parsed && /[۰-۹٠-٩]|\//.test(input.value)) {
+      hint.textContent = "= " + (parsed[0] + "-" + pad2(parsed[1]) + "-" + pad2(parsed[2])) + " میلادی";
+      hint.className = "panel-jalali-hint panel-jalali-hint--ok";
+      return;
+    }
+    hint.textContent = input.value ? "قالب تاریخ: ۱۴۰۵/۰۷/۱۵ شمسی" : "";
+    hint.className = "panel-jalali-hint";
+  }
+
+  function wireDateInputs() {
+    document.querySelectorAll("input.vDateField").forEach(function (input) {
+      if (input.dataset.panelJalali === "1") return;
+      input.dataset.panelJalali = "1";
+      if (!input.getAttribute("title")) {
+        input.setAttribute("title", "تاریخ شمسی (۱۴۰۵/۰۷/۱۵) یا میلادی را وارد کنید");
+      }
+      ["input", "change", "blur"].forEach(function (evt) {
+        input.addEventListener(evt, function () {
+          refreshHint(input);
+        });
+      });
+      /* پیش از ارسال فرم: ورودی شمسی → میلادی، تا سرور همیشه میلادی بگیرد */
+      input.addEventListener("change", function () {
+        var parsed = normaliseDateValue(input.value);
+        if (!parsed) return;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(toEn(input.value).trim())) return;
+        input.value = parsed[0] + "-" + pad2(parsed[1]) + "-" + pad2(parsed[2]);
+        refreshHint(input);
+      });
+      refreshHint(input);
+    });
+  }
+
+  /* -------------------------------------------------- ارقام فارسی در شمارنده‌ها
+     شمارنده‌ی اکشن‌های گروهی، نوار صفحه‌بندی، فیلترها و «سلسله‌مراتب تاریخ»
+     اعداد را لاتین نشان می‌دهند؛ اینجا فقط متن (نه attribute) فارسی می‌شود. */
+  function persianizeTextNodes(root) {
+    if (!root) return;
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    var node;
+    while ((node = walker.nextNode())) {
+      var parent = node.parentNode;
+      if (!parent) continue;
+      var tag = parent.nodeName;
+      if (tag === "SCRIPT" || tag === "STYLE" || tag === "INPUT" || tag === "TEXTAREA") continue;
+      var converted = toFa(node.nodeValue);
+      if (converted !== node.nodeValue) node.nodeValue = converted;
+    }
+  }
+
+  var countersBusy = false;
+  function persianizeCounters() {
+    if (countersBusy) return;
+    countersBusy = true;
+    try {
+      document.querySelectorAll(".action-counter, .all, .question").forEach(persianizeTextNodes);
+      document.querySelectorAll("#changelist-filter, ul.toplinks, .paginator").forEach(persianizeTextNodes);
+      document.querySelectorAll('a[href^="?p="]').forEach(function (a) {
+        var bar = a.parentElement ? a.parentElement.parentElement || a.parentElement : null;
+        persianizeTextNodes(bar);
+      });
+    } finally {
+      countersBusy = false;
+    }
+  }
+
+  var observer = null;
+  function watchCounters() {
+    if (!window.MutationObserver) return;
+    var scope = document.querySelector("#changelist-form") || document.body;
+    if (!scope) return;
+    var timer = null;
+    observer = new MutationObserver(function () {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(function () {
+        if (observer) observer.disconnect();
+        persianizeCounters();
+        if (observer) observer.observe(scope, { childList: true, subtree: true, characterData: true });
+      }, 40);
+    });
+    observer.observe(scope, { childList: true, subtree: true, characterData: true });
+  }
+
+  function boot() {
+    try {
+      labelSearch();
+      labelCheckboxes();
+      markCurrentNav();
+      wireDateInputs();
+      persianizeCounters();
+      watchCounters();
+    } catch (e) {
+      /* در صورت خطا، پنل باید دست‌نخورده کار کند */
+      if (window.console && console.warn) console.warn("panel.js:", e);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+  document.addEventListener("formset:added", boot);
+})();

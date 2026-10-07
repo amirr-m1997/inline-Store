@@ -1,0 +1,163 @@
+{% extends "shop/base.html" %}
+{% load panel_extras shop_extras %}
+{% block title %}فهرست کالاها — فروشگاه مهراصل{% endblock %}
+
+{% block content %}
+{% if user.is_authenticated and header_company and header_company.kyc_status != "approved" %}
+  <div class="alert alert-warning" style="margin-top:14px">
+    <span>حساب سازمانی «{{ header_company.name }}» هنوز <b>تأیید نشده</b> است. تا زمان تأیید کارشناسان مهراصل می‌توانید کالاها را ببینید و سبد را به‌عنوان «درخواست قیمت» بفرستید؛ ثبت سفارش و قیمت اختصاصی پس از تأیید فعال می‌شود.</span>
+  </div>
+{% endif %}
+
+<section class="hero">
+  <h1>خرید عمدهٔ تجهیزات برودتی و تهویه‌مطبوع</h1>
+  <p>قیمت اختصاصی شرکت شما، موجودی لحظه‌ای انبارهای تبریز و ارسال با باربری سراسر کشور.</p>
+  <div class="hero__stats">
+    <div class="hero__stat"><b>{{ hero_stats.products|num_fa }}</b><span>کالای فعال در فهرست</span></div>
+    <div class="hero__stat"><b>{{ hero_stats.categories|num_fa }}</b><span>دستهٔ کالا</span></div>
+    <div class="hero__stat"><b>{{ hero_stats.brands|num_fa }}</b><span>برند فعال</span></div>
+    {% if header_company %}
+      <div class="hero__stat"><b>{{ header_company.name }}</b><span>قیمت‌ها با شرایط این حساب</span></div>
+    {% else %}
+      <div class="hero__stat"><b><a href="{% url 'shop:login' %}" style="color:#fff;text-decoration:underline">ورود مشتریان</a></b><span>مشاهدهٔ قیمت اختصاصی</span></div>
+    {% endif %}
+  </div>
+</section>
+
+<div class="grid-side">
+  <div>
+    <div class="row-between" style="margin-bottom:10px">
+      <h2 style="margin:0">
+        {% if q %}نتیجهٔ جست‌وجوی «{{ q }}»{% else %}فهرست کالاها{% endif %}
+        <span class="text-sm text-muted">({{ total_count|num_fa }} کالا)</span>
+      </h2>
+      <form method="get" class="row" style="gap:6px;margin:0">
+        {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+        {% if selected_category %}<input type="hidden" name="cat" value="{{ selected_category }}">{% endif %}
+        {% if selected_brand %}<input type="hidden" name="brand" value="{{ selected_brand }}">{% endif %}
+        {% if selected_availability %}<input type="hidden" name="avail" value="{{ selected_availability }}">{% endif %}
+        <label class="text-sm text-muted" for="sort">ترتیب:</label>
+        <select id="sort" name="sort" data-auto-submit>
+          <option value="new" {% if sort == "new" %}selected{% endif %}>جدیدترین</option>
+          <option value="cheap" {% if sort == "cheap" %}selected{% endif %}>ارزان‌ترین</option>
+          <option value="expensive" {% if sort == "expensive" %}selected{% endif %}>گران‌ترین</option>
+          <option value="name" {% if sort == "name" %}selected{% endif %}>نام کالا (الفبا)</option>
+        </select>
+        <noscript><button class="btn btn-sm" type="submit">اعمال</button></noscript>
+      </form>
+    </div>
+
+    {% if products %}
+      <div class="grid grid-4">
+        {% for p in products %}
+          {% include "shop/partials/product_card.html" with p=p pr=prices|get_item:p.pk %}
+        {% endfor %}
+      </div>
+
+      {% if page_obj.paginator.num_pages > 1 %}
+        <nav class="pagination" aria-label="صفحه‌بندی">
+          {% if page_obj.has_previous %}
+            <a href="{% querystring page=page_obj.previous_page_number %}" rel="prev">صفحهٔ قبل</a>
+          {% endif %}
+          {% for num in page_obj.paginator.page_range %}
+            {% if num == page_obj.number %}
+              <span class="current" aria-current="page">{{ num|num_fa }}</span>
+            {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+              <a href="{% querystring page=num %}">{{ num|num_fa }}</a>
+            {% endif %}
+          {% endfor %}
+          {% if page_obj.has_next %}
+            <a href="{% querystring page=page_obj.next_page_number %}" rel="next">صفحهٔ بعد</a>
+          {% endif %}
+        </nav>
+      {% endif %}
+    {% else %}
+      <div class="card"><div class="empty">
+        {% include "shop/partials/empty.svg" %}
+        <p>کالایی با این مشخصات پیدا نشد.</p>
+        <a class="btn btn-sm" href="{% url 'shop:home' %}">حذف فیلترها</a>
+      </div></div>
+    {% endif %}
+  </div>
+
+  <aside class="stack">
+    <form class="card" method="get">
+      <div class="card__head">
+        <b>فیلترها</b>
+        {% if q or selected_brand or selected_category or selected_availability %}
+          <a class="btn btn-sm btn-ghost" href="{% url 'shop:home' %}" style="margin-inline-start:auto">پاک کردن</a>
+        {% endif %}
+      </div>
+      <div class="card__body">
+        <input type="hidden" name="q" value="{{ q }}">
+        <div class="field">
+          <label for="f-brand">برند</label>
+          <select id="f-brand" name="brand" data-auto-submit>
+            <option value="">همهٔ برندها</option>
+            {% for b in brands %}
+              <option value="{{ b.pk }}" {% if selected_brand == b.pk|stringformat:"s" %}selected{% endif %}>{{ b.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-cat">دستهٔ کالا</label>
+          <select id="f-cat" name="cat" data-auto-submit>
+            <option value="">همهٔ دسته‌ها</option>
+            {% for c in categories %}
+              <option value="{{ c.slug }}" {% if selected_category == c.slug %}selected{% endif %}>{{ c.name }} ({{ c.products_count|num_fa }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-av">وضعیت کالا</label>
+          <select id="f-av" name="avail" data-auto-submit>
+            <option value="">همه</option>
+            <option value="in_stock" {% if selected_availability == "in_stock" %}selected{% endif %}>موجود (نو)</option>
+            <option value="ready" {% if selected_availability == "ready" %}selected{% endif %}>آماده تحویل</option>
+            <option value="made_to_order" {% if selected_availability == "made_to_order" %}selected{% endif %}>ساخت به سفارش</option>
+            <option value="used" {% if selected_availability == "used" %}selected{% endif %}>کارکرده</option>
+            <option value="needs_quote" {% if selected_availability == "needs_quote" %}selected{% endif %}>نیازمند استعلام</option>
+          </select>
+        </div>
+        <noscript><button class="btn btn-sm btn-block" type="submit">اعمال فیلترها</button></noscript>
+      </div>
+    </form>
+
+    <div class="card">
+      <div class="card__head"><b>مزایای خرید از مهراصل</b></div>
+      <div class="card__body stack" style="gap:10px">
+        <div class="row" style="align-items:flex-start">
+          <span class="badge badge-primary">۱</span>
+          <div><b class="text-sm">قیمت اختصاصی شرکت</b><br><span class="text-sm text-muted">پس از تأیید حساب، قیمت سبد قرارداد و تخفیف پلکانی حجم اعمال می‌شود.</span></div>
+        </div>
+        <div class="row" style="align-items:flex-start">
+          <span class="badge badge-primary">۲</span>
+          <div><b class="text-sm">خرید اعتباری و چکی</b><br><span class="text-sm text-muted">مطابق شرایط تسویهٔ توافق‌شدهٔ حساب شما؛ بدون پرداخت نقدی در لحظهٔ خرید.</span></div>
+        </div>
+        <div class="row" style="align-items:flex-start">
+          <span class="badge badge-primary">۳</span>
+          <div><b class="text-sm">فاکتور رسمی و پیش‌فاکتور</b><br><span class="text-sm text-muted">صدور سند رسمی، ارسال به سامانهٔ مؤدیان و امکان پرداخت آنلاین فاکتور.</span></div>
+        </div>
+      </div>
+    </div>
+
+    {% if user.is_authenticated %}
+      <div class="card">
+        <div class="card__head"><b>خرید عمده در چند ثانیه</b></div>
+        <div class="card__body">
+          <p class="text-sm text-muted">کالاها را به سبد اضافه کنید یا از صفحهٔ سبد، فهرست کد و تعداد را یک‌جا بچسبانید؛ قیمت و موجودی همان لحظه محاسبه می‌شود.</p>
+          <a class="btn btn-block" href="{% url 'shop:cart' %}">رفتن به سبد خرید</a>
+        </div>
+      </div>
+    {% else %}
+      <div class="card">
+        <div class="card__head"><b>مشتری جدید هستید؟</b></div>
+        <div class="card__body">
+          <p class="text-sm text-muted">با ثبت‌نام شرکت، حساب سازمانی شما ساخته و برای تأیید به کارشناس فروش ارجاع می‌شود.</p>
+          <a class="btn btn-primary btn-block" href="{% url 'shop:signup' %}">ثبت‌نام شرکت</a>
+        </div>
+      </div>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

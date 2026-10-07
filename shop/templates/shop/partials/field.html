@@ -1,0 +1,8 @@
+<div class="field">
+  <label for="{{ f.id_for_label }}">{{ f.label }}{% if f.field.required %} <span class="req" aria-hidden="true">*</span>{% endif %}</label>
+  {{ f }}
+  {% if f.help_text %}<span class="help">{{ f.help_text }}</span>{% endif %}
+  {% if f.errors %}
+    <ul class="errors" role="alert">{% for e in f.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+  {% endif %}
+</div>

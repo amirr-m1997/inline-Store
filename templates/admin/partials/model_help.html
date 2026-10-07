@@ -1,0 +1,11 @@
+{% load panel_extras %}
+{% model_help opts.app_label opts.model_name as model_help_text %}
+{% if model_help_text %}
+<div class="model-help" dir="rtl">
+  <span class="material-symbols-outlined model-help__icon" aria-hidden="true">help</span>
+  <div class="model-help__body">
+    <b class="model-help__title">این بخش چیست؟</b>
+    <span class="model-help__text">{{ model_help_text }}</span>
+  </div>
+</div>
+{% endif %}

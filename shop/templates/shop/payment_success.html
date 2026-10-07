@@ -1,0 +1,36 @@
+{% extends "shop/base.html" %}
+{% load panel_extras shop_extras %}
+{% block title %}پرداخت موفق — فروشگاه مهراصل{% endblock %}
+
+{% block content %}
+<div class="steps">
+  <span class="step"><b>۱</b> سبد خرید</span>
+  <span class="step"><b>۲</b> ثبت سفارش</span>
+  <span class="step"><b>۳</b> پرداخت</span>
+  <span class="step is-active"><b>۴</b> تأیید و تسویه</span>
+</div>
+
+<div class="card">
+  <div class="card__body center" style="padding:34px 18px">
+    <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ok)">
+      <circle cx="12" cy="12" r="9.2"/><path d="m8 12.4 2.7 2.7L16.4 9.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <h1 style="margin-top:10px">پرداخت با موفقیت ثبت شد</h1>
+    <p class="text-muted">
+      پرداخت فاکتور <b class="mono">{{ invoice.number }}</b> به مبلغ
+      <b class="mono">{{ invoice.paid_amount|money_fa }} تومان</b> ثبت شد.
+      وضعیت فاکتور: <span class="badge {{ invoice.get_status_display|status_tone }}">{{ invoice.get_status_display }}</span>
+    </p>
+    {% if invoice.balance %}
+      <p class="text-warn">ماندهٔ باقی‌مانده: <b class="mono">{{ invoice.balance|money_fa }} تومان</b></p>
+    {% else %}
+      <p class="text-ok">این فاکتور کاملاً تسویه شد.</p>
+    {% endif %}
+    <div class="row" style="gap:8px;justify-content:center;flex-wrap:wrap">
+      <a class="btn btn-primary" href="{% url 'shop:invoice' invoice.number %}">مشاهده و چاپ فاکتور</a>
+      {% if invoice.order %}<a class="btn" href="{% url 'shop:order-detail' invoice.order.number %}">پیگیری سفارش</a>{% endif %}
+      <a class="btn btn-ghost" href="{% url 'shop:orders' %}">سفارش‌های من</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

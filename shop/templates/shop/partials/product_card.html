@@ -1,0 +1,65 @@
+{% load panel_extras shop_extras %}
+<article class="product">
+  <a class="product__media" href="{{ p.get_absolute_url }}" aria-label="{{ p.name }}">
+    {% with img=p.images.all.0 %}
+      {% if img and img.image %}
+        <img src="{{ img.image.url }}" alt="{{ img.alt|default:p.name }}" loading="lazy">
+      {% else %}
+        <span class="product__ph" aria-hidden="true">
+          <svg viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2.4">
+            <rect x="16" y="24" width="60" height="34" rx="5"/>
+            <path d="M24 33h44M24 42h30M24 51h36" stroke-linecap="round"/>
+            <path d="M84 30v22M84 41h16" stroke-linecap="round"/>
+          </svg>
+        </span>
+      {% endif %}
+    {% endwith %}
+    <span class="product__badges">
+      <span class="badge {{ p.availability|status_tone }}">{{ p.get_availability_display }}</span>
+      {% if p.is_featured %}<span class="badge badge-info">پیشنهاد فروش</span>{% endif %}
+    </span>
+  </a>
+
+  <div class="product__body">
+    <span class="product__cat">{{ p.category.name }}{% if p.brand %} • {{ p.brand.name }}{% endif %}</span>
+    <a class="product__name" href="{{ p.get_absolute_url }}">{{ p.name }}</a>
+    <span class="product__code">کد کالا: <span class="mono">{{ p.code }}</span>{% if p.model_number %} • مدل {{ p.model_number }}{% endif %}</span>
+
+    <div class="product__price">
+      {% if pr and pr.unit_price %}
+        <b class="mono">{{ pr.unit_price|money_fa }} تومان</b>
+        {% if pr.discount_pct %}
+          <span class="text-sm">
+            <del class="mono">{{ p.base_price|money_fa }} تومان</del>
+            <span class="badge badge-ok">{{ pr.discount_pct|pct }} تخفیف</span>
+          </span>
+        {% endif %}
+      {% elif user.is_authenticated %}
+        <b class="text-muted">استعلام قیمت</b>
+      {% else %}
+        <b class="text-muted">برای مشاهدهٔ قیمت وارد شوید</b>
+      {% endif %}
+      <span class="product__uom">
+        هر {{ p.get_uom_display }}{% if p.min_order_qty|qty_fa != "۱" %} • حداقل سفارش {{ p.min_order_qty|qty_fa }}{% endif %}
+        {% if p.packaging_multiple|qty_fa != "۱" %} • مضرب {{ p.packaging_multiple|qty_fa }}{% endif %}
+        {% if p.lead_time_days %} • تأمین {{ p.lead_time_days|num_fa }} روز{% endif %}
+      </span>
+      {% if p.availability != "discontinued" and p.availability != "needs_quote" %}
+        <span class="text-sm {% if p.free_qty > 0 %}text-ok{% else %}text-warn{% endif %}">
+          {% if p.free_qty > 0 %}موجود در انبار: {{ p.free_qty|qty_fa }} {{ p.get_uom_display }}{% else %}موجودی آزاد انبار: صفر (ساخت/تأمین به سفارش){% endif %}
+        </span>
+      {% endif %}
+    </div>
+
+    <form method="post" action="{% url 'shop:cart-add' p.pk %}" class="row" style="gap:6px">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <div class="qty">
+        <button type="button" data-delta="-1" aria-label="کاهش">−</button>
+        <input type="number" name="qty" value="{{ p.min_order_qty|latin }}" min="0" step="{{ p.packaging_multiple|default:1 }}" aria-label="تعداد {{ p.name }}">
+        <button type="button" data-delta="1" aria-label="افزایش">+</button>
+      </div>
+      <button class="btn btn-primary btn-sm" type="submit" style="flex:1">افزودن به سبد</button>
+    </form>
+  </div>
+</article>

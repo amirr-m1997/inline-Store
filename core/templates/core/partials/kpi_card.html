@@ -1,0 +1,17 @@
+<div class="panel-kpi">
+  <div class="panel-kpi-top">
+    <span class="panel-kpi-label">{{ title }}</span>
+    <span class="panel-kpi-icon"><span class="material-symbols-outlined">{{ icon }}</span></span>
+  </div>
+  <div class="panel-kpi-value">{{ value }}</div>
+  <div class="panel-kpi-foot">
+    {% if delta %}<span class="panel-chip">{{ delta }}</span>{% endif %}
+    <span>{{ hint }}</span>
+  </div>
+  {% if spark %}
+  <svg viewBox="0 0 120 30" class="panel-spark" preserveAspectRatio="none">
+    <polyline points="{{ spark }}" fill="none" stroke="#0891b2" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  {% endif %}
+</div>

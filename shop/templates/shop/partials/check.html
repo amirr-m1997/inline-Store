@@ -1,0 +1,7 @@
+<div class="checkline">
+  {{ f }}
+  <label for="{{ f.id_for_label }}">{{ f.label }}</label>
+</div>
+{% if f.errors %}
+  <ul class="errors" role="alert" style="margin-inline-start:22px">{% for e in f.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+{% endif %}

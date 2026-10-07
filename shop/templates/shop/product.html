@@ -1,0 +1,221 @@
+{% extends "shop/base.html" %}
+{% load panel_extras shop_extras %}
+{% block title %}{{ product.name }} — فروشگاه مهراصل{% endblock %}
+{% block meta_description %}{{ product.short_description|default:product.name|truncatechars:150 }}{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="مسیر صفحه">
+  <a href="{% url 'shop:home' %}">فروشگاه</a><span class="sep">/</span>
+  <a href="{% url 'shop:home' %}?cat={{ product.category.slug }}">{{ product.category.name }}</a><span class="sep">/</span>
+  <span aria-current="page">{{ product.name }}</span>
+</nav>
+
+<div class="grid-side">
+  <div class="stack">
+    <div class="card">
+      <div class="card__body">
+        <div class="row-between" style="align-items:flex-start">
+          <div>
+            <h1 style="margin-bottom:4px">{{ product.name }}</h1>
+            <div class="text-sm text-muted">
+              کد کالا: <span class="mono">{{ product.code }}</span>
+              {% if product.model_number %} • مدل: <span class="mono">{{ product.model_number }}</span>{% endif %}
+              {% if product.name_en %} • {{ product.name_en }}{% endif %}
+            </div>
+            <div class="row" style="gap:6px;margin-top:8px">
+              <span class="badge {{ product.availability|status_tone }}">{{ product.get_availability_display }}</span>
+              {% if product.brand %}<span class="badge">{{ product.brand.name }}</span>{% endif %}
+              {% if product.origin_country %}<span class="badge">ساخت {{ product.origin_country }}</span>{% endif %}
+              {% if product.warranty_months %}<span class="badge">گارانتی {{ product.warranty_months|num_fa }} ماه</span>{% endif %}
+            </div>
+          </div>
+          {% if product.is_featured %}<span class="badge badge-info">پیشنهاد فروش</span>{% endif %}
+        </div>
+
+        <div class="grid grid-2" style="margin-top:16px">
+          <div class="product__frame">
+            {% with img=product.images.all.0 %}
+              {% if img and img.image %}
+                <img src="{{ img.image.url }}" alt="{{ img.alt|default:product.name }}" style="width:100%;border-radius:12px">
+              {% else %}
+                <div class="product__ph" style="background:var(--surface-3);border-radius:12px;min-height:230px">
+                  <svg viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                    <rect x="16" y="24" width="60" height="34" rx="5"/>
+                    <path d="M24 33h44M24 42h30M24 51h36" stroke-linecap="round"/>
+                    <path d="M84 30v22M84 41h16" stroke-linecap="round"/>
+                  </svg>
+                </div>
+              {% endif %}
+            {% endwith %}
+            {% if product.images.all|length > 1 %}
+              <div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap">
+                {% for img in product.images.all|slice:"1:5" %}
+                  {% if img.image %}<img src="{{ img.image.url }}" alt="{{ img.alt|default:product.name }}" style="width:72px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">{% endif %}
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="stack" style="gap:12px">
+            <div class="price-block">
+              {% if price.unit_price %}
+                <span class="text-sm text-muted">قیمت واحد برای این حساب</span><br>
+                <b class="mono">{{ price.unit_price|money_fa }}</b> <span class="text-sm">تومان</span>
+                {% if price.total_discount_pct %}
+                  <div class="text-sm" style="margin-top:4px">
+                    <del class="mono">{{ price.list_price|money_fa }} تومان</del>
+                    <span class="badge badge-ok">{{ price.total_discount_pct|pct }} تخفیف</span>
+                    <div class="note">منبع قیمت: {{ price.source }}</div>
+                  </div>
+                {% else %}
+                  <div class="note">قیمت پایهٔ فهرست (بدون تخفیف اختصاصی)</div>
+                {% endif %}
+              {% else %}
+                <b>قیمت این کالا با استعلام اعلام می‌شود.</b>
+                <div class="note">برای دریافت قیمت، کالا را به سبد اضافه کنید و «درخواست قیمت» بفرستید.</div>
+              {% endif %}
+            </div>
+
+            <table class="specs">
+              <tr><th>واحد فروش</th><td>{{ product.get_uom_display }}</td></tr>
+              <tr><th>حداقل سفارش (MOQ)</th><td class="mono">{{ product.min_order_qty|qty_fa }} {{ product.get_uom_display }}</td></tr>
+              <tr><th>مضرب بسته‌بندی</th><td class="mono">{{ product.packaging_multiple|qty_fa }}</td></tr>
+              {% if product.max_order_qty %}<tr><th>حداکثر در هر سفارش</th><td class="mono">{{ product.max_order_qty|qty_fa }}</td></tr>{% endif %}
+              <tr><th>زمان تأمین</th><td>{% if product.lead_time_days %}{{ product.lead_time_days|num_fa }} روز{% else %}موجود{% endif %}</td></tr>
+              <tr><th>موجودی آزاد انبار</th><td class="mono">{{ stock.free|qty_fa }} {{ product.get_uom_display }}{% if stock.shortage %} — کسری {{ stock.shortage|qty_fa }}{% endif %}</td></tr>
+              {% if product.weight_kg %}<tr><th>وزن</th><td class="mono">{{ product.weight_kg|qty_fa }} kg</td></tr>{% endif %}
+              {% if product.dimensions %}<tr><th>ابعاد</th><td class="mono">{{ product.dimensions }} mm</td></tr>{% endif %}
+            </table>
+
+            {% if stock.shortage %}
+              <div class="alert alert-warning">
+                <span>بخشی از این سفارش از تولید/تأمین تأمین می‌شود؛ زمان تأمین حدود {{ product.lead_time_days|num_fa }} روز است. پیش‌فاکتور با همین شرایط صادر می‌شود.</span>
+              </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'shop:cart-add' product.pk %}" class="stack" style="gap:8px">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <div class="row" style="gap:10px;flex-wrap:wrap">
+                <label class="text-sm text-muted" for="qty">تعداد ({{ product.get_uom_display }})</label>
+                <div class="qty">
+                  <button type="button" data-delta="-1" aria-label="کاهش">−</button>
+                  <input id="qty" type="number" name="qty" value="{{ qty|latin }}" min="0" step="{{ product.packaging_multiple|default:1 }}">
+                  <button type="button" data-delta="1" aria-label="افزایش">+</button>
+                </div>
+              </div>
+              <div class="row" style="gap:8px;flex-wrap:wrap">
+                <button class="btn btn-primary" type="submit">افزودن به سبد خرید</button>
+                <button class="btn" type="submit" name="next" value="cart">افزودن و رفتن به سبد</button>
+              </div>
+              <span class="text-sm text-muted">
+                جمع تقریبی این ردیف:
+                <b class="mono">{{ totals.total|money_fa }}</b> تومان
+                (شامل {{ totals.vat|money_fa }} تومان ارزش افزوده)
+              </span>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% if product.description or product.short_description %}
+      <div class="card">
+        <div class="card__head"><b>توضیحات کالا</b></div>
+        <div class="card__body">{{ product.description|default:product.short_description|linebreaks }}</div>
+      </div>
+    {% endif %}
+
+    {% if specs %}
+      <div class="card">
+        <div class="card__head"><b>مشخصات فنی</b></div>
+        <div class="card__body table-wrap">
+          <table class="specs">
+            {% for key, value in specs %}
+              <tr><th>{{ key }}</th><td>{{ value }}</td></tr>
+            {% endfor %}
+          </table>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if product.documents.all %}
+      <div class="card">
+        <div class="card__head"><b>اسناد فنی</b></div>
+        <div class="card__body">
+          <ul style="margin:0;padding-inline-start:18px">
+            {% for doc in product.documents.all %}
+              <li class="text-sm">
+                {% if doc.file %}
+                  <a href="{{ doc.file.url }}">{{ doc.title|default:doc.get_kind_display }}</a>
+                {% else %}
+                  <span>{{ doc.title|default:doc.get_kind_display }}</span>
+                {% endif %}
+                <span class="text-muted">({{ doc.get_kind_display }}{% if doc.version %} • نسخهٔ {{ doc.version }}{% endif %}{% if not doc.file %} • فایل بارگذاری نشده{% endif %})</span>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if product.substitute %}
+      <div class="alert alert-info">
+        <span>جانشین پیشنهادی این کالا: <a href="{{ product.substitute.get_absolute_url }}">{{ product.substitute.name }}</a></span>
+      </div>
+    {% endif %}
+
+    {% if related %}
+      <div>
+        <h2>کالاهای مرتبط در دستهٔ «{{ product.category.name }}»</h2>
+        <div class="grid grid-4">
+          {% for p in related %}
+            {% include "shop/partials/product_card.html" with p=p pr=related_prices|get_item:p.pk %}
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <aside class="stack">
+    <div class="card">
+      <div class="card__head"><b>پله‌های قیمت این کالا</b></div>
+      <div class="card__body table-wrap">
+        <table class="table table--compact">
+          <thead><tr><th>از تعداد</th><th>قیمت واحد</th><th>تخفیف</th></tr></thead>
+          <tbody>
+            {% for level in levels %}
+              <tr>
+                <td class="num">{{ level.qty|qty_fa }}</td>
+                <td class="num">{{ level.unit_price|money_fa }}</td>
+                <td class="num">{% if level.discount_pct %}{{ level.discount_pct|pct }}{% else %}—{% endif %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="text-sm text-muted" style="margin-top:8px">قیمت نهایی = پلهٔ متناظر با تعداد سفارش؛ سفارش‌های بزرگ‌تر مشمول پله‌های بالاتر می‌شوند.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head"><b>نیاز به مشاورهٔ فنی دارید؟</b></div>
+      <div class="card__body">
+        <p class="text-sm text-muted">کارشناسان فنی مهراصل برای انتخاب ظرفیت، لوله‌کشی و تجهیزات جانبی در کنار شما هستند.</p>
+        <div class="row" style="gap:8px;flex-wrap:wrap">
+          <a class="btn btn-sm" href="{% url 'shop:contact' %}">تماس با کارشناس</a>
+          <a class="btn btn-sm" href="{% url 'shop:cart' %}">سبد خرید</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head"><b>خرید مطمئن</b></div>
+      <div class="card__body text-sm text-muted">
+        <p style="margin:0 0 6px">• فاکتور رسمی و ارسال به سامانهٔ مؤدیان</p>
+        <p style="margin:0 0 6px">• تضمین اصالت و گارانتی کارخانه</p>
+        <p style="margin:0">• امکان تسویهٔ اعتباری برای مشتریان دارای سابقه</p>
+      </div>
+    </div>
+  </aside>
+</div>
+{% endblock %}

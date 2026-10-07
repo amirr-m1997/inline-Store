@@ -1,0 +1,117 @@
+{% extends "shop/base.html" %}
+{% load panel_extras shop_extras %}
+{% block title %}{{ invoice.get_kind_display }} {{ invoice.number }} — فروشگاه مهراصل{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="مسیر صفحه">
+  <a href="{% url 'shop:orders' %}">سفارش‌ها و صورت‌حساب‌ها</a><span class="sep">/</span>
+  <span aria-current="page">{{ invoice.number }}</span>
+</nav>
+
+<div class="row-between no-print">
+  <h1 style="margin:0">{{ invoice.get_kind_display }} <span class="mono">{{ invoice.number }}</span></h1>
+  <div class="row" style="gap:8px">
+    <span class="badge {{ invoice.get_status_display|status_tone }}">{{ invoice.get_status_display }}</span>
+    <button class="btn btn-sm" type="button" onclick="window.print()">چاپ / ذخیرهٔ PDF</button>
+    {% if invoice.balance %}<a class="btn btn-sm btn-primary" href="{% url 'shop:invoice-pay' invoice.number %}">پرداخت آنلاین</a>{% endif %}
+  </div>
+</div>
+
+<div class="card" style="margin-top:14px">
+  <div class="card__body">
+    <div class="row-between" style="align-items:flex-start">
+      <div>
+        {% include "shop/partials/logo.svg" %}
+        <h2 style="margin:8px 0 2px">شرکت مهر اصل</h2>
+        <p class="text-sm text-muted" style="margin:0">
+          تبریز، کیلومتر ۵ جادهٔ تهران<br>
+          تلفن: <span class="mono">۰۴۱-۳۳۳۳۳۳۳۳</span> • ایمیل: <span class="mono">sales@mehrasl.ir</span><br>
+          شناسهٔ ملی: <span class="mono">۱۰۱۰۰۰۰۰۰۰۰</span> • کد اقتصادی: <span class="mono">۴۱۱۰۰۰۰۰۰۰۰۰</span>
+        </p>
+      </div>
+      <div class="text-sm" style="text-align:start">
+        <table class="specs">
+          <tr><th>خریدار</th><td>{{ invoice.company.name }}</td></tr>
+          {% if invoice.buyer_economic_code %}<tr><th>کد اقتصادی خریدار</th><td class="mono">{{ invoice.buyer_economic_code }}</td></tr>{% endif %}
+          {% if invoice.company.national_id %}<tr><th>شناسهٔ ملی</th><td class="mono">{{ invoice.company.national_id }}</td></tr>{% endif %}
+          <tr><th>تاریخ صدور</th><td class="mono">{{ invoice.issued_at|jdate }}</td></tr>
+          <tr><th>سررسید</th><td class="mono">{{ invoice.due_date|jdate }}</td></tr>
+          {% if invoice.order %}<tr><th>سفارش مرجع</th><td class="mono">{{ invoice.order.number }}</td></tr>{% endif %}
+          {% if invoice.order.po_number %}<tr><th>شماره PO</th><td class="mono">{{ invoice.order.po_number }}</td></tr>{% endif %}
+        </table>
+      </div>
+    </div>
+
+    <div class="table-wrap" style="margin-top:16px">
+      <table class="table">
+        <thead>
+          <tr><th>#</th><th>شرح کالا / خدمت</th><th class="num">تعداد</th><th class="num">قیمت واحد</th><th class="num">تخفیف</th><th class="num">مبلغ (تومان)</th></tr>
+        </thead>
+        <tbody>
+          {% for line in invoice.lines.all %}
+            <tr>
+              <td class="num">{{ forloop.counter|num_fa }}</td>
+              <td>{{ line.title }}</td>
+              <td class="num">{{ line.qty|qty_fa }}</td>
+              <td class="num">{{ line.unit_price|money_fa }}</td>
+              <td class="num">{% if line.discount_pct %}{{ line.discount_pct|pct }}{% else %}—{% endif %}</td>
+              <td class="num">{{ line.line_total|money_fa }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid grid-2" style="margin-top:14px;align-items:start">
+      <div class="text-sm text-muted">
+        {% if invoice.kind == "proforma" %}
+          <p><b>این سند پیش‌فاکتور است</b> و مبنای فاکتور رسمی پس از تسویه/تأیید خواهد بود.</p>
+        {% endif %}
+        {% if invoice.moadian_status == "sent" or invoice.moadian_status == "accepted" %}
+          <p>وضعیت سامانهٔ مؤدیان: {{ invoice.get_moadian_status_display }}{% if invoice.moadian_tax_id %} — شمارهٔ مالیاتی یکتا: <span class="mono">{{ invoice.moadian_tax_id }}</span>{% endif %}</p>
+        {% else %}
+          <p>وضعیت سامانهٔ مؤدیان: {{ invoice.get_moadian_status_display }}</p>
+        {% endif %}
+        {% if invoice.note %}<p>توضیح: {{ invoice.note }}</p>{% endif %}
+        <p class="print-only">این سند از سامانهٔ فروشگاه مهراصل چاپ شده است.</p>
+      </div>
+      <div>
+        <div class="summary-row"><span>جمع اقلام</span><b class="mono">{{ invoice.subtotal|money_fa }}</b></div>
+        {% if invoice.discount_amount %}<div class="summary-row"><span>تخفیف</span><b class="mono">{{ invoice.discount_amount|money_fa }}</b></div>{% endif %}
+        {% if invoice.shipping_amount %}<div class="summary-row"><span>هزینهٔ حمل</span><b class="mono">{{ invoice.shipping_amount|money_fa }}</b></div>{% endif %}
+        <div class="summary-row"><span>ارزش افزوده</span><b class="mono">{{ invoice.vat_amount|money_fa }}</b></div>
+        <div class="summary-row total"><span>مبلغ کل</span><span class="mono">{{ invoice.total|money_fa }} تومان</span></div>
+        <div class="summary-row"><span>پرداخت‌شده</span><b class="mono text-ok">{{ invoice.paid_amount|money_fa }}</b></div>
+        <div class="summary-row total"><span>مانده</span><span class="mono">{{ invoice.balance|money_fa }} تومان</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if invoice.payments.all %}
+  <div class="card no-print" style="margin-top:14px">
+    <div class="card__head"><b>پرداخت‌های ثبت‌شده</b></div>
+    <div class="card__body table-wrap">
+      <table class="table table--compact">
+        <thead><tr><th>تاریخ</th><th class="num">مبلغ</th><th>روش</th><th>شمارهٔ پیگیری</th><th>بانک</th></tr></thead>
+        <tbody>
+          {% for p in invoice.payments.all %}
+            <tr>
+              <td class="mono">{{ p.created_at|jdatetime_fa }}</td>
+              <td class="num">{{ p.amount|money_fa }}</td>
+              <td>{{ p.get_method_display }}</td>
+              <td class="mono">{{ p.reference|default:"—" }}</td>
+              <td>{{ p.bank|default:"—" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endif %}
+
+<div class="row no-print" style="gap:8px;margin-top:14px">
+  <a class="btn" href="{% url 'shop:orders' %}">بازگشت به فهرست</a>
+  {% if invoice.order %}<a class="btn btn-ghost" href="{% url 'shop:order-detail' invoice.order.number %}">مشاهدهٔ سفارش</a>{% endif %}
+</div>
+{% endblock %}

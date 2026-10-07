@@ -1,0 +1,113 @@
+{% extends "shop/base.html" %}
+{% load panel_extras shop_extras %}
+{% block title %}پروفایل و آدرس‌ها — فروشگاه مهراصل{% endblock %}
+
+{% block content %}
+<h1 style="margin-top:16px">پروفایل من</h1>
+
+{% if membership %}
+  <div class="card">
+    <div class="card__body row-between">
+      <div>
+        <b>{{ membership.company.name }}</b>
+        <span class="text-sm text-muted">
+          • نقش: {{ membership.get_role_display }}
+          {% if membership.company.kyc_status != "approved" %}
+            • <span class="badge badge-warn">در انتظار تأیید</span>
+          {% else %}
+            • <span class="badge badge-ok">تأییدشده</span>
+          {% endif %}
+        </span>
+        <div class="text-sm text-muted">
+          {{ membership.company.city|default:"—" }} • تلفن: <span class="mono">{{ membership.company.phone|default:"—" }}</span>
+          • {# تعداد سفارش‌های ثبت‌شده: #} سفارش‌ها: {{ orders_count|num_fa }}
+        </div>
+      </div>
+      <div class="row" style="gap:8px">
+        <a class="btn btn-sm" href="{% url 'shop:orders' %}">سفارش‌های من</a>
+        <a class="btn btn-sm btn-ghost" href="{% url 'shop:password-change' %}">تغییر گذرواژه</a>
+      </div>
+    </div>
+  </div>
+{% else %}
+  <div class="alert alert-warning"><span>حساب کاربری شما به هیچ حساب سازمانی فعالی متصل نیست؛ برای فعال‌سازی با پشتیبانی مهراصل تماس بگیرید.</span></div>
+{% endif %}
+
+<div class="grid grid-2" style="margin-top:16px;align-items:start">
+  <form method="post" class="card">
+    {% csrf_token %}
+    <div class="card__head"><b>اطلاعات کاربری</b></div>
+    <div class="card__body">
+      {% include "shop/partials/form_errors.html" %}
+      <div class="form-grid">
+        {% include "shop/partials/field.html" with f=form.first_name %}
+        {% include "shop/partials/field.html" with f=form.last_name %}
+      </div>
+      <div class="form-grid">
+        {% include "shop/partials/field.html" with f=form.email %}
+        {% include "shop/partials/field.html" with f=form.phone %}
+      </div>
+      {% include "shop/partials/field.html" with f=form.job_title %}
+    </div>
+    <div class="card__foot">
+      <button class="btn btn-primary" type="submit" name="submit-profile" value="1">ذخیرهٔ تغییرات</button>
+    </div>
+  </form>
+
+  <div class="stack">
+    <form method="post" class="card">
+      {% csrf_token %}
+      <div class="card__head"><b>افزودن نشانی جدید</b></div>
+      <div class="card__body">
+        {% include "shop/partials/form_errors.html" with form=address_form %}
+        <div class="form-grid">
+          {% include "shop/partials/field.html" with f=address_form.title %}
+          {% include "shop/partials/field.html" with f=address_form.province %}
+        </div>
+        <div class="form-grid">
+          {% include "shop/partials/field.html" with f=address_form.city %}
+          {% include "shop/partials/field.html" with f=address_form.postal_code %}
+        </div>
+        {% include "shop/partials/field.html" with f=address_form.address %}
+        <div class="form-grid">
+          {% include "shop/partials/field.html" with f=address_form.contact_name %}
+          {% include "shop/partials/field.html" with f=address_form.contact_phone %}
+        </div>
+        {% include "shop/partials/field.html" with f=address_form.loading_note %}
+        {% include "shop/partials/check.html" with f=address_form.is_default %}
+      </div>
+      <div class="card__foot">
+        <button class="btn btn-primary" type="submit" name="submit-address" value="1" {% if not membership %}disabled{% endif %}>ثبت نشانی</button>
+      </div>
+    </form>
+
+    <div class="card">
+      <div class="card__head"><b>نشانی‌های ثبت‌شده</b></div>
+      <div class="card__body table-wrap">
+        {% if addresses %}
+          <table class="table table--compact">
+            <thead><tr><th>عنوان</th><th>نشانی</th><th>رابط</th><th></th></tr></thead>
+            <tbody>
+              {% for a in addresses %}
+                <tr>
+                  <td>{{ a.title }}{% if a.is_default %} <span class="badge badge-primary">پیش‌فرض</span>{% endif %}</td>
+                  <td class="text-sm">{{ a.province }} {{ a.city }} — {{ a.address }}{% if a.postal_code %}<div class="text-muted">کدپستی: <span class="mono">{{ a.postal_code }}</span></div>{% endif %}</td>
+                  <td class="text-sm">{{ a.contact_name|default:"—" }}{% if a.contact_phone %}<div class="text-muted mono">{{ a.contact_phone }}</div>{% endif %}</td>
+                  <td>
+                    <form method="post" action="{% url 'shop:address-delete' a.pk %}" data-confirm="این نشانی حذف شود؟">
+                      {% csrf_token %}
+                      <button class="btn btn-sm btn-ghost text-danger" type="submit">حذف</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="text-muted" style="margin:0">هنوز نشانی ثبت نشده است؛ در ثبت سفارش می‌توانید نشانی جدید وارد کنید.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

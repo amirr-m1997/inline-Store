@@ -1,0 +1,61 @@
+{% extends "shop/base.html" %}
+{% block title %}ثبت‌نام شرکت — فروشگاه مهراصل{% endblock %}
+
+{% block content %}
+<h1 style="margin-top:22px">ثبت‌نام مشتری سازمانی</h1>
+<p class="text-muted">با تکمیل این فرم، حساب کاربری و حساب سازمانی شرکت شما ساخته می‌شود و برای تأیید به کارشناس فروش ارجاع می‌گردد.</p>
+
+<form method="post" class="stack" novalidate>
+  {% csrf_token %}
+  {% include "shop/partials/form_errors.html" %}
+
+  <div class="grid grid-2" style="align-items:start">
+    <div class="card">
+      <div class="card__head"><b>۱) حساب کاربری</b></div>
+      <div class="card__body">
+        <div class="form-grid">
+          {% include "shop/partials/field.html" with f=form.first_name %}
+          {% include "shop/partials/field.html" with f=form.last_name %}
+        </div>
+        <div class="form-grid">
+          {% include "shop/partials/field.html" with f=form.username %}
+          {% include "shop/partials/field.html" with f=form.mobile %}
+        </div>
+        {% include "shop/partials/field.html" with f=form.email %}
+        <div class="form-grid">
+          {% include "shop/partials/field.html" with f=form.password1 %}
+          {% include "shop/partials/field.html" with f=form.password2 %}
+        </div>
+        {% if form.password1.help_text %}
+          <p class="text-sm text-muted">{{ form.password1.help_text|safe }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head"><b>۲) مشخصات شرکت</b></div>
+      <div class="card__body">
+        {% include "shop/partials/field.html" with f=form.company_name %}
+        <div class="form-grid">
+          {% include "shop/partials/field.html" with f=form.legal_type %}
+          {% include "shop/partials/field.html" with f=form.company_phone %}
+        </div>
+        <div class="form-grid">
+          {% include "shop/partials/field.html" with f=form.national_id %}
+          {% include "shop/partials/field.html" with f=form.economic_code %}
+        </div>
+        <div class="form-grid">
+          {% include "shop/partials/field.html" with f=form.province %}
+          {% include "shop/partials/field.html" with f=form.city %}
+        </div>
+        <p class="text-sm text-muted">پس از تأیید کارشناس فروش، سطح قیمت، شرایط تسویه و سقف اعتبار روی حساب شما تنظیم می‌شود.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="row" style="gap:10px;flex-wrap:wrap">
+    <button class="btn btn-primary" type="submit">ثبت‌نام و ساخت حساب</button>
+    <a class="btn btn-ghost" href="{% url 'shop:login' %}">حساب دارم؛ ورود</a>
+  </div>
+</form>
+{% endblock %}

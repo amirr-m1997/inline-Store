@@ -1,0 +1,130 @@
+{% extends "shop/base.html" %}
+{% load panel_extras shop_extras %}
+{% block title %}سفارش {{ order.number }} — فروشگاه مهراصل{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="مسیر صفحه">
+  <a href="{% url 'shop:orders' %}">سفارش‌های من</a><span class="sep">/</span>
+  <span aria-current="page">{{ order.number }}</span>
+</nav>
+
+<div class="row-between">
+  <h1 style="margin:0">سفارش <span class="mono">{{ order.number }}</span></h1>
+  <span class="badge {{ order.get_status_display|status_tone }}">{{ order.get_status_display }}</span>
+</div>
+
+<div class="grid-side" style="margin-top:16px">
+  <div class="stack">
+    <div class="card">
+      <div class="card__head"><b>اقلام سفارش</b></div>
+      <div class="card__body table-wrap">
+        <table class="table">
+          <thead>
+            <tr><th>کالا</th><th class="num">تعداد</th><th class="num">قیمت واحد</th><th class="num">جمع ردیف</th><th class="num">ارسال‌شده</th></tr>
+          </thead>
+          <tbody>
+            {% for line in order.lines.all %}
+              <tr>
+                <td>
+                  {% if line.product %}<a href="{{ line.product.get_absolute_url }}">{{ line.product.name }}</a>
+                  {% else %}{{ line }}{% endif %}
+                  <div class="text-sm text-muted">کد <span class="mono">{{ line.product.code|default:"—" }}</span>{% if line.product %} • هر {{ line.product.get_uom_display }}{% endif %}</div>
+                </td>
+                <td class="num">{{ line.qty|qty_fa }}</td>
+                <td class="num">{{ line.unit_price|money_fa }}</td>
+                <td class="num">{{ line.line_total|money_fa }}</td>
+                <td class="num">{% if line.qty_shipped %}{{ line.qty_shipped|qty_fa }}{% else %}—{% endif %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="card__foot">
+        <div class="summary-row"><span>جمع اقلام</span><b class="mono">{{ order.subtotal|money_fa }}</b></div>
+        {% if order.discount_amount %}<div class="summary-row"><span>تخفیف</span><b class="mono text-ok">{{ order.discount_amount|money_fa }}</b></div>{% endif %}
+        {% if order.shipping_cost %}<div class="summary-row"><span>هزینهٔ حمل</span><b class="mono">{{ order.shipping_cost|money_fa }}</b></div>{% endif %}
+        <div class="summary-row"><span>ارزش افزوده</span><b class="mono">{{ order.vat|money_fa }}</b></div>
+        <div class="summary-row total"><span>مبلغ کل</span><span class="mono">{{ order.total|money_fa }} تومان</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head"><b>گردش سفارش</b></div>
+      <div class="card__body">
+        <ul class="timeline">
+          {% for event in order.events.all %}
+            <li>
+              <span class="badge">{{ event.get_kind_display }}</span>
+              <span><b>{{ event.title }}</b>{% if event.description %} — {{ event.description }}{% endif %}</span>
+              <time class="mono">{{ event.created_at|jdatetime_fa }}</time>
+            </li>
+          {% empty %}
+            <li><span class="text-muted">رویدادی ثبت نشده است.</span></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    {% if order.customer_note %}
+      <div class="card">
+        <div class="card__head"><b>یادداشت شما</b></div>
+        <div class="card__body">{{ order.customer_note|linebreaks }}</div>
+      </div>
+    {% endif %}
+  </div>
+
+  <aside class="stack">
+    <div class="card">
+      <div class="card__head"><b>اطلاعات سفارش</b></div>
+      <div class="card__body">
+        <table class="specs">
+          <tr><th>تاریخ ثبت</th><td class="mono">{{ order.ordered_at|jdatetime_fa }}</td></tr>
+          <tr><th>پروژه</th><td>{{ order.project_name|default:"—" }}</td></tr>
+          <tr><th>شماره PO</th><td class="mono">{{ order.po_number|default:"—" }}</td></tr>
+          <tr><th>روش پرداخت</th><td>{{ order.get_payment_method_display }}</td></tr>
+          <tr><th>شرایط تسویه</th><td>{{ order.payment_terms|default:"—" }}</td></tr>
+          <tr><th>روش تحویل</th><td>{{ order.get_shipping_method_display }}</td></tr>
+          <tr><th>نشانی تحویل</th><td>{{ order.shipping_address|default:"—" }}</td></tr>
+          {% if order.expected_delivery_at %}<tr><th>تحویل تعهدی</th><td class="mono">{{ order.expected_delivery_at|jdate }}</td></tr>{% endif %}
+          {% if order.waybill_number %}<tr><th>شماره بارنامه</th><td class="mono">{{ order.waybill_number }}</td></tr>{% endif %}
+          {% if order.carrier_name %}<tr><th>باربری</th><td>{{ order.carrier_name }}</td></tr>{% endif %}
+          {% if order.cancel_reason %}<tr><th>دلیل لغو</th><td>{{ order.cancel_reason }}</td></tr>{% endif %}
+        </table>
+      </div>
+    </div>
+
+    {% if invoices %}
+      <div class="card">
+        <div class="card__head"><b>فاکتورهای این سفارش</b></div>
+        <div class="card__body table-wrap">
+          <table class="table table--compact">
+            <tbody>
+              {% for inv in invoices %}
+                <tr>
+                  <td><a class="mono" href="{% url 'shop:invoice' inv.number %}">{{ inv.number }}</a><div class="text-sm text-muted">{{ inv.get_kind_display }}</div></td>
+                  <td class="num">{{ inv.total|money_fa }}</td>
+                  <td>
+                    {% if inv.balance %}
+                      <span class="badge badge-warn">مانده {{ inv.balance|money_fa }}</span>
+                      <a class="btn btn-sm btn-primary" href="{% url 'shop:invoice-pay' inv.number %}">پرداخت</a>
+                    {% else %}
+                      <span class="badge badge-ok">تسویه‌شده</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card__body row" style="gap:8px;flex-wrap:wrap">
+        <a class="btn btn-sm" href="{% url 'shop:home' %}">خرید مجدد</a>
+        <a class="btn btn-sm btn-ghost" href="{% url 'shop:contact' %}">پشتیبانی این سفارش</a>
+      </div>
+    </div>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,321 @@
+{% extends "admin/base.html" %}
+{% load i18n panel_extras %}
+
+{% block title %}داشبورد عملیاتی | {{ site_title|default:"پنل مدیریت مهراصل" }}{% endblock %}
+
+{% block content %}
+<div class="panel-wrap" dir="rtl">
+
+  {# ---------------------------------------------------------- ردیف KPI #}
+  <div class="panel-kpi-row">
+    {% include "core/partials/kpi_card.html" with title="فروش امروز" value=kpi.sales_today|money_fa hint="میانگین سبد و سفارش‌های امروز" delta=kpi.sales_today_delta|pct icon="trending_up" spark=sales_spark %}
+    {% include "core/partials/kpi_card.html" with title="استعلام باز (RFQ)" value=kpi.open_rfqs|fa_digits hint="مهلت سپری‌شده و نیازمند اقدام فوری" icon="forum" spark=rfq_spark %}
+    {% include "core/partials/kpi_card.html" with title="در انتظار تأیید" value=kpi.pending_approvals|fa_digits hint="سفارش معطل" icon="approval" spark=orders_spark %}
+    {% include "core/partials/kpi_card.html" with title="کالای کم‌موجود" value=kpi.low_stock_count|fa_digits hint="رسیده به نقطه سفارش" icon="inventory_2" %}
+    {% include "core/partials/kpi_card.html" with title="مطالبات باز" value=kpi.receivable|money_fa hint="جمع مانده فاکتورهای باز" icon="account_balance_wallet" spark=invoiced_spark %}
+  </div>
+
+  {# ---------------------------------------------------------- نمودار فروش + دونات #}
+  <div class="panel-grid panel-grid-2-1">
+    <section class="panel-card">
+      <header class="panel-card-head">
+        <div>
+          <b>روند فروش ۳۰ روز گذشته</b>
+          <span class="panel-sub">مبلغ سفارش‌های ثبت‌شده (پس از تخفیف، میلیون تومان)</span>
+        </div>
+        <div class="panel-card-actions">
+          <a class="panel-btn" href="{{ links.reports }}">گزارش کامل</a>
+          <a class="panel-btn panel-btn-primary" href="{{ links.reports }}?export=xlsx">خروجی اکسل</a>
+        </div>
+      </header>
+      <div class="panel-card-body">
+        {% if not sales_chart.empty %}
+        <svg viewBox="0 0 {{ sales_chart.width }} {{ sales_chart.height }}" class="panel-chart">
+          <defs>
+            <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#0891b2" stop-opacity=".30"/>
+              <stop offset="100%" stop-color="#0891b2" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          {% for g in sales_chart.grid %}
+            <line x1="54" x2="{{ sales_chart.width|add:-14 }}" y1="{{ g.y }}" y2="{{ g.y }}" stroke="#eef2f8"/>
+            <text x="46" y="{{ g.y|add:4 }}" font-size="9.5" fill="#5b6b82" text-anchor="end">{{ g.label }}</text>
+          {% endfor %}
+          <path d="{{ sales_chart.area }}" fill="url(#salesGrad)"/>
+          <path d="{{ sales_chart.line }}" fill="none" stroke="#0e7490" stroke-width="2.4"
+                stroke-linejoin="round" stroke-linecap="round"/>
+          {% for lbl in sales_chart.x_labels %}
+            <text x="{{ lbl.x }}" y="{{ sales_chart.height|add:-8 }}" font-size="9.5"
+                  fill="#5b6b82" text-anchor="middle">{{ lbl.label }}</text>
+          {% endfor %}
+          <circle cx="{{ sales_chart.last.x }}" cy="{{ sales_chart.last.y }}" r="4.5" fill="#fff"
+                  stroke="#0e7490" stroke-width="2.5"/>
+        </svg>
+        <div class="panel-chart-caption">آخرین مقدار: <b>{{ sales_chart.last.label }}</b> میلیون تومان</div>
+        {% else %}
+        <p class="panel-empty">داده‌ای برای نمایش وجود ندارد.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="panel-card">
+      <header class="panel-card-head">
+        <div><b>وضعیت سفارش‌ها</b><span class="panel-sub">توزیع کل سفارش‌ها</span></div>
+      </header>
+      <div class="panel-card-body panel-center">
+        <svg viewBox="0 0 160 160" class="panel-donut">
+          {% for slice in status_donut.slices %}
+            <circle cx="80" cy="80" r="{{ status_donut.radius }}" fill="none" stroke="{{ slice.color }}"
+                    stroke-width="20" stroke-dasharray="{{ slice.dasharray }}"
+                    stroke-dashoffset="{{ slice.offset }}" transform="rotate(-90 80 80)"/>
+          {% endfor %}
+          <text x="80" y="76" text-anchor="middle" font-size="21" font-weight="700" fill="#0f1b2d">{{ status_donut.center_title }}</text>
+          <text x="80" y="95" text-anchor="middle" font-size="10.5" fill="#5b6b82">{{ status_donut.center_sub }}</text>
+        </svg>
+        <ul class="panel-legend">
+          {% for item in status_donut.legend %}
+            <li><i style="background:{{ item.color }}"></i>{{ item.label }}
+              <b>{{ item.pct|pct_unfilled }}٪</b></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  {# ---------------------------------------------------------- قیف + پرفروش‌ها #}
+  <div class="panel-grid panel-grid-3">
+    <section class="panel-card">
+      <header class="panel-card-head"><div><b>قیف استعلام → سفارش</b><span class="panel-sub">۳۰ روز گذشته</span></div></header>
+      <div class="panel-card-body">
+        {% for step in funnel_steps %}
+          <div class="panel-funnel" style="width:{{ step.width_pct }}%;background:{{ step.color }}">
+            <span>{{ step.label }}</span>
+            <span class="panel-funnel-rate">{{ step.rate|pct_unfilled }}٪</span>
+            <b>{{ step.value|fa_digits }}</b>
+          </div>
+        {% endfor %}
+        <p class="panel-sub" style="margin-top:6px">
+          نرخ نهایی تبدیل استعلام به سفارش محاسبه‌شده از داده‌های واقعی.
+        </p>
+      </div>
+    </section>
+
+    <section class="panel-card">
+      <header class="panel-card-head"><div><b>پرفروش‌ترین محصولات</b><span class="panel-sub">۳۰ روز گذشته</span></div></header>
+      <div class="panel-card-body">
+        {% for item in top_products %}
+          <div class="panel-hbar">
+            <div class="panel-hbar-head"><span>{{ item.label }}</span><b>{{ item.value|money_s }}</b></div>
+            <div class="panel-bar"><i style="width:{{ item.pct }}%"></i></div>
+          </div>
+        {% empty %}
+          <p class="panel-empty">فروشی ثبت نشده است.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="panel-card">
+      <header class="panel-card-head">
+        <div><b>هشدارهای موجودی</b><span class="panel-sub">اقلام زیر نقطه سفارش</span></div>
+        <div class="panel-card-actions"><a class="panel-btn" href="{{ links.stock }}">مدیریت انبار</a></div>
+      </header>
+      <div class="panel-card-body panel-tight">
+        <table class="panel-table">
+          <thead><tr><th>کالا</th><th>انبار</th><th>آزاد</th><th>نقطه سفارش</th><th>وضعیت</th></tr></thead>
+          <tbody>
+          {% for item in stock_alerts %}
+            <tr>
+              <td><a href="/admin/inventory/stockitem/{{ item.pk }}/change/">{{ item.product.name|truncatechars:28 }}</a>
+                <div class="panel-mono">{{ item.product.code }}</div></td>
+              <td>{{ item.warehouse.name }}</td>
+              <td class="panel-mono">{{ item.free_qty|num_fa }}</td>
+              <td class="panel-mono">{{ item.reorder_point|num_fa }}</td>
+              <td>{% badge item.status.1 item.status.2 %}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5" class="panel-empty">همه‌ی اقلام بالای نقطه سفارش هستند.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  {# ---------------------------------------------------------- کارتابل‌ها #}
+  <div class="panel-grid panel-grid-2">
+    <section class="panel-card">
+      <header class="panel-card-head">
+        <div><b>کارتابل استعلام (SLA)</b><span class="panel-sub">نزدیک‌ترین مهلت‌ها</span></div>
+        <div class="panel-card-actions"><a class="panel-btn" href="{{ links.rfq }}">کارتابل کامل</a></div>
+      </header>
+      <div class="panel-card-body panel-tight">
+        <table class="panel-table">
+          <thead><tr><th>شماره</th><th>مشتری / پروژه</th><th>کارشناس</th><th>مبلغ</th><th>مهلت</th><th>وضعیت</th></tr></thead>
+          <tbody>
+          {% for quote in rfq_board %}
+            <tr>
+              <td><a href="/admin/quotes/quote/{{ quote.pk }}/change/" class="panel-mono">{{ quote.number|fa_digits }}</a></td>
+              <td>{{ quote.company.name }}<div class="panel-sub">{{ quote.project_name|default:"—" }}</div></td>
+              <td>{{ quote.assigned_to.get_full_name|default:"تخصیص نیافته" }}</td>
+              <td class="panel-mono">{% if quote.lines.count %}{{ quote.total|money_s }}{% else %}—{% endif %}</td>
+              <td>
+                {% if quote.is_sla_overdue %}{% badge "منقضی" "#c02626" %}
+                {% elif quote.sla_remaining_hours <= 8 %}{% badge quote.sla_remaining_hours|num_fa "#b45309" %}
+                {% else %}{% badge quote.sla_remaining_hours|num_fa "#12855f" %}{% endif %}
+              </td>
+              <td>{% badge quote.get_status_display quote.status_color %}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6" class="panel-empty">استعلام بازی وجود ندارد.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel-card">
+      <header class="panel-card-head">
+        <div><b>کارتابل گردش تأیید</b><span class="panel-sub">سفارش‌های منتظر تصمیم</span></div>
+        <div class="panel-card-actions"><a class="panel-btn panel-btn-primary" href="{{ links.approvals }}">تأیید/رد</a></div>
+      </header>
+      <div class="panel-card-body panel-tight">
+        <table class="panel-table">
+          <thead><tr><th>سفارش</th><th>مشتری</th><th>مبلغ</th><th>نقش لازم</th><th>وضعیت اعتبار</th></tr></thead>
+          <tbody>
+          {% for approval in pending_approvals %}
+            <tr>
+              <td><a href="/admin/orders/approval/{{ approval.pk }}/change/" class="panel-mono">{{ approval.order.number|fa_digits }}</a></td>
+              <td>{{ approval.order.company.name }}</td>
+              <td class="panel-mono">{{ approval.amount_snapshot|money_s }}</td>
+              <td>{% badge approval.get_required_role_display "#6d28d9" %}</td>
+              <td>
+                {% if approval.order.credit_info.exceeded %}{% badge "عبور از سقف اعتبار" "#c02626" %}
+                {% else %}{% badge "در محدوده مجاز" "#12855f" %}{% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5" class="panel-empty">سفارشی در انتظار تأیید نیست.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  {# ---------------------------------------------------------- چک‌ها + سفارش‌ها #}
+  <div class="panel-grid panel-grid-2">
+    <section class="panel-card">
+      <header class="panel-card-head">
+        <div><b>چک‌ها و سررسیدها</b><span class="panel-sub">نزدیک‌ترین سررسیدها</span></div>
+        <div class="panel-card-actions"><a class="panel-btn" href="{{ links.cheques }}">مدیریت چک‌ها</a></div>
+      </header>
+      <div class="panel-card-body panel-tight">
+        <table class="panel-table">
+          <thead><tr><th>شماره</th><th>مشتری</th><th>بانک</th><th>مبلغ</th><th>سررسید</th><th>وضعیت</th></tr></thead>
+          <tbody>
+          {% for cheque in due_cheques %}
+            <tr>
+              <td class="panel-mono">{{ cheque.number|fa_digits }}</td>
+              <td>{{ cheque.company.name }}</td>
+              <td>{{ cheque.bank }}</td>
+              <td class="panel-mono">{{ cheque.amount|money_s }}</td>
+              <td class="panel-mono">{{ cheque.due_date|jdate }}</td>
+              <td>{% badge cheque.urgency.0 cheque.urgency.1 %}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6" class="panel-empty">چکی در جریان نیست.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel-card">
+      <header class="panel-card-head">
+        <div><b>آخرین سفارش‌ها</b><span class="panel-sub">بر اساس تاریخ ثبت</span></div>
+        <div class="panel-card-actions">
+          <a class="panel-btn" href="{{ links.quick_order }}">سفارش سریع</a>
+          <a class="panel-btn" href="{{ links.orders }}">همه سفارش‌ها</a>
+        </div>
+      </header>
+      <div class="panel-card-body panel-tight">
+        <table class="panel-table">
+          <thead><tr><th>شماره</th><th>مشتری</th><th>PO</th><th>مبلغ</th><th>وضعیت</th><th>کارشناس</th></tr></thead>
+          <tbody>
+          {% for order in recent_orders %}
+            <tr>
+              <td><a class="panel-mono" href="/admin/orders/order/{{ order.pk }}/change/">{{ order.number|fa_digits }}</a></td>
+              <td>{{ order.company.name }}</td>
+              <td class="panel-mono">{{ order.po_number|default:"—"|fa_digits }}</td>
+              <td class="panel-mono">{{ order.total|money_s }}</td>
+              <td>{% badge order.get_status_display order.status_color %}</td>
+              <td>{{ order.sales_rep.get_full_name|default:"—" }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6" class="panel-empty">سفارشی ثبت نشده است.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  {# ---------------------------------------------------------- اعلان‌ها + لاگ #}
+  <div class="panel-grid panel-grid-2">
+    <section class="panel-card">
+      <header class="panel-card-head">
+        <div><b>اعلان‌های درون‌پنلی</b><span class="panel-sub">هشدارهای خودکار سیستم</span></div>
+        <div class="panel-card-actions"><a class="panel-btn" href="{{ links.alerts }}">همه اعلان‌ها</a></div>
+      </header>
+      <div class="panel-card-body panel-tight">
+        <ul class="panel-feed">
+          {% for note in notifications %}
+            <li>
+              <span class="panel-feed-dot panel-feed-{{ note.level }}"></span>
+              <div>
+                <b>{{ note.title }}</b>
+                <div class="panel-sub">{{ note.body|truncatechars:110 }}</div>
+              </div>
+              <time>{{ note.created_at|jdatetime_fa }}</time>
+            </li>
+          {% empty %}
+            <li class="panel-empty">اعلان جدیدی وجود ندارد. برای تولید هشدارها دستور
+              <code>python manage.py check_alerts</code> را اجرا کنید.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel-card">
+      <header class="panel-card-head">
+        <div><b>آخرین رخدادهای حسابرسی</b><span class="panel-sub">چه کسی، چه چیزی را تغییر داد</span></div>
+        <div class="panel-card-actions"><a class="panel-btn" href="{{ links.audit }}">لاگ کامل</a></div>
+      </header>
+      <div class="panel-card-body panel-tight">
+        <ul class="panel-feed">
+          {% for entry in recent_audit %}
+            <li>
+              <span class="panel-feed-dot panel-feed-{{ entry.action }}"></span>
+              <div>
+                <b>{{ entry.get_action_display }} — {{ entry.object_repr|truncatechars:48 }}</b>
+                <div class="panel-sub">
+                  {{ entry.actor_repr|default:"سیستم" }}{% if entry.role %} ({{ entry.role }}){% endif %}
+                  {% if entry.changed_fields %} — فیلدها: {{ entry.changed_fields|join:", " }}{% endif %}
+                </div>
+              </div>
+              <time>{{ entry.created_at|jdatetime_fa }}</time>
+            </li>
+          {% empty %}
+            <li class="panel-empty">رخدادی ثبت نشده است.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  <p class="panel-footnote">
+    داده‌های این داشبورد زنده و از مدل‌های واقعی پنل خوانده می‌شود — API خلاصه:
+    <a href="{% url 'panel-api-summary' %}">/admin/api/summary/</a>
+  </p>
+</div>
+{% endblock %}

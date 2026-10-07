@@ -1,0 +1,119 @@
+{% extends "admin/base.html" %}
+{% load panel_extras %}
+
+{% block title %}سفارش سریع{% endblock %}
+
+{% block content %}
+<div class="panel-wrap" dir="rtl">
+  <section class="panel-card">
+    <header class="panel-card-head">
+      <div>
+        <b>سفارش سریع (Quick Order)</b>
+        <span class="panel-sub">فهرست کد کالا را بچسبانید؛ قالب: «کد کالا × تعداد» در هر خط</span>
+      </div>
+      {% if matched %}
+        <div class="panel-card-actions">
+          <span class="panel-chip">{{ matched|fa_digits }} ردیف آماده ثبت — {{ total_amount|money_fa }}</span>
+        </div>
+      {% endif %}
+    </header>
+    <div class="panel-card-body">
+      <form method="post">
+        {% csrf_token %}
+        <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:18px">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <label style="display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:#5b6b82">
+              مشتری (تعیین‌کننده سطح قیمت و اعتبار)
+              <select name="company" style="padding:9px 10px;border:1px solid #e6eaf2;border-radius:10px;font:inherit">
+                <option value="">— انتخاب مشتری —</option>
+                {% for c in companies %}
+                  <option value="{{ c.pk }}" {% if selected and selected.pk == c.pk %}selected{% endif %}>
+                    {{ c.name }} — {{ c.get_payment_terms_display }}
+                  </option>
+                {% endfor %}
+              </select>
+            </label>
+            <label style="display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:#5b6b82">
+              شماره سفارش خرید مشتری (PO)
+              <input type="text" name="po_number" value="{{ po_number }}" dir="ltr"
+                     style="padding:9px 10px;border:1px solid #e6eaf2;border-radius:10px;font:inherit">
+            </label>
+            <label style="display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:#5b6b82">
+              فهرست کد کالا و تعداد
+              <textarea name="lines" rows="9" dir="ltr"
+                style="padding:10px;border:1px dashed #c9d4e5;border-radius:12px;font:inherit;background:#fbfcfe">{{ text }}</textarea>
+            </label>
+            <div style="display:flex;gap:8px">
+              <button class="panel-btn panel-btn-primary" type="submit" name="action" value="preview">تطبیق و بررسی</button>
+              <button class="panel-btn" type="submit" name="action" value="create">ایجاد سفارش پیش‌نویس</button>
+            </div>
+          </div>
+
+          <div>
+            {% if rows %}
+              <div class="panel-card" style="box-shadow:none">
+                <div class="panel-card-body panel-tight">
+                  <table class="panel-table">
+                    <thead>
+                      <tr>
+                        <th>کد</th><th>کالا</th><th>تعداد</th><th>قیمت لیست</th><th>قیمت اعمالی</th>
+                        <th>مبنای قیمت / تخفیف</th><th>جمع ردیف</th><th>وضعیت</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in rows %}
+                      <tr>
+                        <td class="panel-mono">{{ row.code }}</td>
+                        <td>{{ row.product_name|default:"—" }}
+                          {% if row.note %}<div class="panel-sub">{{ row.note }}</div>{% endif %}</td>
+                        <td class="panel-mono">{{ row.qty|num_fa }} <span class="panel-sub">{{ row.uom|default:"" }}</span></td>
+                        <td class="panel-mono">{% if row.list_price %}{{ row.list_price|money_s }}{% else %}—{% endif %}</td>
+                        <td class="panel-mono">{% if row.unit_price %}{{ row.unit_price|money_s }}{% else %}—{% endif %}</td>
+                        <td>
+                          {% if row.source %}
+                            <span class="panel-sub">{{ row.source|truncatechars:44 }}</span>
+                            {% if row.discount_pct %}{% badge row.discount_pct|pct "warn" %}{% endif %}
+                          {% else %}—{% endif %}
+                        </td>
+                        <td class="panel-mono">{% if row.total %}{{ row.total|money_s }}{% else %}—{% endif %}</td>
+                        <td>{% badge row.status row.key %}</td>
+                      </tr>
+                    {% endfor %}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colspan="6" class="panel-sub">جمع اقلام قابل ثبت (بدون ارزش افزوده)</td>
+                        <td class="panel-mono"><b>{{ total_amount|money_s }}</b></td>
+                        <td>{% badge matched|fa_digits|add:" ردیف" "ok" %}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+              {% if selected %}
+                <div class="panel-card" style="box-shadow:none;margin-top:12px">
+                  <div class="panel-card-body" style="font-size:12.3px">
+                    <b>وضعیت مشتری «{{ selected.name }}»</b>
+                    <ul style="margin:8px 0 0;padding-inline-start:18px;line-height:2">
+                      <li>سطح قیمت: {{ selected.price_list.name|default:"قیمت پایه" }}</li>
+                      <li>سقف اعتبار: {{ selected.credit_limit|money_fa }} — مصرف‌شده: {{ selected.credit_used|money_fa }}
+                        ({{ selected.credit_usage_pct|pct }})</li>
+                      <li>وضعیت: {% badge selected.credit_status.0 selected.credit_status.1 %}</li>
+                      <li>احراز هویت: {% badge selected.get_kyc_status_display selected.kyc_color %}</li>
+                    </ul>
+                  </div>
+                </div>
+              {% endif %}
+            {% else %}
+              <p class="panel-empty">
+                فهرست کد کالا را وارد کنید تا تطبیق، قیمت‌گذاری (قیمت مشتری + پله حجمی)، بررسی مضرب بسته‌بندی،
+                MOQ، موجودی و اعتبار مشتری به‌صورت خودکار انجام شود.
+              </p>
+            {% endif %}
+          </div>
+        </div>
+      </form>
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,178 @@
+{% extends "shop/base.html" %}
+{% load panel_extras shop_extras %}
+{% block title %}سبد خرید — فروشگاه مهراصل{% endblock %}
+
+{% block content %}
+<div class="steps">
+  <span class="step is-active"><b>۱</b> سبد خرید</span>
+  <span class="step"><b>۲</b> ثبت سفارش</span>
+  <span class="step"><b>۳</b> صدور پیش‌فاکتور</span>
+  <span class="step"><b>۴</b> پرداخت / تسویه اعتباری</span>
+</div>
+
+<h1>سبد خرید</h1>
+
+{% if not user.is_authenticated %}
+  <div class="alert alert-info">
+    <span>قیمت‌هایی که می‌بینید <b>قیمت مصرفی</b> است. با <a href="{% url 'shop:login' %}?next={% url 'shop:cart' %}">ورود به حساب شرکت</a> قیمت اختصاصی و شرایط اعتباری حساب شما اعمال می‌شود.</span>
+  </div>
+{% elif gate_error %}
+  <div class="alert alert-warning"><span>{{ gate_error }}</span></div>
+{% endif %}
+
+{% if totals.warnings %}
+  <div class="alert alert-warning">
+    <span>در {{ totals.warnings|length }} ردیف، موجودی آزاد انبار کمتر از تعداد درخواستی است؛ ثبت سفارش ممکن است با زمان تأمین همراه باشد.</span>
+  </div>
+{% endif %}
+{% if totals.blocked %}
+  <div class="alert alert-error">
+    <span>
+      {{ totals.blocked|length }} ردیف قابل ثبت نیست و در سفارش لحاظ نمی‌شود:
+      {% for row in totals.blocked %}
+        {% if row.product %}<br>• {{ row.product.name }} — {{ row.status }}{% if row.notes %} ({{ row.notes|join:"؛ " }}){% endif %}
+        {% else %}<br>• کد «{{ row.code }}» — {{ row.status }}{% endif %}
+      {% endfor %}
+    </span>
+  </div>
+{% endif %}
+
+{% if not rows %}
+  <div class="card"><div class="empty">
+    {% include "shop/partials/empty.svg" %}
+    <p>سبد خرید شما خالی است.</p>
+    <a class="btn btn-primary btn-sm" href="{% url 'shop:home' %}">مشاهدهٔ فهرست کالاها</a>
+  </div></div>
+{% else %}
+  <div class="grid-side">
+    <div class="card">
+      <div class="card__head">
+        <b>{{ rows|length|num_fa }} ردیف کالا</b>
+        <form method="post" action="{% url 'shop:cart-clear' %}" style="margin-inline-start:auto" data-confirm="سبد خرید خالی شود؟">
+          {% csrf_token %}
+          <button class="btn btn-sm btn-ghost" type="submit">خالی کردن سبد</button>
+        </form>
+      </div>
+      <div class="card__body table-wrap">
+        <table class="table">
+          <thead>
+            <tr><th>کالا</th><th class="num">تعداد</th><th class="num">قیمت واحد</th><th class="num">جمع ردیف</th><th>وضعیت</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                <td>
+                  {% if row.product %}
+                    <a href="{{ row.product.get_absolute_url }}"><b>{{ row.product.name }}</b></a>
+                    <div class="text-sm text-muted">
+                      کد <span class="mono">{{ row.product.code }}</span>
+                      • هر {{ row.product.get_uom_display }}
+                      {% if row.product.lead_time_days %} • تأمین {{ row.product.lead_time_days|num_fa }} روز{% endif %}
+                    </div>
+                    {% if row.discount_pct %}<span class="badge badge-ok">{{ row.discount_pct|pct }} تخفیف • {{ row.source }}</span>{% endif %}
+                  {% else %}
+                    <b class="text-danger">کد نامشخص: <span class="mono">{{ row.code }}</span></b>
+                  {% endif %}
+                </td>
+                <td class="num">
+                  {% if row.product %}
+                    <form method="post" action="{% url 'shop:cart-update' row.product.pk %}" class="row" style="gap:6px">
+                      {% csrf_token %}
+                      <div class="qty">
+                        <button type="button" data-delta="-1" aria-label="کاهش">−</button>
+                        <input type="number" name="qty" value="{{ row.qty|latin }}" min="0" step="{{ row.product.packaging_multiple|default:1 }}" aria-label="تعداد">
+                        <button type="button" data-delta="1" aria-label="افزایش">+</button>
+                      </div>
+                      <button class="btn btn-sm btn-ghost" type="submit">به‌روزرسانی</button>
+                    </form>
+                  {% else %}
+                    <span class="mono">{{ row.qty|qty_fa }}</span>
+                  {% endif %}
+                </td>
+                <td class="num">{{ row.unit_price|money_fa }}</td>
+                <td class="num">{{ row.total|money_fa }}</td>
+                <td>
+                  <span class="badge {{ row.key|badge_class }}">{{ row.status }}</span>
+                  {% if row.notes %}<div class="text-sm text-muted">{{ row.notes|join:"؛ " }}</div>{% endif %}
+                  {% if row.stock.shortage %}<div class="text-sm text-warn">کسری {{ row.stock.shortage|qty_fa }}</div>{% endif %}
+                </td>
+                <td>
+                  {% if row.product %}
+                    <form method="post" action="{% url 'shop:cart-update' row.product.pk %}" data-confirm="این کالا از سبد حذف شود؟">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="remove">
+                      <button class="btn btn-sm btn-ghost text-danger" type="submit" aria-label="حذف {{ row.product.name }}">حذف</button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <aside class="stack">
+      <div class="card">
+        <div class="card__head"><b>جمع سبد</b></div>
+        <div class="card__body">
+          {% if totals.discount %}
+            <div class="summary-row"><span>جمع پیش از تخفیف</span><b class="mono">{{ totals.list_total|money_fa }}</b></div>
+            <div class="summary-row"><span>تخفیف شما</span><b class="mono text-ok">{{ totals.discount|money_fa }}</b></div>
+          {% endif %}
+          <div class="summary-row"><span>جمع اقلام</span><b class="mono">{{ totals.subtotal|money_fa }}</b></div>
+          <div class="summary-row">
+            <span>ارزش افزوده {% if company.vat_exempt %}(معاف){% endif %}</span>
+            <b class="mono">{{ totals.vat|money_fa }}</b>
+          </div>
+          <div class="summary-row total"><span>مبلغ قابل پرداخت</span><span class="mono">{{ totals.total|money_fa }} تومان</span></div>
+
+          <div class="stack" style="gap:8px;margin-top:14px">
+            {% if user.is_authenticated %}
+              {% if gate_error %}
+                <button class="btn btn-primary btn-block" type="submit" form="rfq-form">ارسال به‌عنوان درخواست قیمت</button>
+                <a class="btn btn-block" href="{% url 'shop:profile' %}">مشاهدهٔ وضعیت حساب</a>
+              {% else %}
+                <a class="btn btn-primary btn-block" href="{% url 'shop:checkout' %}">ادامهٔ فرآیند خرید</a>
+                <button class="btn btn-block" type="submit" form="rfq-form">ارسال برای استعلام قیمت (RFQ)</button>
+              {% endif %}
+            {% else %}
+              <a class="btn btn-primary btn-block" href="{% url 'shop:login' %}?next={% url 'shop:checkout' %}">ورود و ثبت سفارش</a>
+              <a class="btn btn-block" href="{% url 'shop:signup' %}">ثبت‌نام شرکت جدید</a>
+            {% endif %}
+            <a class="btn btn-ghost btn-block" href="{% url 'shop:home' %}">ادامهٔ خرید</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__head"><b>انتخاب زمان تحویل</b></div>
+        <div class="card__body text-sm text-muted">
+          <p style="margin:0 0 6px">• تحویل از کارخانه تبریز: بدون هزینهٔ حمل</p>
+          <p style="margin:0 0 6px">• ارسال با باربری: کرایهٔ حمل با فاکتور تسویه می‌شود</p>
+          <p style="margin:0">• زمان تأمین هر کالا در ستون وضعیت آمده است</p>
+        </div>
+      </div>
+
+      {% if user.is_authenticated %}
+        <form class="card" id="rfq-form" method="post" action="{% url 'shop:rfq-from-cart' %}">
+          {% csrf_token %}
+          <div class="card__head"><b>درخواست قیمت (RFQ)</b></div>
+          <div class="card__body">
+            <div class="field">
+              <label for="rfq-project">نام پروژه / کاربرد</label>
+              <input id="rfq-project" type="text" name="project_name" maxlength="160" placeholder="مثلاً پروژهٔ برج نگین — طبقه ۵">
+            </div>
+            <div class="field">
+              <label for="rfq-note">توضیح برای کارشناس فروش</label>
+              <textarea id="rfq-note" name="note" rows="3" maxlength="2000" placeholder="شرایط خاص، زمان تحویل، مشخصات فنی مورد نظر…"></textarea>
+            </div>
+            <p class="text-sm text-muted">پس از ارسال، کارشناس فروش قیمت پیشنهادی را ثبت می‌کند و در بخش «سفارش‌های من» قابل پیگیری است.</p>
+            <button class="btn btn-block" type="submit">ارسال درخواست قیمت</button>
+          </div>
+        </form>
+      {% endif %}
+    </aside>
+  </div>
+{% endif %}
+{% endblock %}

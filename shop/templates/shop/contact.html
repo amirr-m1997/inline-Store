@@ -1,0 +1,55 @@
+{% extends "shop/base.html" %}
+{% block title %}تماس و پشتیبانی — فروشگاه مهراصل{% endblock %}
+
+{% block content %}
+<h1 style="margin-top:20px">تماس و پشتیبانی</h1>
+<p class="text-muted">برای استعلام قیمت، مشاورهٔ فنی یا پیگیری سفارش از راه‌های زیر با ما در ارتباط باشید.</p>
+
+<div class="grid grid-3">
+  <div class="card">
+    <div class="card__head"><b>واحد فروش</b></div>
+    <div class="card__body text-sm">
+      <p class="mono" style="margin:0 0 4px">۰۴۱-۳۳۳۳۳۳۳۳ داخلی ۱۰۱</p>
+      <p class="mono" style="margin:0 0 4px">sales@mehrasl.ir</p>
+      <p class="text-muted" style="margin:0">ثبت سفارش، اعلام قیمت، شرایط تسویه</p>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card__head"><b>پشتیبانی فنی</b></div>
+    <div class="card__body text-sm">
+      <p class="mono" style="margin:0 0 4px">۰۴۱-۳۳۳۳۳۳۳۳ داخلی ۲۰۲</p>
+      <p class="mono" style="margin:0 0 4px">tech@mehrasl.ir</p>
+      <p class="text-muted" style="margin:0">انتخاب ظرفیت، نقشه، نصب و راه‌اندازی</p>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card__head"><b>امور مالی و فاکتور</b></div>
+    <div class="card__body text-sm">
+      <p class="mono" style="margin:0 0 4px">۰۴۱-۳۳۳۳۳۳۳۳ داخلی ۳۰۳</p>
+      <p class="mono" style="margin:0 0 4px">finance@mehrasl.ir</p>
+      <p class="text-muted" style="margin:0">صورت‌حساب، تسویه، سامانهٔ مؤدیان</p>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-2" style="margin-top:16px;align-items:start">
+  <div class="card">
+    <div class="card__head"><b>نشانی کارخانه و دفتر فروش</b></div>
+    <div class="card__body text-sm text-muted">
+      <p>تبریز، کیلومتر ۵ جادهٔ تهران، شهرک صنعتی، کارخانهٔ مهر اصل</p>
+      <p>ساعات کاری: شنبه تا چهارشنبه ۸ تا ۱۷ — پنجشنبه ۸ تا ۱۳</p>
+      <p style="margin-bottom:0">بازدید از خطوط تولید با هماهنگی قبلی امکان‌پذیر است.</p>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card__head"><b>درخواست قیمت سریع (RFQ)</b></div>
+    <div class="card__body">
+      <p class="text-sm text-muted">فهرست کالاها را در سبد خرید بگذارید و دکمهٔ «ارسال برای استعلام قیمت» را بزنید؛ کارشناس فروش قیمت پیشنهادی را در حساب شما ثبت می‌کند.</p>
+      <div class="row" style="gap:8px;flex-wrap:wrap">
+        <a class="btn btn-primary btn-sm" href="{% url 'shop:cart' %}">رفتن به سبد خرید</a>
+        {% if not user.is_authenticated %}<a class="btn btn-sm" href="{% url 'shop:login' %}">ورود / ثبت‌نام</a>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
