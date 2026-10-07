@@ -41,6 +41,7 @@ class QuoteMessageInline(TabularInline):
 
 @admin.register(Quote)
 class QuoteAdmin(PanelModelAdmin, ModelAdmin):
+    list_select_related = ("company", "assigned_to", "contact", "created_by")
     list_display = ("number", "company", "project_name", "items_summary", "total_col",
                     "status_badge", "priority_badge", "assigned_to", "sla_col", "validity_col")
     list_display_links = ("number", "company")
@@ -59,7 +60,6 @@ class QuoteAdmin(PanelModelAdmin, ModelAdmin):
                        "updated_at", "first_response_at")
     actions = ["action_assign_me", "action_recalc_prices", "action_send_offer", "action_mark_lost"]
     actions_detail = ["convert_to_order_detail", "escalate_detail", "recalculate_detail"]
-    date_hierarchy = "created_at"
     fieldsets = (
         ("شناسه", {
             "fields": (("number", "status", "priority", "source"),
@@ -254,6 +254,7 @@ class QuoteAdmin(PanelModelAdmin, ModelAdmin):
 
 @admin.register(QuoteLine)
 class QuoteLineAdmin(PanelModelAdmin, ModelAdmin):
+    list_select_related = ("quote", "product", "quote__company")
     list_display = ("quote", "product", "qty", "list_price_col", "offered_price_col",
                     "discount_col", "lead_time_col", "line_total_col")
     list_filter = (("product__category", RelatedDropdownFilter),
@@ -292,6 +293,7 @@ class QuoteLineAdmin(PanelModelAdmin, ModelAdmin):
 
 @admin.register(QuoteMessage)
 class QuoteMessageAdmin(PanelModelAdmin, ModelAdmin):
+    list_select_related = ("quote", "author", "quote__company")
     list_display = ("quote", "kind", "internal_badge", "display_author", "created_at_col", "short_body")
     list_filter = (("kind", ChoicesDropdownFilter), "is_internal", ("quote__status", ChoicesDropdownFilter))
     search_fields = ("quote__number", "body", "author_name")

@@ -5,6 +5,22 @@
 
 {% block content %}
 <div class="panel-wrap" dir="rtl">
+{% if not can_view_sales %}
+  <section class="panel-card">
+    <header class="panel-card-head">
+      <div><b>دسترسی به گزارش‌های فروش محدود است</b>
+        <span class="panel-sub">نقش شما مجوز دیدن سفارش‌ها یا فاکتورها را ندارد</span></div>
+    </header>
+    <div class="panel-card-body">
+      <p class="panel-sub" style="line-height:2;margin:0">
+        این داشبورد اعداد فروش، اعتبار مشتریان و وضعیت چک‌ها را نشان می‌دهد. برای دیدن آن
+        باید یکی از این دو مجوز به نقش شما داده شود: <span class="panel-mono">orders.view_order</span>
+        یا <span class="panel-mono">finance.view_invoice</span>. از منوی کنار می‌توانید به
+        بخش‌های مجاز خود (کاتالوگ، محتوا، اعلان‌ها) بروید.
+      </p>
+    </div>
+  </section>
+{% else %}
 
   {# ---------------------------------------------------------- ردیف KPI #}
   <div class="panel-kpi-row">
@@ -317,5 +333,6 @@
     داده‌های این داشبورد زنده و از مدل‌های واقعی پنل خوانده می‌شود — API خلاصه:
     <a href="{% url 'panel-api-summary' %}">/admin/api/summary/</a>
   </p>
+{% endif %}
 </div>
 {% endblock %}

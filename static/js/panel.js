@@ -211,6 +211,10 @@
     try {
       document.querySelectorAll(".action-counter, .all, .question").forEach(persianizeTextNodes);
       document.querySelectorAll("#changelist-filter, ul.toplinks, .paginator").forEach(persianizeTextNodes);
+      /* شمارنده‌های سایدبار (تعداد ردیف هر مدل) و خلاصه‌ی صفحه‌بندی */
+      document.querySelectorAll("#nav-sidebar a, .paginator, .changelist-footer").forEach(
+        persianizeTextNodes
+      );
       document.querySelectorAll('a[href^="?p="]').forEach(function (a) {
         var bar = a.parentElement ? a.parentElement.parentElement || a.parentElement : null;
         persianizeTextNodes(bar);
@@ -237,6 +241,139 @@
     observer.observe(scope, { childList: true, subtree: true, characterData: true });
   }
 
+  /* ------------------------------------------- پیوند «پرش به محتوای اصلی» (WCAG 2.4.1) */
+  function addSkipLink() {
+    if (document.getElementById("panel-skip-link")) return;
+    var main = document.querySelector("main") || document.getElementById("content");
+    if (!main) return;
+    if (!main.id) main.id = "panel-main";
+    if (!main.getAttribute("tabindex")) main.setAttribute("tabindex", "-1");
+    var link = document.createElement("a");
+    link.id = "panel-skip-link";
+    link.className = "panel-skip-link";
+    link.href = "#" + main.id;
+    link.textContent = "پرش به محتوای اصلی";
+    link.addEventListener("click", function () {
+      /* فوکوس واقعی روی محتوا، تا کلید Tab از همان‌جا ادامه پیدا کند */
+      setTimeout(function () { main.focus(); }, 0);
+    });
+    if (document.body.firstChild) document.body.insertBefore(link, document.body.firstChild);
+    else document.body.appendChild(link);
+  }
+
+  /* ------------------------------------------------- میان‌بر جست‌وجو: / و Esc */
+  function addSearchHint() {
+    var bar = document.getElementById("searchbar") || document.querySelector("#changelist-search");
+    var input = document.querySelector('input[name="q"]');
+    if (!bar || !input) return;
+    if (!bar.querySelector(".panel-search-hint")) {
+      var hint = document.createElement("span");
+      hint.className = "panel-search-hint";
+      hint.innerHTML =
+        '<span class="panel-kbd">/</span> جست‌وجو' +
+        '<span class="panel-kbd">Esc</span> پاک‌کردن';
+      bar.appendChild(hint);
+    }
+    if (input.dataset.panelShortcut === "1") return;
+    input.dataset.panelShortcut = "1";
+    input.addEventListener("keydown", function (evt) {
+      if (evt.key === "Escape") {
+        input.value = "";
+        input.blur();
+      }
+    });
+    document.addEventListener("keydown", function (evt) {
+      if (evt.key !== "/" || evt.ctrlKey || evt.metaKey || evt.altKey) return;
+      var tag = (evt.target && evt.target.tagName) || "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" ||
+          (evt.target && evt.target.isContentEditable)) return;
+      evt.preventDefault();
+      input.focus();
+      input.select();
+    });
+  }
+
+  /* --------------------------------------- کنش‌های درون‌ردیفی فهرست‌ها (ویرایش/تاریخچه/حذف)
+     لینک‌ها از خودِ لینک «تغییر» هر ردیف ساخته می‌شوند، پس همیشه به همان شیء
+     اشاره می‌کنند. «حذف» تنها وقتی اضافه می‌شود که کنش گروهی حذف در همین صفحه
+     موجود باشد (یعنی کاربر مجوز حذف دارد). */
+  function addRowActions() {
+    var list = document.getElementById("result_list");
+    if (!list) return;
+    var canDelete = !!document.querySelector(
+      '#changelist-form select[name="action"] option[value="delete_selected"]'
+    );
+    var flag = String(canDelete);
+    if (list.dataset.panelRowActions === flag) return;   /* بار قبل همین وضعیت بوده */
+    list.dataset.panelRowActions = flag;
+
+    var rows = list.querySelectorAll("tbody tr");
+    Array.prototype.forEach.call(rows, function (row) {
+      if (row.querySelector(".panel-row-actions")) return;
+      var link = row.querySelector('a[href*="/change/"]');
+      if (!link) return;
+      var cell = link.closest("td, th") || row.firstElementChild;
+      if (!cell) return;
+      var base = link.getAttribute("href").split("?")[0];
+      var box = document.createElement("span");
+      box.className = "panel-row-actions";
+      box.appendChild(actionLink(link.getAttribute("href"), "ویرایش", ""));
+      box.appendChild(actionLink(base.replace("/change/", "/history/"), "تاریخچه", ""));
+      if (canDelete) {
+        box.appendChild(actionLink(base.replace("/change/", "/delete/"), "حذف", "panel-act-danger"));
+      }
+      cell.appendChild(box);
+    });
+  }
+
+  function actionLink(href, label, extraClass) {
+    var a = document.createElement("a");
+    a.href = href;
+    a.className = extraClass || "";
+    a.setAttribute("aria-label", label);
+    var span = document.createElement("span");
+    span.className = "panel-act-label";
+    span.textContent = label;
+    a.appendChild(span);
+    return a;
+  }
+
+  /* --------------------------------------- نوار راهنمای فهرست + شمارش انتخاب‌ها */
+  function addListHint() {
+    var form = document.getElementById("changelist-form");
+    var list = document.getElementById("result_list");
+    if (!form || !list || document.getElementById("panel-list-hint")) return;
+    var hint = document.createElement("p");
+    hint.id = "panel-list-hint";
+    hint.className = "panel-list-hint";
+    hint.setAttribute("role", "status");
+    hint.setAttribute("aria-live", "polite");
+    /* جدول ممکن است فرزند مستقیم فرم نباشد (unfold آن را در div می‌گذارد) */
+    if (list.parentNode) list.parentNode.insertBefore(hint, list);
+    else form.insertBefore(hint, form.firstChild);
+    refreshListHint();
+
+    if (form.dataset.panelHintWired === "1") return;
+    form.dataset.panelHintWired = "1";
+    form.addEventListener("change", function (evt) {
+      if (evt.target && evt.target.name === "_selected_action") refreshListHint();
+    });
+    form.addEventListener("click", function (evt) {
+      if (evt.target && evt.target.name === "action-toggle") refreshListHint();
+    });
+  }
+
+  function refreshListHint() {
+    var hint = document.getElementById("panel-list-hint");
+    if (!hint) return;
+    var chosen = document.querySelectorAll('#result_list input[name="_selected_action"]:checked').length;
+    var total = document.querySelectorAll('#result_list input[name="_selected_action"]').length;
+    hint.textContent = chosen
+      ? toFa(chosen) + " ردیف انتخاب شده — از کادر «کنش» بالای فهرست استفاده کنید."
+      : "برای کنش‌های گروهی ردیف‌ها را تیک بزنید؛ برای جست‌وجوی سریع کلید / را بزنید. "
+        + "(" + toFa(total) + " ردیف در این صفحه)";
+  }
+
   function boot() {
     try {
       labelSearch();
@@ -245,6 +382,10 @@
       wireDateInputs();
       persianizeCounters();
       watchCounters();
+      addSkipLink();
+      addSearchHint();
+      addRowActions();
+      addListHint();
     } catch (e) {
       /* در صورت خطا، پنل باید دست‌نخورده کار کند */
       if (window.console && console.warn) console.warn("panel.js:", e);

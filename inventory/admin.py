@@ -11,6 +11,7 @@ from unfold.contrib.filters.admin import (
 )
 
 from core.admin_utils import COLORS, PanelModelAdmin, badge, html_table, money_compact, progress_bar
+from core.jalali_filters import JalaliRangeDateFilter as RangeDateFilter
 from core.utils import jalali_dt, num
 
 from .models import PurchaseRequest, StockItem, StockMove, Warehouse
@@ -168,14 +169,16 @@ class StockItemAdmin(PanelModelAdmin, ModelAdmin):
 @admin.register(StockMove)
 class StockMoveAdmin(PanelModelAdmin, ModelAdmin):
     """رسید و حواله — تغییر موجودی فقط از طریق سرویس انبار انجام می‌شود."""
+    list_select_related = ("product", "warehouse", "created_by")
 
     list_display = ("created_at_col", "kind_badge", "product", "warehouse", "qty_col",
                     "unit_cost_col", "reference", "counterparty", "order_link", "created_by")
     list_filter = (("kind", ChoicesDropdownFilter), ("warehouse", RelatedDropdownFilter),
-                   "occurred_on")
+                   ("occurred_on", RangeDateFilter))
     search_fields = ("product__code", "product__name", "reference", "counterparty", "note")
     autocomplete_fields = ("product", "warehouse", "order")
-    date_hierarchy = "occurred_on"
+    list_filter = (("kind", ChoicesDropdownFilter), ("warehouse", RelatedDropdownFilter),
+                   ("occurred_on", RangeDateFilter))
     fieldsets = (
         ("تراکنش", {"fields": ("kind", "product", "warehouse", "qty", "unit_cost")}),
         ("مستندات", {"fields": ("reference", "counterparty", "order", "occurred_on", "note")}),
@@ -230,6 +233,7 @@ class StockMoveAdmin(PanelModelAdmin, ModelAdmin):
 
 @admin.register(PurchaseRequest)
 class PurchaseRequestAdmin(PanelModelAdmin, ModelAdmin):
+    list_select_related = ("product", "warehouse", "requested_by")
     list_display = ("id", "product", "warehouse", "qty_col", "status_badge", "needed_by_col",
                     "supplier", "estimated_cost_col", "requested_by", "created_at_col")
     list_filter = (("status", ChoicesDropdownFilter), ("warehouse", RelatedDropdownFilter),

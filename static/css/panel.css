@@ -138,7 +138,7 @@ body, .font-sans, input, select, textarea, button, .material-symbols-outlined {
 /* ------------------------------------------------------ جدول‌ها */
 .panel-table { width: 100%; border-collapse: collapse; font-size: 12.3px; }
 .panel-table thead th {
-  text-align: right; font-size: 11px; color: #5b6b82; font-weight: 600;
+  text-align: start; font-size: 11px; color: var(--panel-text-muted); font-weight: 600;
   padding: 8px 10px; border-bottom: 1px solid #e6eaf2; background: #f8fafd; white-space: nowrap;
 }
 .panel-table td { padding: 9px 10px; border-bottom: 1px solid #eef2f8; vertical-align: middle; }
@@ -280,3 +280,96 @@ body, .font-sans, input, select, textarea, button, .material-symbols-outlined {
 .dark .model-help__icon, .dark .model-help__title { color: #3ec3dd; }
 .dark .model-help__text { color: #c9d7e6; }
 @media print { .model-help { display: none !important; } }
+
+/* ==================================================================
+   ۹) توکن‌های رنگ پنل — منبع یکتا برای روشن/تیره
+   همه‌ی مقادیر در دو تم با محاسبه‌ی کنتراست WCAG سنجیده شده‌اند
+   (scripts/panel_ux_audit.py). برای تغییر رنگ، فقط این بلوک را عوض کنید.
+   ================================================================== */
+:root {
+  --panel-surface: #ffffff;
+  --panel-surface-2: #f6f8fc;
+  --panel-border: #e6eaf2;
+  --panel-text: #16233a;         /* ۱۵٫۳:۱ روی سطح روشن */
+  --panel-text-muted: #5b6b82;   /* ۵٫۸:۱ روی سطح روشن */
+  --panel-accent: #0e7490;       /* ۴٫۹:۱ روی سطح روشن */
+  --panel-accent-weak: #e8f4f8;  /* پس‌زمینه‌ی ملایم فیروزه‌ای */
+  --panel-ok: #12855f;
+  --panel-warn: #b45309;
+  --panel-danger: #c02626;
+  --panel-focus: #0e7490;
+  --panel-on-accent: #ffffff;    /* متن روی زمینهٔ فیروزه‌ای پررنگ */
+  --panel-target: 32px;          /* کمینه‌ی هدف لمسی (WCAG 2.5.8) */
+}
+.dark {
+  --panel-surface: #101c2e;
+  --panel-surface-2: #132239;
+  --panel-border: #1e2f47;
+  --panel-text: #e6eef8;         /* ۱۳٫۸:۱ روی سطح تیره */
+  --panel-text-muted: #a9bcd2;   /* ۸٫۱:۱ روی سطح تیره */
+  --panel-accent: #3ec3dd;       /* ۸٫۶:۱ روی سطح تیره */
+  --panel-accent-weak: #0f2433;
+  --panel-ok: #4ade80;
+  --panel-warn: #fbbf24;
+  --panel-danger: #fca5a5;
+  --panel-focus: #3ec3dd;
+  --panel-on-accent: #06212c;
+}
+
+/* ---------------------------------------------- ۱۰) پیوند «پرش به محتوای اصلی» (WCAG 2.4.1)
+   با کلید Tab اول از همه ظاهر می‌شود؛ برای کاربران کیبورد مسیر میان‌برها را کوتاه می‌کند. */
+.panel-skip-link {
+  position: fixed; top: -70px; inset-inline-start: 14px; z-index: 70;
+  background: var(--panel-accent); color: var(--panel-on-accent); text-decoration: none;
+  padding: 9px 14px; border-radius: 0 0 10px 10px; font-size: 12.5px; font-weight: 600;
+  transition: top .15s ease-in-out;
+}
+.panel-skip-link:focus { top: 0; color: var(--panel-on-accent); }
+#panel-main:focus { outline: none; }
+#panel-main:focus-visible { outline: 2px solid var(--panel-focus); outline-offset: 2px; }
+
+/* ---------------------------------------------- ۱۱) میان‌بر جست‌وجو (/)
+   راهنمای زیر کادر جست‌وجو + کلیدهای کمکی. با Esc پاک می‌شود. */
+.panel-kbd {
+  display: inline-block; border: 1px solid var(--panel-border); border-bottom-width: 2px;
+  border-radius: 6px; padding: 0 6px; font-size: 11px; line-height: 18px;
+  color: var(--panel-text-muted); background: var(--panel-surface-2);
+  font-variant-numeric: tabular-nums;
+}
+.panel-search-hint {
+  display: flex; align-items: center; gap: 6px; margin-top: 5px;
+  font-size: 11px; color: var(--panel-text-muted);
+}
+
+/* ---------------------------------------------- ۱۲) کنش‌های درون‌ردیفی فهرست‌ها
+   «ویرایش / تاریخچه / حذف» با هدف لمسی ≥ ۳۲px و رنگ توکن‌محور (panel.js می‌سازد).
+   کنش «حذف» فقط برای کاربری ساخته می‌شود که اجازه‌ی حذف دارد (data-attr از سرور). */
+.panel-row-actions {
+  display: inline-flex; gap: 4px; align-items: center; margin-top: 5px; flex-wrap: wrap;
+}
+.panel-row-actions a {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  min-height: var(--panel-target); min-width: var(--panel-target);
+  padding: 0 8px; border: 1px solid var(--panel-border); border-radius: 8px;
+  background: var(--panel-surface); color: var(--panel-accent);
+  font-size: 11.5px; font-weight: 500; text-decoration: none; white-space: nowrap;
+}
+.panel-row-actions a:hover { background: var(--panel-accent-weak); color: var(--panel-accent); }
+.panel-row-actions a:focus-visible { outline: 2px solid var(--panel-focus); outline-offset: 1px; }
+.panel-row-actions a.panel-act-danger { color: var(--panel-danger); }
+.panel-row-actions a.panel-act-danger:hover {
+  background: color-mix(in srgb, var(--panel-danger) 12%, transparent);
+}
+.panel-row-actions .material-symbols-outlined { font-size: 16px; line-height: 1; }
+@media (max-width: 1280px) { .panel-row-actions .panel-act-label { display: none; } }
+
+/* ---------------------------------------------- ۱۳) سرصفحه‌ی ابزار فهرست‌ها
+   نوار خلاصه‌ی «چند ردیف انتخاب شده» + راهنمای کنش‌های گروهی. */
+.panel-list-hint {
+  margin: 0 0 8px; padding: 7px 11px; border-radius: 10px; font-size: 11.5px;
+  background: var(--panel-surface-2); border: 1px solid var(--panel-border);
+  color: var(--panel-text-muted);
+}
+@media print {
+  .panel-skip-link, .panel-search-hint, .panel-row-actions, .panel-list-hint { display: none !important; }
+}

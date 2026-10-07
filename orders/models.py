@@ -145,14 +145,24 @@ class Order(models.Model):
 
     @property
     def credit_info(self) -> dict:
-        """وضعیت اعتبار مشتری برای این سفارش."""
+        """وضعیت اعتبار مشتری برای این سفارش.
+
+        «مصرف‌شده» فقط یک‌بار محاسبه می‌شود و بقیه‌ی اعداد از همان استخراج
+        می‌شوند؛ پیش‌تر credit_available و credit_usage_pct هرکدام جداگانه
+        credit_used را صدا می‌زدند و در فهرست سفارش‌ها هر ردیف تا ۶ کوئری
+        اضافه تولید می‌کرد.
+        """
         company = self.company
+        used = company.credit_used
+        limit = company.credit_limit or 0
+        available = max(limit - used, 0)
+        total = self.total
         return {
-            "limit": company.credit_limit,
-            "used": company.credit_used,
-            "available": company.credit_available,
-            "exceeded": bool(company.credit_limit and self.total > company.credit_available),
-            "usage_pct": company.credit_usage_pct,
+            "limit": limit,
+            "used": used,
+            "available": available,
+            "exceeded": bool(limit and total > available),
+            "usage_pct": min(round(used * 100 / limit), 150) if limit else 0,
         }
 
     @property

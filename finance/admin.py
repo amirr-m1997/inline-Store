@@ -50,6 +50,7 @@ class ChequeInline(TabularInline):
 
 @admin.register(Invoice)
 class InvoiceAdmin(PanelModelAdmin, ModelAdmin):
+    list_select_related = ("company", "order", "created_by")
     list_display = ("number", "kind_badge", "company", "total_col", "balance_col", "status_badge",
                     "moadian_badge", "issued_col", "due_col", "overdue_col")
     list_display_links = ("number", "company")
@@ -63,8 +64,10 @@ class InvoiceAdmin(PanelModelAdmin, ModelAdmin):
     search_fields = ("number", "company__name", "moadian_tax_id", "note")
     autocomplete_fields = ("company", "order")
     inlines = [InvoiceLineInline, PaymentInline, ChequeInline]
-    readonly_fields = ("amounts_display", "moadian_display", "created_at")
-    date_hierarchy = "issued_at"
+    # مبالغ فاکتور فقط از راه سرویس‌های مالی (ثبت پرداخت، گردش سفارش) تغییر می‌کنند
+    readonly_fields = ("amounts_display", "moadian_display", "created_at",
+                       "subtotal", "discount_amount", "vat_amount", "shipping_amount",
+                       "total", "paid_amount")
     actions = ["action_submit_moadian", "action_mark_overdue", "action_mark_accepted"]
     actions_detail = ["submit_moadian_detail", "register_payment_detail"]
     fieldsets = (
@@ -213,13 +216,13 @@ class InvoiceAdmin(PanelModelAdmin, ModelAdmin):
 
 @admin.register(Payment)
 class PaymentAdmin(PanelModelAdmin, ModelAdmin):
+    list_select_related = ("invoice", "invoice__company", "company", "created_by")
     list_display = ("paid_at_col", "company", "method_badge", "amount_col", "invoice_link",
                     "order_link", "bank", "reference", "created_by")
     list_filter = (("method", ChoicesDropdownFilter), ("company", RelatedDropdownFilter),
                    ("paid_at", RangeDateFilter))
     search_fields = ("company__name", "reference", "bank", "note", "invoice__number")
     autocomplete_fields = ("company", "invoice", "order")
-    date_hierarchy = "paid_at"
     fieldsets = (
         ("پرداخت", {"fields": ("company", "method", "amount", "paid_at")}),
         ("ارجاع", {"fields": ("invoice", "order", "bank", "reference")}),
@@ -261,6 +264,7 @@ class PaymentAdmin(PanelModelAdmin, ModelAdmin):
 
 @admin.register(Cheque)
 class ChequeAdmin(PanelModelAdmin, ModelAdmin):
+    list_select_related = ("company", "order")
     list_display = ("number", "company", "direction_badge", "bank", "amount_col", "due_col",
                     "urgency_badge", "status_badge", "invoice_link")
     list_filter = (("status", ChoicesDropdownFilter), ("direction", ChoicesDropdownFilter),
@@ -268,7 +272,6 @@ class ChequeAdmin(PanelModelAdmin, ModelAdmin):
                    ("due_date", RangeDateFilter))
     search_fields = ("number", "company__name", "bank", "branch", "account_holder", "note")
     autocomplete_fields = ("company", "invoice", "order")
-    date_hierarchy = "due_date"
     actions = ["action_deposit", "action_clear", "action_bounce"]
     actions_detail = ["clear_detail"]
     readonly_fields = ("created_at",)
@@ -362,6 +365,7 @@ class ChequeAdmin(PanelModelAdmin, ModelAdmin):
 class InvoiceLineAdmin(PanelModelAdmin, ModelAdmin):
     """ردیف‌های فاکتور — ویرایش معمول داخل صفحه فاکتور؛ این صفحه برای جست‌وجوی سراسری
     روی اقلام فروش‌رفته و مقایسه قیمت فاکتور با قیمت لیست است."""
+    list_select_related = ("invoice", "product", "invoice__company")
 
     list_display = ("invoice_col", "title_col", "qty_col", "unit_price_col", "discount_col",
                     "line_total_col", "diff_col")

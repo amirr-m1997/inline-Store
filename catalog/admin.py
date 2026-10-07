@@ -315,6 +315,7 @@ class ProductAdmin(ModelHelpMixin, ImportExportModelAdmin, ModelAdmin):
 
 @admin.register(ProductDocument)
 class ProductDocumentAdmin(PanelModelAdmin, ModelAdmin):
+    list_select_related = ("product",)
     list_display = ("product", "kind_badge", "title", "version", "is_latest",
                     "reviewed_col", "approved_by", "file_link")
     list_filter = (("kind", ChoicesDropdownFilter), "is_latest",

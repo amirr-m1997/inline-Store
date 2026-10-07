@@ -122,6 +122,9 @@ class PanelModelAdmin(ModelHelpMixin, admin.ModelAdmin):
     """کلاس پایه‌ی ادمین پنل با تنظیمات مشترک."""
 
     list_per_page = 30
+    # با True، جنگو هر FK موجود در list_display را خودش با select_related
+    # همراه میکند (جلوگیری از کوئری N+1 در فهرستهای پنل).
+    list_select_related = True
     save_on_top = True
     show_facets = admin.ShowFacets.ALWAYS if hasattr(admin, "ShowFacets") else True
     empty_value_display = "—"

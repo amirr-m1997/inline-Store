@@ -91,16 +91,28 @@ class Company(models.Model):
     # ---------------------------------------------------------- اعتبار
     @property
     def credit_used(self) -> int:
-        """جمع مانده‌ی فاکتورهای باز + چک‌های در جریان."""
+        """جمع مانده‌ی فاکتورهای باز + چک‌های در جریان — با ۲ کوئری، نه یکی‌به‌ازای هر سند.
+
+        پیش‌تر برای هر فاکتور و هر چک یک کوئری جدا اجرا می‌شد؛ در داشبورد پنل که
+        اعتبار ده‌ها مشتری را نشان می‌دهد این یعنی صدها کوئری. اینک هر دو جمع
+        با یک aggregate گرفته می‌شود و نتیجه عددی یکسان است.
+        """
+        from django.db.models import BigIntegerField, F, Sum, Value
+        from django.db.models.functions import Greatest
+
         from finance.models import Cheque, Invoice
 
-        invoices = Invoice.objects.filter(company=self).exclude(
-            status__in=["paid", "cancelled", "draft"])
-        used = sum(inv.balance for inv in invoices)
-        cheques = Cheque.objects.filter(company=self, direction="received",
-                                        status__in=["in_hand", "deposited"])
-        used += sum(ch.amount for ch in cheques)
-        return used
+        invoices = (Invoice.objects
+                    .filter(company=self)
+                    .exclude(status__in=["paid", "cancelled", "draft"])
+                    .annotate(_balance=Greatest(F("total") - F("paid_amount"),
+                                                Value(0), output_field=BigIntegerField()))
+                    .aggregate(total=Sum("_balance"))["total"])
+        cheques = (Cheque.objects
+                   .filter(company=self, direction="received",
+                           status__in=["in_hand", "deposited"])
+                   .aggregate(total=Sum("amount"))["total"])
+        return int(invoices or 0) + int(cheques or 0)
 
     @property
     def credit_available(self) -> int:

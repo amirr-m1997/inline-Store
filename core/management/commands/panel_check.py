@@ -314,7 +314,10 @@ class Command(BaseCommand):
             data[f"{prefix}-MIN_NUM_FORMS"] = "0"
             data[f"{prefix}-MAX_NUM_FORMS"] = "1000"
 
-        new_limit = int(obj.credit_limit or 0) + 1_000_000_000
+        # مقدار اصلی نگه داشته می‌شود تا در پایان به پایگاه‌داده برگردد؛
+        # این آزمون نباید داده‌ی محیط توسعه را تغییرِ ماندگار بدهد.
+        original_limit = int(obj.credit_limit or 0)
+        new_limit = original_limit + 1_000_000_000
         data["credit_limit"] = str(new_limit)
         before_logs = AuditLog.objects.filter(model_name__endswith="company").count()
 
@@ -331,6 +334,12 @@ class Command(BaseCommand):
         saved = int(obj.credit_limit) == new_limit
         (self._ok if saved else self._fail)("ذخیره‌ی تغییر در فرم",
                                             f"سقف اعتبار → {obj.credit_limit:,}")
+        # بازگرداندن سقف اعتبار به مقدار اولیه (نوشتن آزمون نباید در داده بماند)
+        model.objects.filter(pk=obj.pk).update(credit_limit=original_limit)
+        restored = model.objects.filter(pk=obj.pk, credit_limit=original_limit).exists()
+        (self._ok if restored else self._fail)(
+            "بازگردانی داده پس از آزمون", f"سقف اعتبار → {original_limit:,}")
+
         after_logs = AuditLog.objects.filter(model_name__endswith="company").count()
         if after_logs > before_logs:
             entry = AuditLog.objects.filter(model_name__endswith="company").order_by("-id").first()

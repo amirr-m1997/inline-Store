@@ -34,6 +34,7 @@ def _orders_with_totals():
     """کوئری پایه سفارش‌ها با جمع ردیف‌ها و مبلغ ناخالص."""
     return (
         Order.objects.exclude(status__in=["draft", "cancelled"])
+        .select_related("company", "sales_rep")
         .annotate(
             lines_total=Sum(ExpressionWrapper(F("lines__qty") * F("lines__unit_price"),
                                               output_field=MONEY)),
@@ -293,12 +294,19 @@ def rfq_board(limit: int = 6) -> list[Quote]:
     return list(
         Quote.objects.filter(status__in=ACTIVE_RFQ_STATUSES)
         .select_related("company", "assigned_to")
+        .prefetch_related("lines")   # total/subtotal در قالب، بدون کوئری اضافه
         .order_by("sla_due_at")[:limit]
     )
 
 
 def pending_approval_list(limit: int = 6):
-    return list(Approval.objects.filter(status="pending").select_related("order__company").order_by("created_at")[:limit])
+    return list(
+        Approval.objects.filter(status="pending")
+        .select_related("order__company", "order__sales_rep")
+        # کارتابل تأیید در داشبورد مبلغ و اعتبار هر سفارش را نشان می‌دهد
+        .prefetch_related("order__lines")
+        .order_by("created_at")[:limit]
+    )
 
 
 def due_cheques(limit: int = 6):
@@ -310,7 +318,11 @@ def due_cheques(limit: int = 6):
 
 
 def recent_orders(limit: int = 6):
-    return list(Order.objects.select_related("company", "sales_rep").order_by("-ordered_at")[:limit])
+    return list(
+        Order.objects.select_related("company", "sales_rep")
+        .prefetch_related("lines")
+        .order_by("-ordered_at")[:limit]
+    )
 
 
 def searches_without_result(limit: int = 5) -> list[dict]:

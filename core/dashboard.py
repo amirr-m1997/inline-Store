@@ -16,8 +16,26 @@ KPI_ICONS = {
 }
 
 
+def can_view_sales(user) -> bool:
+    """آیا کاربر مجاز است اعداد فروش/مالی را ببیند؟"""
+    return bool(
+        user.is_superuser
+        or user.has_perm("orders.view_order")
+        or user.has_perm("finance.view_invoice")
+    )
+
+
 def dashboard_callback(request, context):
-    """Unfold این تابع را با (request, context) صدا می‌زند."""
+    """Unfold این تابع را با (request, context) صدا می‌زند.
+
+    اگر کاربر مجوز دیدن سفارش‌ها/فاکتورها را نداشته باشد (مثلاً نقش «محتوا»)،
+    نه اعداد فروش برایش محاسبه می‌شود و نه در قالب نمایش داده می‌شود؛ فقط
+    کارت راهنما می‌بیند. این هم جلوی افشای اعداد مالی را می‌گیرد و هم چند
+    کوئری سنگین را برای این نقش‌ها حذف می‌کند.
+    """
+    if not can_view_sales(request.user):
+        return {**context, "can_view_sales": False}
+
     today = None
     kpi = analytics.kpis(today)
     series = analytics.sales_series(30)
@@ -31,6 +49,7 @@ def dashboard_callback(request, context):
 
     cart = {
         **context,
+        "can_view_sales": True,
         "kpi": kpi,
         "sales_chart": sales_chart,
         "sales_spark": sparkline(series["values"][-14:]),

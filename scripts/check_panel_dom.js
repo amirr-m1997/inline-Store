@@ -141,5 +141,73 @@ function load(name) {
   check("صفحه‌ی ورود RTL است", doc.documentElement.getAttribute("dir") === "rtl");
 }
 
+/* ------------------------------------------------ ۵) بهبودهای ۱۴۰۵/۰۷ (پنل بازبینی‌شده) */
+{
+  const { dom, doc, errors } = load("orders_changelist");
+  console.log("— کنش‌های درون‌ردیفی و میان‌برها —");
+
+  const skip = doc.getElementById("panel-skip-link");
+  check("پیوند «پرش به محتوای اصلی» ساخته شد", !!skip, skip && skip.outerHTML.slice(0, 70));
+  const target = skip && doc.querySelector(skip.getAttribute("href"));
+  check("مقصد پیوند پرش وجود دارد و فوکوس‌پذیر است",
+    target && target.getAttribute("tabindex") === "-1",
+    target ? target.id : "—");
+  check("پیوند پرش اولین عنصر قابل‌فوکوس صفحه است",
+    doc.body.firstElementChild === skip, doc.body.firstElementChild && doc.body.firstElementChild.tagName);
+
+  const actions = doc.querySelectorAll("#result_list .panel-row-actions");
+  const rows = doc.querySelectorAll("#result_list tbody tr");
+  check("هر ردیف فهرست کنش درون‌ردیفی گرفت", actions.length === rows.length,
+    `${actions.length} کنش برای ${rows.length} ردیف`);
+  const firstAction = doc.querySelector("#result_list .panel-row-actions a");
+  check("پیوند «ویرایش» به صفحه‌ی تغییر همان شیء می‌رود",
+    firstAction && /\/change\//.test(firstAction.getAttribute("href")),
+    firstAction && firstAction.getAttribute("href"));
+  const hist = doc.querySelector('#result_list .panel-row-actions a[href*="/history/"]');
+  check("پیوند «تاریخچه» ساخته شد", !!hist, hist && hist.getAttribute("href"));
+  const del = doc.querySelector('#result_list .panel-row-actions a[href*="/delete/"]');
+  const canDelete = !!doc.querySelector('#changelist-form select[name="action"] option[value="delete_selected"]');
+  check("کنش «حذف» تنها با مجوز حذف ساخته می‌شود", canDelete ? !!del : !del,
+    canDelete ? "مجوز دارد و دکمه ساخته شد" : "مجوز ندارد و دکمه ساخته نشد");
+  const sized = firstAction && doc.querySelector("#result_list .panel-row-actions a");
+  check("برچسب دسترس‌پذیر روی کنش‌ها نشست", sized && sized.getAttribute("aria-label"));
+
+  const hint = doc.getElementById("panel-list-hint");
+  check("نوار راهنمای فهرست ساخته شد", !!hint, hint && hint.textContent.slice(0, 40));
+  check("نوار راهنما نقش status دارد (اعلام به صفحه‌خوان)",
+    hint && hint.getAttribute("role") === "status" && hint.getAttribute("aria-live") === "polite");
+
+  const boxes = doc.querySelectorAll('#result_list input[name="_selected_action"]');
+  if (boxes.length > 1) {
+    boxes[0].checked = true;
+    boxes[0].dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+    check("شمارش ردیف‌های انتخاب‌شده به‌روز شد و ارقام فارسی است",
+      /[۰-۹]/.test(hint.textContent) && hint.textContent.indexOf("انتخاب") > -1,
+      hint.textContent.trim());
+    boxes[0].checked = false;
+    boxes[0].dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+  }
+
+  const searchHint = doc.querySelector("#searchbar .panel-search-hint, #changelist-search .panel-search-hint");
+  check("راهنمای میان‌بر جست‌وجو زیر کادر جست‌وجو هست", !!searchHint);
+  const q = doc.querySelector('input[name="q"]');
+  if (q) {
+    const evt = new dom.window.KeyboardEvent("keydown", { key: "/", bubbles: true });
+    doc.dispatchEvent(evt);
+    check("کلید / فوکوس را به کادر جست‌وجو می‌برد", doc.activeElement === q, doc.activeElement && doc.activeElement.tagName);
+    q.value = "چیزی";
+    q.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    check("کلید Esc کادر جست‌وجو را پاک می‌کند", q.value === "");
+  }
+
+  /* اجرای دوباره‌ی panel.js نباید المان‌ها را تکراری بسازد */
+  dom.window.eval(panelJs);
+  check("اجرای دوباره، کنش‌ها و نوارها را تکراری نمی‌سازد",
+    doc.querySelectorAll("#result_list .panel-row-actions").length === rows.length &&
+    doc.querySelectorAll("#panel-list-hint").length === 1 &&
+    doc.querySelectorAll("#panel-skip-link").length === 1);
+  check("بدون خطای جاوااسکریپت پس از اجرای دوباره", errors.length === 0, errors.join(" | "));
+}
+
 console.log(failures === 0 ? "\nنتیجه: همه‌ی بررسی‌های DOM موفق ✓" : `\nنتیجه: ${failures} بررسی ناموفق ✗`);
 process.exit(failures === 0 ? 0 : 1);

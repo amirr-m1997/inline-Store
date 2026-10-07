@@ -183,6 +183,7 @@ class CompanyAdmin(ModelHelpMixin, ImportExportModelAdmin, ModelAdmin):
 
 @admin.register(CompanyUser)
 class CompanyUserAdmin(PanelModelAdmin, ModelAdmin):
+    list_select_related = ("company", "user")
     list_display = ("user", "company", "role_badge", "job_title", "approval_limit_col",
                     "is_active", "can_view_invoices")
     list_filter = (("role", ChoicesDropdownFilter), ("company", RelatedDropdownFilter), "is_active")
@@ -203,6 +204,7 @@ class CompanyUserAdmin(PanelModelAdmin, ModelAdmin):
 
 @admin.register(CompanyAddress)
 class CompanyAddressAdmin(PanelModelAdmin, ModelAdmin):
+    list_select_related = ("company",)
     list_display = ("company", "title", "province", "city", "contact_name", "contact_phone",
                     "is_default", "loading_note")
     list_filter = (("province", ChoicesDropdownFilter), "is_default",

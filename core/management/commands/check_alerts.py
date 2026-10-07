@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from core.models import Notification
+from core.utils import fa, jalali, num
 from customers.models import Company
 from finance.models import Cheque
 from inventory.models import StockItem
@@ -35,9 +36,20 @@ class Command(BaseCommand):
 
     # ------------------------------------------------------------- helpers
     def _create(self, **kwargs):
+        """اگر اعلان با همان کلید یکتا وجود داشته باشد، متنش به‌روز می‌شود.
+
+        پیش‌تر اعلان موجود دست‌نخورده می‌ماند؛ یعنی اگر مبلغ/موجودی تغییر می‌کرد،
+        کاربر عدد قدیمی را می‌دید. حالا متن تازه می‌شود ولی «خوانده‌شده» و تاریخ
+        ایجاد اعلان دست نمی‌خورد.
+        """
         dedup = kwargs.pop("dedup_key", None)
-        if dedup and Notification.objects.filter(dedup_key=dedup).exists():
-            return 0
+        if dedup:
+            existing = Notification.objects.filter(dedup_key=dedup).first()
+            if existing:
+                for field, value in kwargs.items():
+                    setattr(existing, field, value)
+                existing.save(update_fields=[*kwargs.keys()])
+                return 0
         Notification.objects.create(dedup_key=dedup, **kwargs)
         return 1
 
@@ -50,8 +62,8 @@ class Command(BaseCommand):
             count += self._create(
                 kind="low_stock", level="danger" if key in ("critical", "out", "error") else "warning",
                 title=f"موجودی کم: {item.product.name}",
-                body=f"{item.warehouse.name} — موجودی آزاد {item.free_qty} {item.product.get_uom_display()} "
-                     f"(نقطه سفارش {item.reorder_point})",
+                body=f"{item.warehouse.name} — موجودی آزاد {num(item.free_qty, 0)} "
+                     f"{item.product.get_uom_display()} (نقطه سفارش {num(item.reorder_point, 0)})",
                 url=f"/admin/inventory/stockitem/{item.pk}/change/",
                 dedup_key=f"low_stock:{item.pk}:{timezone.localdate()}",
             )
@@ -66,7 +78,7 @@ class Command(BaseCommand):
         for quote in overdue:
             count += self._create(
                 kind="rfq_sla", level="danger",
-                title=f"استعلام {quote.number} از SLA عبور کرد",
+                title=f"استعلام {fa(quote.number)} از SLA عبور کرد",
                 body=f"{quote.company.name} — کارشناس: "
                      f"{(quote.assigned_to.get_full_name() if quote.assigned_to else 'تخصیص نیافته')}",
                 url=f"/admin/quotes/quote/{quote.pk}/change/",
@@ -82,9 +94,10 @@ class Command(BaseCommand):
         for approval in Approval.objects.filter(status="pending").select_related("order__company"):
             count += self._create(
                 kind="order_pending", level="warning",
-                title=f"سفارش {approval.order.number} در انتظار تأیید",
-                body=f"{approval.order.company.name} — مرحله {approval.step} "
-                     f"({self.ROLE_LABELS.get(approval.required_role, approval.required_role)}) — مبلغ {approval.amount_snapshot:,} تومان",
+                title=f"سفارش {fa(approval.order.number)} در انتظار تأیید",
+                body=f"{approval.order.company.name} — مرحله {num(approval.step, 0)} "
+                     f"({self.ROLE_LABELS.get(approval.required_role, approval.required_role)}) — "
+                     f"مبلغ {num(approval.amount_snapshot, 0)} تومان",
                 url=f"/admin/orders/approval/{approval.pk}/change/",
                 company=approval.order.company,
                 dedup_key=f"order_pending:{approval.pk}",
@@ -101,9 +114,10 @@ class Command(BaseCommand):
             level = "danger" if days <= 2 else "warning"
             count += self._create(
                 kind="cheque_due", level=level,
-                title=f"چک {cheque.number} — {cheque.company.name}",
-                body=f"سررسید {cheque.due_date} ({'معوق' if days < 0 else f'{days} روز دیگر'}) — "
-                     f"مبلغ {cheque.amount:,} تومان — بانک {cheque.bank}",
+                title=f"چک {fa(cheque.number)} — {cheque.company.name}",
+                body=f"سررسید {jalali(cheque.due_date)} "
+                     f"({'معوق' if days < 0 else f'{num(abs(days), 0)} روز دیگر'}) — "
+                     f"مبلغ {num(cheque.amount, 0)} تومان — بانک {cheque.bank}",
                 url=f"/admin/finance/cheque/{cheque.pk}/change/",
                 company=cheque.company,
                 dedup_key=f"cheque:{cheque.pk}:{cheque.due_date}",
@@ -120,8 +134,9 @@ class Command(BaseCommand):
             level = "danger" if days < 0 else "warning"
             count += self._create(
                 kind="price_expiring", level=level,
-                title=f"سبد قیمت «{price_list.name}» {'منقضی شده' if days < 0 else f'{days} روز تا انقضا'}",
-                body=f"{price_list.items.count()} قلم قیمت اختصاصی — نیازمند بازنگری",
+                title=f"سبد قیمت «{price_list.name}» "
+                      f"{'منقضی شده' if days < 0 else f'{num(days, 0)} روز تا انقضا'}",
+                body=f"{num(price_list.items.count(), 0)} قلم قیمت اختصاصی — نیازمند بازنگری",
                 url=f"/admin/pricing/pricelist/{price_list.pk}/change/",
                 dedup_key=f"price_expiry:{price_list.pk}:{price_list.valid_until}",
             )
@@ -133,8 +148,9 @@ class Command(BaseCommand):
             if company.credit_usage_pct >= 90:
                 count += self._create(
                     kind="credit_exceed", level="danger" if company.credit_usage_pct >= 100 else "warning",
-                    title=f"مصرف اعتبار {company.name}: {company.credit_usage_pct}%",
-                    body=f"مصرف {company.credit_used:,} از سقف {company.credit_limit:,} تومان",
+                    title=f"مصرف اعتبار {company.name}: {num(company.credit_usage_pct, 0)}٪",
+                    body=f"مصرف {num(company.credit_used, 0)} از سقف "
+                         f"{num(company.credit_limit, 0)} تومان",
                     url=f"/admin/customers/company/{company.pk}/change/",
                     company=company,
                     dedup_key=f"credit:{company.pk}:{timezone.localdate()}",

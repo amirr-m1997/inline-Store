@@ -22,7 +22,7 @@ class AuditLogAdmin(ModelHelpMixin, ModelAdmin):
     list_filter = (("action", ChoicesDropdownFilter), "model_name", "role",
                    ("actor", RelatedDropdownFilter), ("created_at", RangeDateFilter))
     search_fields = ("object_repr", "model_name", "actor_repr", "reason", "note", "object_id")
-    date_hierarchy = "created_at"
+    # ناوبری تاریخ میلادی حذف شده؛ فیلتر بازه‌ی شمسی (RangeDateFilter) جای آن است
     list_per_page = 50
     readonly_fields = ("action", "actor", "actor_repr", "role", "model_name", "object_id",
                        "object_repr", "before", "after", "changed_fields", "reason", "note",
@@ -86,7 +86,8 @@ class NotificationAdmin(PanelModelAdmin, ModelAdmin):
     list_display = ("created_at_col", "level_badge", "kind_badge", "title", "company",
                     "is_read", "target_link")
     list_filter = (("level", ChoicesDropdownFilter), ("kind", ChoicesDropdownFilter),
-                   "is_read", ("company", RelatedDropdownFilter))
+                   ("created_at", RangeDateFilter), "is_read",
+                   ("company", RelatedDropdownFilter))
     search_fields = ("title", "body", "dedup_key")
     autocomplete_fields = ("company",)
     actions = ["action_mark_read", "action_mark_unread"]
@@ -98,7 +99,6 @@ class NotificationAdmin(PanelModelAdmin, ModelAdmin):
             return "—"
         return format_html('<a href="{}">مشاهده</a>', obj.url)
     list_editable = ("is_read",)
-    date_hierarchy = "created_at"
 
     @admin.display(description="زمان", ordering="created_at")
     def created_at_col(self, obj):

@@ -74,11 +74,12 @@ class OrderAdmin(PanelModelAdmin, ModelAdmin):
     )
     search_fields = ("number", "company__name", "po_number", "project_name", "waybill_number",
                      "internal_note")
+    # ستونهای کارشناس/مشتری/اعتبار از این روابط میخوانند.
+    list_select_related = ("company", "contact", "sales_rep", "shipping_address")
     autocomplete_fields = ("company", "contact", "sales_rep", "shipping_address")
     inlines = [OrderLineInline, ApprovalInline, OrderEventInline]
     readonly_fields = ("totals_display", "credit_display", "margin_display", "shipping_display",
                        "ordered_at", "updated_at")
-    date_hierarchy = "ordered_at"
     actions = ["action_reserve", "action_mark_ready", "action_deliver", "action_cancel"]
     actions_detail = ["reserve_stock_detail", "ship_detail", "create_invoice_detail", "deliver_detail"]
     fieldsets = (
@@ -129,11 +130,17 @@ class OrderAdmin(PanelModelAdmin, ModelAdmin):
 
     @admin.display(description="تأیید")
     def approval_col(self, obj):
-        pending = obj.pending_approvals
+        """شمارش مرحله‌های تأیید از روی داده‌ی پیش‌واکشی‌شده.
+
+        get_queryset این ادمین approvals را prefetch می‌کند؛ پس شمارش در پایتون
+        انجام می‌شود و هیچ کوئری‌ای در هر ردیف اجرا نمی‌شود (پیش‌تر دو COUNT
+        جداگانه در هر ردیف می‌رفت).
+        """
+        approvals = list(obj.approvals.all())
+        pending = sum(1 for a in approvals if a.status == "pending")
         if pending:
-            return badge(f"{num(pending.count())} مرحله در انتظار", key="warn")
-        approved = obj.approvals.filter(status="approved").count()
-        if approved:
+            return badge(f"{num(pending)} مرحله در انتظار", key="warn")
+        if any(a.status == "approved" for a in approvals):
             return badge("تأییدشده", key="ok")
         return badge("بدون نیاز به تأیید", key="muted")
 
@@ -436,7 +443,6 @@ class OrderEventAdmin(PanelModelAdmin, ModelAdmin):
     search_fields = ("order__number", "order__company__name", "title", "description")
     list_filter = (("kind", ChoicesDropdownFilter), ("actor", RelatedDropdownFilter),
                    ("created_at", RangeDateFilter))
-    date_hierarchy = "created_at"
     list_per_page = 40
     ordering = ("-created_at",)
 
