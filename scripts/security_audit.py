@@ -268,8 +268,26 @@ def main() -> int:
 
         r = Client().get(reverse("shop:home"))
         cookie_headers = {k.lower(): v for k, v in r.headers.items()}
-        check("هدر X-Frame-Options تنظیم شده است", "x-frame-options" in cookie_headers,
-              str(cookie_headers.get("x-frame-options")))
+        # در توسعه/پیش‌نمایش نباید هدر فریم‌بندی فرستاده شود تا داخل iframe باز شود؛
+        # در production باید DENY باشد.
+        if settings.DEBUG:
+            check("در حالت توسعه هدر X-Frame-Options مانع نمایش در iframe نمی‌شود",
+                  "x-frame-options" not in cookie_headers,
+                  str(cookie_headers.get("x-frame-options")))
+        else:
+            check("در حالت عملیاتی هدر X-Frame-Options برابر DENY است",
+                  cookie_headers.get("x-frame-options") == "DENY", str(cookie_headers.get("x-frame-options")))
+        import subprocess
+        prod_env = {**os.environ, "DJANGO_DEBUG": "0", "DJANGO_SECURE": "1",
+                    "DJANGO_ALLOWED_HOSTS": "shop.mehrasl.ir", "SHOP_MOCK_GATEWAY": "0",
+                    "DJANGO_EMAIL_HOST": "smtp.example.com"}
+        probe = subprocess.run(
+            [sys.executable, "-c",
+             "import django;django.setup();from django.conf import settings as s;"
+             "print(s.X_FRAME_OPTIONS, any('clickjacking' in m for m in s.MIDDLEWARE))"],
+            cwd=str(BASE), env=prod_env, capture_output=True, text=True, timeout=120)
+        check("در محیط عملیاتی سیاست فریم‌بندی سخت‌گیرانه فعال می‌شود",
+              probe.stdout.strip() == "DENY True", f"out={probe.stdout.strip()} err={probe.stderr[-200:]}")
         check("هدر nosniff فعال است", cookie_headers.get("x-content-type-options") == "nosniff")
         check("کوکی نشست HttpOnly است", settings.SESSION_COOKIE_HTTPONLY)
         check("کوکی نشست SameSite=Lax است", settings.SESSION_COOKIE_SAMESITE == "Lax")

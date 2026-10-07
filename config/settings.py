@@ -298,7 +298,6 @@ PASSWORD_RESET_TIMEOUT = 60 * 60 * 24  # اعتبار لینک بازیابی: �
 # ---------------------------------------------------------------- امنیت
 # این مقادیر در production با متغیرهای محیطی روشن می‌شوند (DJANGO_SECURE=1).
 SECURE_CONTENT_TYPE_NOSNIFF = True
-X_FRAME_OPTIONS = "DENY"
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
@@ -306,6 +305,13 @@ SECURE_REFERRER_POLICY = "same-origin"
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 14          # ۱۴ روز
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024   # ۵ مگابایت
+
+# فریم‌بندی: در production هدر X-Frame-Options=DENY می‌فرستیم، اما در محیط توسعه/پیش‌نمایش
+# سایت باید داخل iframe نمایش داده شود (پنل آنلاین، پیش‌نمایش محیط توسعه)؛ بنابراین میدل‌ور
+# clickjacking در آن حالت غیرفعال است و هیچ هدری فرستاده نمی‌شود.
+X_FRAME_OPTIONS = "DENY" if os.environ.get("DJANGO_SECURE", "0") == "1" else "SAMEORIGIN"
+if X_FRAME_OPTIONS != "DENY":
+    MIDDLEWARE = [m for m in MIDDLEWARE if "clickjacking" not in m]
 
 if os.environ.get("DJANGO_SECURE", "0") == "1":
     SECURE_SSL_REDIRECT = True
