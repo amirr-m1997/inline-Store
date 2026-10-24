@@ -68,6 +68,9 @@ def find_chromium() -> str:
 
 def render_invoice_pdf_bytes(html: str, timeout: int = 120) -> bytes:
     """Print invoice HTML to A4 PDF bytes. Raises InvoicePdfError on failure."""
+    from apps.common.textnorm import normalize_persian_text
+
+    html = normalize_persian_text(html)
     binary = find_chromium()
     if not binary:
         raise InvoicePdfError(

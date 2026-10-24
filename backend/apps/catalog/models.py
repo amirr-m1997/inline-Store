@@ -18,6 +18,7 @@ class Category(TimestampedModel):
     code = models.CharField(max_length=64)
     name_fa = models.CharField(max_length=255)
     name_en = models.CharField(max_length=255, blank=True)
+    image = models.ImageField("تصویر دسته‌بندی", upload_to="catalog/categories/", blank=True, null=True)
     slug = models.SlugField(max_length=255, unique=True, blank=True)
     parent = models.ForeignKey("self", null=True, blank=True, related_name="children", on_delete=models.PROTECT)
     level = models.PositiveSmallIntegerField(default=0, editable=False)

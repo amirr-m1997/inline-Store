@@ -6,7 +6,7 @@ from .models import Invoice, InvoiceEmailLog, Order, OrderItem, OrderStatusHisto
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
-    readonly_fields = ("product", "product_name", "product_code", "unit", "unit_price", "quantity", "discount_percentage", "discount_amount", "line_subtotal", "line_total")
+    readonly_fields = ("product", "product_name", "product_code", "unit", "unit_price", "unit_cost", "quantity", "discount_percentage", "discount_amount", "line_subtotal", "line_total")
 
 
 class PaymentInline(admin.TabularInline):
@@ -33,7 +33,7 @@ class OrderAdmin(admin.ModelAdmin):
 
 @admin.register(OrderItem)
 class OrderItemAdmin(admin.ModelAdmin):
-    list_display = ("order", "product_code", "product_name", "quantity", "line_total")
+    list_display = ("order", "product_code", "product_name", "quantity", "unit_cost", "line_total")
     search_fields = ("order__order_number", "product_code", "product_name")
 
 

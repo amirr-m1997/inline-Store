@@ -1,0 +1,66 @@
+{% extends "admin/base_site.html" %}
+{% load static humanize %}
+
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/sales-workbench.css' %}?v=1">{% endblock %}
+
+{% block content %}
+<main class="sales-workbench" dir="rtl">
+  <header class="sales-workbench__hero">
+    <div>
+      <span>مرکز عملیات B2B</span>
+      <h1>میز کار فروش سازمانی</h1>
+      <p>استعلام‌ها را به پیشنهاد قیمت تبدیل کنید و پاسخ مشتری را تا نهایی‌شدن پیگیری کنید.</p>
+    </div>
+    <a href="{% url 'admin:rfq_requestforquotation_changelist' %}">همهٔ استعلام‌ها</a>
+  </header>
+
+  <section class="sales-workbench__kpis">
+    <article><b>{{ kpis.new_rfq|intcomma }}</b><span>استعلام تازه</span></article>
+    <article><b>{{ kpis.reviewing_rfq|intcomma }}</b><span>در حال بررسی</span></article>
+    <article><b>{{ kpis.draft_quotation|intcomma }}</b><span>پیش‌فاکتور پیش‌نویس</span></article>
+    <article><b>{{ kpis.awaiting_response|intcomma }}</b><span>منتظر پاسخ مشتری</span></article>
+    <article class="{% if kpis.expired_quotation %}sales-workbench__kpi--warn{% endif %}"><b>{{ kpis.expired_quotation|intcomma }}</b><span>منقضی و بدون پاسخ</span></article>
+  </section>
+
+  <section class="sales-workbench__grid">
+    <article class="sales-workbench__card">
+      <header><div><span>گام ۱</span><h2>استعلام‌های آمادهٔ قیمت‌گذاری</h2></div><a href="{% url 'admin:rfq_requestforquotation_changelist' %}?status__exact=submitted">فهرست</a></header>
+      <div class="sales-workbench__list">
+        {% for rfq in needs_quote %}
+          <div class="sales-workbench__row">
+            <div>
+              <a href="{% url 'admin:rfq_requestforquotation_change' rfq.pk %}">{{ rfq.reference }}</a>
+              <span>{{ rfq.company_name|default:rfq.contact_name }} · {{ rfq.item_count_value|intcomma }} قلم · {{ rfq.created_at|date:"Y/m/d H:i" }}</span>
+            </div>
+            <form method="post" action="{% url 'admin:rfq_create_draft' rfq.pk %}">{% csrf_token %}<button type="submit">ساخت پیش‌نویس</button></form>
+          </div>
+        {% empty %}
+          <p class="sales-workbench__empty">استعلامی برای تبدیل به پیش‌فاکتور در صف نیست.</p>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="sales-workbench__card">
+      <header><div><span>گام ۲</span><h2>پیشنهادهای منتظر پاسخ</h2></div><a href="{% url 'admin:rfq_salesquotation_changelist' %}?status__exact=issued">فهرست</a></header>
+      <div class="sales-workbench__list">
+        {% for quotation in awaiting_response %}
+          <div class="sales-workbench__row">
+            <div>
+              <a href="{% url 'admin:rfq_salesquotation_change' quotation.pk %}">{{ quotation.reference }}</a>
+              <span>{{ quotation.rfq.company_name|default:quotation.rfq.contact_name }} · اعتبار تا {{ quotation.expires_at|date:"Y/m/d"|default:"بدون تاریخ" }}</span>
+            </div>
+            <a class="sales-workbench__open" href="{% url 'admin:rfq_salesquotation_change' quotation.pk %}">پیگیری</a>
+          </div>
+        {% empty %}
+          <p class="sales-workbench__empty">پیشنهاد صادرشدهٔ بدون پاسخ وجود ندارد.</p>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+
+  <section class="sales-workbench__guide">
+    <b>روال پیشنهادی:</b>
+    <span>۱. بررسی نیاز مشتری</span><i>←</i><span>۲. ساخت پیش‌نویس</span><i>←</i><span>۳. ثبت قیمت و اعتبار</span><i>←</i><span>۴. صدور و ارسال</span><i>←</i><span>۵. پیگیری پاسخ</span>
+  </section>
+</main>
+{% endblock %}

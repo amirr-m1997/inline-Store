@@ -59,5 +59,5 @@ export function SiteHeader({ initialCompany = null }: { initialCompany?: Company
     return () => { cancelAnimationFrame(frame); window.removeEventListener("scroll", updateHeader); };
   }, []);
   const logout = async () => { await logoutRequest(); setCustomer(null); window.dispatchEvent(new CustomEvent("auth-changed", { detail: { authenticated: false } })); };
-  return <header ref={headerRef} className={`reference-header${compact ? " is-compact" : ""}${menuOpen ? " menu-is-open" : ""}`}><TopBar locale={locale} company={company} customer={customer} onLogout={logout} /><MainHeader locale={locale} company={company} menuOpen={menuOpen} onMenuToggle={() => setMenuOpen((value) => !value)} /><CategoryNavigation mobileOpen={menuOpen} onNavigate={() => setMenuOpen(false)} /></header>;
+  return <header id="page-top" ref={headerRef} className={`reference-header${compact ? " is-compact" : ""}${menuOpen ? " menu-is-open" : ""}`}><TopBar locale={locale} company={company} customer={customer} onLogout={logout} /><MainHeader locale={locale} company={company} customer={customer} menuOpen={menuOpen} onMenuToggle={() => setMenuOpen((value) => !value)} /><CategoryNavigation mobileOpen={menuOpen} onNavigate={() => setMenuOpen(false)} /></header>;
 }

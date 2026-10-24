@@ -9,6 +9,7 @@ export function ProductCard({ product, priority = false, locale = "fa" }: { prod
   const image = product.media.find((item) => item.isPrimary) ?? product.media[0];
   const discount = hasDiscount(product.pricing);
   const available = isAvailable(product.availability);
+  const quoteInPrice = !product.pricing?.finalAmount;
   const productHref = `/${locale}/product/${product.slug}`;
 
   return (
@@ -89,19 +90,20 @@ export function ProductCard({ product, priority = false, locale = "fa" }: { prod
               </strong>
             </>
           ) : (
-            <span className="industrial-card-price-quote">
-              {product.purchaseMode === "quote"
-                ? (english ? "Price on request" : "نیازمند استعلام قیمت")
-                : (english ? "Price not listed" : "قیمت ثبت نشده است")}
-            </span>
+            <Link
+              className="industrial-card-quote-btn"
+              href={`/${locale}/rfq?product=${encodeURIComponent(product.slug)}`}
+            >
+              {english ? "Request a quote" : "استعلام قیمت"}
+            </Link>
           )}
         </div>
       </div>
 
       <footer className="industrial-card-actions">
         <Button href={productHref} variant="ghost" size="sm" className="industrial-card-cta">
-          <span>{product.purchaseMode === "quote" ? (english ? "Request a quote" : "استعلام قیمت") : (english ? "View details" : "مشاهده جزئیات")}</span>
-          <span aria-hidden="true" className="rtl:rotate-180 inline-block">←</span>
+          <span>{!quoteInPrice && product.purchaseMode === "quote" ? (english ? "Request a quote" : "استعلام قیمت") : (english ? "View details" : "مشاهده جزئیات")}</span>
+          <span aria-hidden="true">←</span>
         </Button>
       </footer>
     </article>

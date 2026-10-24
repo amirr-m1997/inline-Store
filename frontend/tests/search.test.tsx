@@ -42,6 +42,6 @@ describe("unified search UI", () => {
     render(<SearchGroupSummary groups={{ products: [product], categories: [], brands: [], articles: [article], faqs: [] }} locale="en" />);
     expect(screen.getByRole("navigation", { name: "Search result groups" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Products/ })).toHaveAttribute("href", "#search-products");
-    expect(screen.getByRole("link", { name: /Knowledge & News/ })).toHaveAttribute("href", "#search-articles");
+    expect(screen.getByRole("link", { name: /Articles/ })).toHaveAttribute("href", "#search-articles");
   });
 });

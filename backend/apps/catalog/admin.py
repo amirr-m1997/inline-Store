@@ -7,7 +7,7 @@ from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils.html import format_html
 
-from apps.inventory.models import Inventory
+from apps.inventory.models import Inventory, ReplenishmentRule
 from apps.pricing.models import ProductPrice
 from .admin_widgets import CategoryPickerWidget
 from .models import AttributeDefinition, Category, CategoryAttribute, CategorySlugRedirect, Product, ProductAttributeValue, ProductBrand, ProductDocument, ProductFavorite, ProductIdentifier, ProductImage, ProductQuestion, ProductReview, SupplyBrand
@@ -42,6 +42,11 @@ class ProductImageInline(admin.TabularInline):
     extra = 0
     fields = ("image", "alt_fa", "alt_en", "is_primary", "sort_order")
 class InventoryInline(admin.StackedInline): model = Inventory; extra = 0; max_num = 1
+class ReplenishmentRuleInline(admin.StackedInline):
+    model = ReplenishmentRule
+    extra = 0
+    max_num = 1
+    fields = ("minimum_quantity", "maximum_quantity", "order_multiple", "lead_time_days", "is_auto", "is_active")
 class ProductPriceInline(admin.TabularInline): model = ProductPrice; extra = 0
 class ProductIdentifierInline(admin.TabularInline): model = ProductIdentifier; extra = 0
 class ProductAttributeValueInline(admin.TabularInline): model = ProductAttributeValue; extra = 0; autocomplete_fields = ("attribute",)
@@ -151,7 +156,7 @@ class ProductAdmin(HierarchicalCategoryAdminMixin, admin.ModelAdmin):
     list_filter = ("is_featured", "is_active", "brand", "category")
     search_fields = ("code", "name", "slug", "identifiers__normalized_value", "documents__display_name")
     ordering = ("code",)
-    inlines = (ProductImageInline, ProductDocumentInline, InventoryInline, ProductPriceInline, ProductIdentifierInline, ProductAttributeValueInline, ProductReviewInline, ProductQuestionInline)
+    inlines = (ProductImageInline, ProductDocumentInline, InventoryInline, ReplenishmentRuleInline, ProductPriceInline, ProductIdentifierInline, ProductAttributeValueInline, ProductReviewInline, ProductQuestionInline)
     list_editable = ("is_featured",)
     autocomplete_fields = ("brand",)
 

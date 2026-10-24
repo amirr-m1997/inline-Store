@@ -1,0 +1,17 @@
+DejaVuSans.ttf
+==============
+
+Bundled Latin typeface used for English business documents (quotations,
+invoices). It is only loaded when the document locale is English; Persian
+documents continue to use the Vazir weights in ../vazir/.
+
+Copyright (c) 2003 by Bitstream, Inc. All Rights Reserved.
+Bitstream Vera is a trademark of Bitstream, Inc.
+DejaVu changes are in the public domain.
+
+The font is distributed under the DejaVu Fonts license (a permissive,
+Bitstream Vera derived license). Full text:
+https://dejavu-fonts.github.io/License.html
+
+Do not sell this typeface on its own; it may be redistributed as part of
+this application only.

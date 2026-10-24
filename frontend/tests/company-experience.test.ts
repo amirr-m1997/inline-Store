@@ -32,12 +32,15 @@ describe("Mehrasl company experience", () => {
     expect(locations).toContain("company-locations--compact");
   });
 
-  it("keeps homepage company sections as bounded previews and marks demo content", () => {
+  it("keeps company capabilities as a bounded homepage preview and omits industries and offers", () => {
     const source = read("components/catalog/enterprise-home.tsx");
-    expect(source).toContain("industries.slice(0, 3)");
+    expect(source).not.toContain("industries.slice");
+    expect(source).not.toContain("Industries and applications");
+    expect(source).not.toContain("CompanyPromotionStrip");
+    expect(source).not.toContain("featured_promotion");
     expect(source).toContain("capabilities.slice(0, 3)");
     expect(source).toContain("content-demo-indicator");
-    expect(source.indexOf("Featured products")).toBeLessThan(source.indexOf("Industries and applications"));
+    expect(source).toContain("products.slice(0, 4)");
   });
 
   it("omits invalid demo capability destinations", () => {

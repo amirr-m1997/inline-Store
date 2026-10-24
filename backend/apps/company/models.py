@@ -30,7 +30,6 @@ class CompanyInfo(models.Model):
     hero_description_fa = models.TextField("توضیحات هیرو فارسی", blank=True)
     hero_description_en = models.TextField("توضیحات هیرو انگلیسی", blank=True)
     hero_image = models.ImageField("تصویر هیرو", upload_to="company/hero/", blank=True, null=True)
-    mobile_hero_image = models.ImageField("تصویر موبایل هیرو", upload_to="company/hero/", blank=True, null=True)
     primary_button_text = models.CharField("متن دکمه اصلی", max_length=100, blank=True)
     primary_button_link = models.CharField("لینک دکمه اصلی", max_length=255, blank=True)
     secondary_button_text = models.CharField("متن دکمه دوم", max_length=100, blank=True)
@@ -38,6 +37,7 @@ class CompanyInfo(models.Model):
     hero_is_active = models.BooleanField("فعال بودن هیرو", default=True)
     hero_created_at = models.DateTimeField("ایجاد هیرو", auto_now_add=True)
     hero_updated_at = models.DateTimeField("به‌روزرسانی هیرو", auto_now=True)
+    contractors_image = models.ImageField("تصویر ویژه پیمانکاران", upload_to="company/sections/", blank=True, null=True)
 
     class Meta:
         verbose_name = "اطلاعات شرکت"
@@ -349,3 +349,34 @@ class Capability(SourcedContentModel):
 
     def __str__(self):
         return self.title_fa
+
+
+class CompanySocialLink(models.Model):
+    """لینک شبکه‌های اجتماعی شرکت؛ از پنل مدیریت می‌شود و در فوتر سایت نمایش داده می‌شود."""
+
+    PLATFORM_CHOICES = (
+        ("instagram", "اینستاگرام"),
+        ("linkedin", "لینکدین"),
+        ("telegram", "تلگرام"),
+        ("whatsapp", "واتس‌اپ"),
+        ("aparat", "آپارات"),
+        ("facebook", "فیسبوک"),
+        ("x", "ایکس (توییتر)"),
+        ("youtube", "یوتیوب"),
+        ("email", "ایمیل"),
+        ("website", "وب‌سایت"),
+    )
+    company_info = models.ForeignKey(CompanyInfo, related_name="social_links", on_delete=models.CASCADE, verbose_name="اطلاعات شرکت")
+    platform = models.CharField("پلتفرم", max_length=20, choices=PLATFORM_CHOICES, default="instagram")
+    # CharField (نه URLField) تا نشانی‌های mailto: و tel: هم پذیرفته شوند.
+    url = models.CharField("نشانی", max_length=500, help_text="نشانی کامل؛ برای ایمیل با mailto: شروع شود")
+    order = models.PositiveSmallIntegerField("ترتیب", default=0)
+    is_active = models.BooleanField("فعال", default=True)
+
+    class Meta:
+        ordering = ("order", "id")
+        verbose_name = "لینک شبکه اجتماعی"
+        verbose_name_plural = "لینک‌های شبکه‌های اجتماعی"
+
+    def __str__(self):
+        return f"{self.get_platform_display()} — {self.url}"

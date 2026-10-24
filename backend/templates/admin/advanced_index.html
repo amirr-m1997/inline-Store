@@ -1,0 +1,72 @@
+{% extends "admin/base_site.html" %}
+{% load humanize static %}
+
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/ops-dashboard.css' %}?v=4">{% endblock %}
+
+{% block content %}
+<main class="ops" dir="rtl">
+  <header class="ops__hero">
+    <div><span class="ops__eyebrow">مرکز عملیات فروش</span><h1>داشبورد هوشمند فروشگاه</h1><p>نبض فروش، کاتالوگ، انبار و رخدادهای واقعی کسب‌وکار؛ از همان دیتابیس اصلی.</p></div>
+    <div class="ops__quick"><a href="{% url 'admin:catalog_product_changelist' %}">کاتالوگ محصولات</a><a href="{% url 'admin:rfq_sales_workbench' %}">میز کار فروش</a><a href="{% url 'admin:pricing_customerpricelist_changelist' %}">قیمت سازمانی</a>{% if can_view_management_reports %}<a href="/admin/reports/management/">گزارش‌های مدیریتی</a>{% endif %}<a class="ops__quick--filled" href="{% url 'admin:common_auditevent_changelist' %}">رخدادهای سیستم</a></div>
+  </header>
+
+  <section class="ops-kpis">
+    <article><i>◈</i><span>محصول فعال</span><b>{{ kpis.products|intcomma }}</b><small>کالای قابل‌نمایش در فروشگاه</small></article>
+    <article><i>⌘</i><span>دسته‌بندی فعال</span><b>{{ kpis.categories|intcomma }}</b><small>ساختار واقعی کاتالوگ</small></article>
+    <article><i>↗</i><span>سفارش امروز</span><b>{{ kpis.orders_today|intcomma }}</b><small>ثبت‌شده از نیمه‌شب</small></article>
+    <article><i>◌</i><span>استعلام باز</span><b>{{ kpis.open_rfq|intcomma }}</b><small>نیازمند پیگیری فروش</small></article>
+    <article><i>▣</i><span>رکورد موجودی</span><b>{{ kpis.inventory_items|intcomma }}</b><small>دادهٔ لحظه‌ای انبار</small></article>
+  </section>
+
+  <section class="ops-grid ops-grid--top">
+    <article class="ops-card ops-card--chart"><header><div><span>عملکرد فروش</span><h2>روند ۳۰ روز اخیر</h2></div><b>{% if sales_total_30 %}{{ sales_total_30|intcomma }} ریال{% else %}بدون فروش ثبت‌شده{% endif %}</b></header>
+      <div class="ops-bars" aria-label="نمودار فروش ۳۰ روز اخیر">{% for point in sales_series %}<div class="ops-bars__col" title="{{ point.label }}: {{ point.total|intcomma }} ریال"><i style="height:{{ point.height }}%"></i>{% if forloop.counter0|divisibleby:5 %}<span>{{ point.label }}</span>{% endif %}</div>{% endfor %}</div>
+      <p class="ops-card__note">نمودار پس از اولین سفارش، مبلغ نهایی سفارش‌های واقعی را نمایش می‌دهد.</p>
+    </article>
+    <article class="ops-card ops-card--donut"><header><div><span>گردش سفارش</span><h2>وضعیت سفارش‌ها</h2></div><a href="{% url 'admin:orders_order_changelist' %}">مشاهده همه</a></header>
+      <div class="ops-donut-wrap"><div class="ops-donut" style="background:conic-gradient({{ donut_gradient }})"><div><b>{{ status_slices|length|default:0 }}</b><span>وضعیت فعال</span></div></div><ul class="ops-legend">{% for item in status_slices %}<li><i style="background:{{ item.color }}"></i><span>{{ item.label }}</span><b>{{ item.count|intcomma }}</b></li>{% empty %}<li class="ops-empty">هنوز سفارشی در دیتابیس ثبت نشده است.</li>{% endfor %}</ul></div>
+    </article>
+  </section>
+
+  <section class="ops-grid ops-grid--three">
+    <article class="ops-card"><header><div><span>کالاهای مورد توجه</span><h2>پرفروش‌ترین محصولات</h2></div><a href="{% url 'admin:catalog_product_changelist' %}">کاتالوگ</a></header><div class="ops-ranking">{% for product in top_products %}<div><div><span>{{ product.name }}</span><b>{{ product.value|intcomma }} فروش</b></div><i><em style="width:{{ product.pct }}%"></em></i><small>{{ product.code }}</small></div>{% empty %}<p class="ops-empty">محصول فعالی وجود ندارد.</p>{% endfor %}</div></article>
+    <article class="ops-card"><header><div><span>ساختار کاتالوگ</span><h2>دسته‌های پرکالا</h2></div><a href="{% url 'admin:catalog_category_changelist' %}">دسته‌ها</a></header><ol class="ops-ranked-list">{% for category in top_categories %}<li><b>{{ forloop.counter }}</b><span>{{ category.name_fa }}</span><em>{{ category.product_count|intcomma }} کالا</em></li>{% endfor %}</ol></article>
+    <article class="ops-card"><header><div><span>موجودی و رزرو</span><h2>هشدارهای انبار</h2></div><a href="{% url 'admin:inventory_inventory_changelist' %}">انبار</a></header><ul class="ops-stock">{% for item in low_stock %}<li><span>{{ item.product.name }}</span><b>{{ item.available_quantity }} باقی‌مانده</b></li>{% empty %}<li class="ops-empty">کالایی با موجودی کمتر یا برابر رزرو پیدا نشد.</li>{% endfor %}</ul></article>
+  </section>
+
+  <section class="ops-grid ops-grid--operations">
+    <article class="ops-card ops-card--urgent">
+      <header><div><span>اقدام فوری</span><h2>تأمین و کسری موجودی</h2></div><a href="{% url 'admin:inventory_replenishmentrule_changelist' %}">قوانین تأمین</a></header>
+      <p class="ops-card__summary">{{ replenishment_alert_count|intcomma }} کالا به نقطهٔ تأمین رسیده‌اند.</p>
+      <ul class="ops-stock">{% for rule in replenishment_alerts %}
+        <li><span>{{ rule.product.name }}</span><b>پیشنهاد سفارش: {{ rule.suggested_order_quantity|intcomma }}</b></li>
+      {% empty %}<li class="ops-empty">برای کالاهای دارای قانون تأمین، کسری فعالی وجود ندارد.</li>{% endfor %}</ul>
+    </article>
+    <article class="ops-card">
+      <header><div><span>کنترل کیفیت محتوا</span><h2>سلامت کاتالوگ</h2></div><a href="{% url 'admin:catalog_product_changelist' %}">مدیریت کالا</a></header>
+      <div class="ops-health">
+        <div><b>{{ catalog_health.without_price|intcomma }}</b><span>بدون قیمت جاری</span></div>
+        <div><b>{{ catalog_health.without_image|intcomma }}</b><span>بدون تصویر</span></div>
+        <div><b>{{ catalog_health.without_document|intcomma }}</b><span>بدون سند فنی منتشرشده</span></div>
+        <div><b>{{ catalog_health.without_specs|intcomma }}</b><span>بدون مشخصات فنی</span></div>
+        <div><b>{{ catalog_health.active_contract_lists|intcomma }}</b><span>قرارداد قیمت سازمانی فعال</span></div>
+      </div>
+    </article>
+    <article class="ops-card">
+      <header><div><span>صف رسیدگی</span><h2>فروش و تأیید محتوا</h2></div><a href="{% url 'admin:rfq_sales_workbench' %}">میز فروش</a></header>
+      <div class="ops-queue">
+        <a href="{% url 'admin:rfq_requestforquotation_changelist' %}"><b>{{ kpis.open_rfq|intcomma }}</b><span>استعلام باز</span></a>
+        <a href="{% url 'admin:rfq_salesquotation_changelist' %}"><b>{{ draft_quotations|intcomma }}</b><span>پیش‌فاکتور پیش‌نویس</span></a>
+        <a href="{% url 'admin:catalog_productreview_changelist' %}?is_published__exact=0"><b>{{ pending_reviews|intcomma }}</b><span>نظر در انتظار تأیید</span></a>
+        <a href="{% url 'admin:catalog_productquestion_changelist' %}?is_published__exact=0"><b>{{ pending_questions|intcomma }}</b><span>پرسش بدون پاسخ</span></a>
+      </div>
+      <ul class="ops-rfq-list">{% for rfq in rfq_queue %}<li><a href="{% url 'admin:rfq_requestforquotation_change' rfq.pk %}">{{ rfq.reference }}</a><span>{{ rfq.contact_name }} · {{ rfq.get_status_display }}</span></li>{% empty %}<li class="ops-empty">استعلام نیازمند بررسی وجود ندارد.</li>{% endfor %}</ul>
+    </article>
+  </section>
+
+  <section class="ops-grid ops-grid--bottom">
+    <article class="ops-card ops-card--table"><header><div><span>آخرین ورودی‌ها</span><h2>سفارش‌های فروشگاه</h2></div><a href="{% url 'admin:orders_order_changelist' %}">فهرست سفارش‌ها</a></header><div class="ops-table"><table><thead><tr><th>شماره</th><th>مشتری</th><th>وضعیت</th><th>مبلغ نهایی</th><th>زمان ثبت</th></tr></thead><tbody>{% for order in recent_orders %}<tr><td><a href="{% url 'admin:orders_order_change' order.pk %}">{{ order.order_number }}</a></td><td>{{ order.customer|default:"مهمان" }}</td><td><span class="ops-status">{{ order.get_status_display }}</span></td><td>{{ order.final_amount|intcomma }} ریال</td><td>{{ order.created_at|date:"Y/m/d H:i" }}</td></tr>{% empty %}<tr><td colspan="5" class="ops-empty">هنوز سفارشی ثبت نشده است.</td></tr>{% endfor %}</tbody></table></div></article>
+    <article class="ops-card"><header><div><span>ردیابی عملیات</span><h2>آخرین رخدادها</h2></div><a href="{% url 'admin:common_auditevent_changelist' %}">لاگ کامل</a></header><ul class="ops-events">{% for event in recent_events %}<li><i class="ops-events__{{ event.action }}"></i><div><b>{{ event.get_action_display }} · {{ event.object_repr }}</b><span>{{ event.actor|default:"سیستم" }} · {{ event.created_at|date:"Y/m/d H:i:s" }}</span></div></li>{% empty %}<li class="ops-empty">از این لحظه همهٔ تغییرات ایجاد، ویرایش و حذف اینجا ثبت می‌شوند.</li>{% endfor %}</ul></article>
+  </section>
+</main>
+{% endblock %}

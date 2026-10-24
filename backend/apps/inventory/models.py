@@ -1,4 +1,5 @@
 from decimal import Decimal
+from decimal import ROUND_CEILING
 
 from django.conf import settings
 from django.core.validators import MinValueValidator
@@ -35,6 +36,54 @@ class Inventory(models.Model):
             inventory.save(update_fields=("reserved_quantity", "updated_at"))
             return inventory
     def __str__(self): return str(self.product)
+
+
+class ReplenishmentRule(models.Model):
+    """Per-product replenishment policy, reviewed from the operations dashboard."""
+
+    product = models.OneToOneField(Product, related_name="replenishment_rule", on_delete=models.CASCADE)
+    minimum_quantity = models.DecimalField(
+        "حداقل موجودی قابل‌قبول", max_digits=18, decimal_places=6, default=0,
+        validators=[MinValueValidator(Decimal("0"))],
+    )
+    maximum_quantity = models.DecimalField(
+        "سقف هدف موجودی", max_digits=18, decimal_places=6, default=0,
+        validators=[MinValueValidator(Decimal("0"))],
+    )
+    order_multiple = models.DecimalField(
+        "مضرب سفارش", max_digits=18, decimal_places=6, default=1,
+        validators=[MinValueValidator(Decimal("0.000001"))],
+    )
+    lead_time_days = models.PositiveIntegerField("زمان تأمین (روز)", default=0)
+    is_auto = models.BooleanField("ایجاد خودکار درخواست تأمین", default=False)
+    is_active = models.BooleanField("فعال", default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(maximum_quantity__gte=models.F("minimum_quantity")),
+                name="replenishment_max_gte_min",
+            ),
+        ]
+        verbose_name = "قانون تأمین مجدد"
+        verbose_name_plural = "قوانین تأمین مجدد"
+
+    @property
+    def available_quantity(self):
+        inventory = getattr(self.product, "inventory", None)
+        return inventory.available_quantity if inventory else Decimal("0")
+
+    @property
+    def suggested_order_quantity(self):
+        needed = max(Decimal("0"), self.maximum_quantity - self.available_quantity)
+        if not needed:
+            return Decimal("0")
+        multiple = self.order_multiple or Decimal("1")
+        return (needed / multiple).to_integral_value(rounding=ROUND_CEILING) * multiple
+
+    def __str__(self):
+        return f"{self.product.code} — تأمین تا {self.maximum_quantity}"
 
 class Receipt(models.Model):
     product = models.ForeignKey(Product, related_name="receipts", on_delete=models.PROTECT)

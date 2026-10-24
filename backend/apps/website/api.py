@@ -6,7 +6,7 @@ from rest_framework.throttling import AnonRateThrottle
 
 from django.db.models import Prefetch
 
-from apps.company.models import CompanyInfo
+from apps.company.models import CompanyInfo, CompanySocialLink
 from .models import ContactMessage, CustomerFeedback, CustomerSupportRequest, FooterLink, FooterSection, SiteNavigation, TrustBadge, WarrantyPolicy, WarrantyRegistration
 
 
@@ -115,7 +115,9 @@ def feedback_create(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def footer_detail(request):
-    company = CompanyInfo.objects.first()
+    company = CompanyInfo.objects.prefetch_related(
+        Prefetch("social_links", queryset=CompanySocialLink.objects.filter(is_active=True).order_by("order", "id"))
+    ).first()
     sections = FooterSection.objects.filter(is_active=True).prefetch_related(
         Prefetch("links", queryset=FooterLink.objects.filter(is_active=True).order_by("order", "id"))
     )
@@ -132,6 +134,10 @@ def footer_detail(request):
             "email": company.email,
             "address": company.address,
             "website": company.website,
+            "social_links": [
+                {"platform": link.platform, "url": link.url}
+                for link in company.social_links.all()
+            ],
         }
         copyright_text = company.footer_copyright_fa
     return Response({

@@ -17,7 +17,7 @@ test.describe("unified storefront search", () => {
     await expect(page.locator("h1")).toHaveCount(1);
     await expect(page.getByText(/نتیجه/).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "محصولات" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "دانش و اخبار" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "مقالات" })).toBeVisible();
     await expect(page.locator(".site-search-form")).toHaveCount(0);
     const suffix = testInfo.project.name === "mobile-chromium" ? "mobile" : "desktop";
     await page.screenshot({ path: `/tmp/phase114b-search-fa-${suffix}.png`, fullPage: true });

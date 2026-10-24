@@ -28,10 +28,11 @@ def rich_text_to_html(value):
 
 class CategorySerializer(serializers.ModelSerializer):
     children = serializers.SerializerMethodField()
+    image = serializers.ImageField(read_only=True)
 
     class Meta:
         model = Category
-        fields = ("id", "code", "name_fa", "name_en", "slug", "parent", "level", "is_active", "children")
+        fields = ("id", "code", "name_fa", "name_en", "image", "slug", "parent", "level", "is_active", "children")
         read_only_fields = ("level",)
 
     def get_children(self, obj):
@@ -44,10 +45,11 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class CategoryNavigationSerializer(serializers.ModelSerializer):
     has_children = serializers.SerializerMethodField()
+    image = serializers.ImageField(read_only=True)
 
     class Meta:
         model = Category
-        fields = ("id", "code", "name_fa", "name_en", "slug", "parent", "level", "has_children")
+        fields = ("id", "code", "name_fa", "name_en", "image", "slug", "parent", "level", "has_children")
 
     def get_has_children(self, obj):
         return obj.children.filter(is_active=True).exists()
@@ -184,6 +186,10 @@ class ProductSerializer(serializers.ModelSerializer):
         price_map = (self.context or {}).get("price_map")
         if price_map is not None:
             return price_map.get(obj.pk)
+        request = (self.context or {}).get("request")
+        if request and request.user.is_authenticated:
+            from apps.pricing.services import bulk_price_map
+            return bulk_price_map(((obj.pk, 1),), customer=request.user).get(obj.pk)
         now = timezone.now()
         price = ProductPrice.objects.filter(product=obj, effective_from__lte=now).filter(Q(effective_to__isnull=True) | Q(effective_to__gte=now)).order_by("-effective_from").first()
         if not price:
@@ -254,10 +260,34 @@ class CatalogProductSerializer(serializers.ModelSerializer):
 
     def get_price(self, obj):
         if obj.catalog_price_amount is None:
-            return None
-        discount = obj.discount_percentage or Decimal("0")
-        final = obj.catalog_price_amount * (Decimal("1") - discount / Decimal("100"))
-        return {"original_amount": str(obj.catalog_price_amount), "currency": obj.catalog_price_currency, "discount_percentage": str(discount), "final_amount": str(final.quantize(Decimal("0.01")))}
+            fixed = getattr(obj, "catalog_contract_fixed_amount", None)
+            if fixed is None:
+                return None
+            return {
+                "original_amount": str(fixed),
+                "currency": obj.catalog_price_currency or getattr(obj, "catalog_contract_currency", None) or "IRR",
+                "discount_percentage": "0",
+                "final_amount": str(fixed.quantize(Decimal("0.01"))),
+                "price_list": getattr(obj, "catalog_contract_name", ""),
+                "is_contract_price": True,
+            }
+        original = obj.catalog_price_amount
+        fixed = getattr(obj, "catalog_contract_fixed_amount", None)
+        contract_discount = getattr(obj, "catalog_contract_discount", None)
+        if fixed is not None:
+            final = fixed
+            discount = max(Decimal("0"), (Decimal("1") - final / original) * Decimal("100")) if original else Decimal("0")
+        elif contract_discount is not None:
+            discount = contract_discount
+            final = original * (Decimal("1") - discount / Decimal("100"))
+        else:
+            discount = obj.discount_percentage or Decimal("0")
+            final = original * (Decimal("1") - discount / Decimal("100"))
+        payload = {"original_amount": str(original), "currency": obj.catalog_price_currency, "discount_percentage": str(discount), "final_amount": str(final.quantize(Decimal("0.01")))}
+        if fixed is not None or contract_discount is not None:
+            payload["price_list"] = getattr(obj, "catalog_contract_name", "")
+            payload["is_contract_price"] = True
+        return payload
 
 
 class ProductDetailSerializer(ProductSerializer):

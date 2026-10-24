@@ -8,7 +8,7 @@ import csv
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from django.db.models import F, Q
+from django.db.models import F
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import permissions, serializers
@@ -18,8 +18,8 @@ from rest_framework.response import Response
 
 from apps.catalog.serializers import ProductSerializer
 from apps.catalog.models import Product
-from apps.pricing.models import ProductPrice
-from apps.inventory.models import Inventory, Reservation
+from apps.pricing.services import bulk_price_map
+from apps.inventory.models import Inventory, Receipt, Reservation
 from apps.accounts.models import CustomerAddress, normalize_iranian_phone
 from django.core.exceptions import ValidationError as DjangoValidationError
 from apps.orders.models import Order, OrderItem, Payment
@@ -169,39 +169,9 @@ def current_cart(request, create=True):
     return Cart.objects.create() if create else None
 
 
-def bulk_price_map(product_ids):
-    """Latest effective selling price per product in ONE query.
-
-    Mirrors ProductSerializer.get_price so cart, checkout, and CSV export can
-    serialize many items without one query per product (works on SQLite and
-    PostgreSQL — no DISTINCT ON).
-    """
-    ids = list({pid for pid in product_ids if pid is not None})
-    if not ids:
-        return {}
-    now = timezone.now()
-    rows = (
-        ProductPrice.objects.filter(product_id__in=ids, effective_from__lte=now)
-        .filter(Q(effective_to__isnull=True) | Q(effective_to__gte=now))
-        .order_by("product_id", "-effective_from")
-    )
-    prices = {}
-    for row in rows:
-        if row.product_id in prices:
-            continue
-        final = row.amount * (Decimal("1") - row.discount_percentage / Decimal("100"))
-        prices[row.product_id] = {
-            "original_amount": str(row.amount),
-            "currency": row.currency,
-            "discount_percentage": str(row.discount_percentage),
-            "final_amount": str(final.quantize(Decimal("0.01"))),
-        }
-    return prices
-
-
 def cart_payload(cart):
     items = list(cart.items.select_related("product", "product__category", "product__inventory").prefetch_related("product__images"))
-    price_map = bulk_price_map(item.product_id for item in items)
+    price_map = bulk_price_map(((item.product_id, item.quantity) for item in items), customer=cart.user)
     rows, total = [], Decimal("0")
     for item in items:
         product = ProductSerializer(item.product, context={"price_map": price_map}).data
@@ -307,7 +277,7 @@ def checkout(request):
         if locked_cart.status != Cart.Status.ACTIVE:
             return Response({"detail": "این سبد قبلاً ثبت شده است."}, status=409)
         inventories = {inventory.product_id: inventory for inventory in Inventory.objects.select_for_update().filter(product_id__in=[item.product_id for item in items])}
-        price_map = bulk_price_map(item.product_id for item in items)
+        price_map = bulk_price_map(((item.product_id, item.quantity) for item in items), customer=locked_cart.user)
         totals = cart_payload(locked_cart)
         coupon = None
         if locked_cart.discount_code_id:
@@ -315,6 +285,21 @@ def checkout(request):
             now = timezone.now()
             if not coupon.is_active or coupon.valid_from > now or (coupon.valid_until and coupon.valid_until < now) or (coupon.max_uses is not None and coupon.usage_count >= coupon.max_uses) or Decimal(totals["subtotal"]) < coupon.minimum_order_amount:
                 return Response({"detail": "کد تخفیف دیگر معتبر نیست؛ لطفاً سبد را به‌روزرسانی کنید."}, status=400)
+        # Keep the purchase cost that was known at checkout.  Reports must not
+        # change retrospectively merely because a later receipt has a new cost.
+        latest_costs = {}
+        receipts = (
+            Receipt.objects.filter(
+                product_id__in=[item.product_id for item in items],
+                unit_purchase_price_irr__isnull=False,
+                occurred_at__lte=timezone.now(),
+            )
+            .order_by("product_id", "-occurred_at", "-id")
+            .values("product_id", "unit_purchase_price_irr")
+        )
+        for receipt in receipts:
+            latest_costs.setdefault(receipt["product_id"], receipt["unit_purchase_price_irr"])
+
         for item in items:
             inventory = inventories.get(item.product_id)
             if not inventory or inventory.available_quantity < item.quantity:
@@ -350,7 +335,7 @@ def checkout(request):
             order_item = OrderItem.objects.create(
                 order=order, product=item.product, product_name=item.product.name,
                 product_code=item.product.code, unit=item.product.unit,
-                unit_price=original_price, quantity=item.quantity,
+                unit_price=original_price, unit_cost=latest_costs.get(item.product_id), quantity=item.quantity,
                 discount_percentage=Decimal(price.get("discount_percentage") or 0),
                 discount_amount=line_subtotal - line_total,
                 line_subtotal=line_subtotal, line_total=line_total,
@@ -425,7 +410,7 @@ def cart_export_csv(request):
     # Public by design (guest carts via X-Guest-Token); throttled export generation.
     cart = current_cart(request)
     items = list(cart.items.select_related("product", "product__category", "product__inventory").prefetch_related("product__images"))
-    price_map = bulk_price_map(item.product_id for item in items)
+    price_map = bulk_price_map(((item.product_id, item.quantity) for item in items), customer=cart.user)
     response = HttpResponse(content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = 'attachment; filename="cart.csv"'
     response.write("\ufeff")

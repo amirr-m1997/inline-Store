@@ -60,7 +60,7 @@ export function EditorialTypeNav({ locale, basePath, selectedType = "", allowedT
 
 export function EditorialPreview({ articles, locale, title, href }: { articles: EditorialArticle[]; locale: string; title?: string; href?: string }) {
   if (!articles.length) return null;
-  const heading = title || (locale === "en" ? "Knowledge & News" : "دانش و اخبار");
+  const heading = title || (locale === "en" ? "Articles" : "مقالات");
   return <section className="editorial-preview site-container" aria-labelledby="editorial-preview-title"><header><div><span>{locale === "en" ? "Editorial perspective" : "نگاه تحریریه"}</span><h2 id="editorial-preview-title">{heading}</h2></div>{href && <Link href={href}>{locale === "en" ? "View all" : "مشاهده همه"}<span aria-hidden="true">←</span></Link>}</header><div className="editorial-preview-grid">{articles.slice(0, 3).map((article, index) => <EditorialCard key={article.id} article={article} locale={locale} variant={index === 0 ? "featured" : "compact"} />)}</div></section>;
 }
 

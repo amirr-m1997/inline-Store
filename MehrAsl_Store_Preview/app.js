@@ -315,13 +315,12 @@
   const slides=[
     {title:'انتخاب دقیق.<br><span>خرید مطمئن.</span>',description:'تجهیزات و قطعات تهویه و تبرید، در یک مسیر روشن؛<br class="desktop-only"> از انتخاب فنی تا تأمین نیاز پروژه شما.',art:'chiller',small:'compressor-green',text:'انتخاب بر اساس مدل و کد',cta:'مشاهده محصولات'},
     {title:'قطعه درست؛<br><span>برای کارِ درست.</span>',description:'کمپرسور، موتور، کنترلر و قطعات مدار تبرید؛<br class="desktop-only"> جست‌وجو و مقایسه را از مشخصات شروع کنید.',art:'compressor-green',small:'axial',text:'جست‌وجوی تخصصی قطعات',cta:'دیدن قطعات نمونه'},
-    {title:'موجودی منتخب.<br><span>فرصت خرید بهتر.</span>',description:'تجهیزات و قطعات منتخب در بخش پیشنهادهای ویژه؛<br class="desktop-only"> وضعیت و شرایط هر کالا را کنار قیمت ببینید.',art:'fancoil',small:'copper',text:'لوله و ملزومات نصب',cta:'مشاهده تخفیف‌ها'}
+    {title:'موجودی روشن.<br><span>انتخاب مطمئن.</span>',description:'وضعیت موجودی و شرایط هر کالا را کنار مشخصات فنی ببینید؛<br class="desktop-only"> انتخاب را با اطلاعات کامل انجام دهید.',art:'fancoil',small:'copper',text:'لوله و ملزومات نصب',cta:'مشاهده محصولات'}
   ];
   let currentSlide=0;
   function setSlide(index){currentSlide=index;const s=slides[index];$('#hero-title').innerHTML=s.title;$('#hero-description').innerHTML=s.description;$('#hero-art').src=asset(`assets/images/${s.art}.svg`);$('#hero-small-art').src=asset(`assets/images/${s.small}.svg`);$('#hero-small-text').textContent=s.text;$('#hero-cta').innerHTML=esc(s.cta)+icon('arrow-left');$('#slide-index').textContent=String(index+1).padStart(2,'0').replace(/[0-9]/g,c=>'۰۱۲۳۴۵۶۷۸۹'[c]);$$('[data-slide]').forEach(b=>{b.classList.toggle('active',Number(b.dataset.slide)===index);b.setAttribute('aria-pressed',String(Number(b.dataset.slide)===index));});}
-  $('#hero-cta').addEventListener('click',e=>{e.preventDefault();if(currentSlide===2)navigateTab('discount');else if(currentSlide===1)navigateCategory('B');else resetCatalog(true);});
+  $('#hero-cta').addEventListener('click',e=>{e.preventDefault();if(currentSlide===1)navigateCategory('B');else resetCatalog(true);});
   renderMenus();
-  $('#special-products').innerHTML=['DEMO-005','DEMO-006','DEMO-015','DEMO-019'].map(id=>card(byId.get(id))).join('');
   $('#latest-products').innerHTML=['DEMO-013','DEMO-017','DEMO-010','DEMO-002','DEMO-011'].map(id=>card(byId.get(id))).join('');
   renderCatalog();renderHeaderCounts();fillIcons();
   // Keyboard navigation for the tablist. No auto-rotating banners or fake urgency.

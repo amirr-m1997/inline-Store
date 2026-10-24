@@ -19,7 +19,7 @@ describe("homepage final UX safeguards", () => {
     const source = read("components/catalog/enterprise-home.tsx");
     const hero = read("components/catalog/site-hero.tsx");
     expect(hero).toContain("<h1>{banner.title}</h1>");
-    expect(hero).toContain("return legacyBanner ? [legacyBanner, ...hero.banners] : hero.banners");
+    expect(hero).toContain("mobile_image || item.desktop_image");
     expect(source).toContain("دسته‌بندی‌های محصولات در دسترس نیست.");
     expect(source).toContain("home-section-empty");
   });
@@ -29,5 +29,17 @@ describe("homepage final UX safeguards", () => {
     expect(source).toContain("aria-label={`${title}؛ مشاهده همه`}");
     expect(source).toContain("aria-label={`مشاهده دسته ${category.name_fa}`}");
     expect(source).toContain("/${locale}/best-discounts");
+  });
+
+  it("keeps homepage product cards compact and grids responsive to section width", () => {
+    const source = read("components/catalog/enterprise-home.tsx");
+    const styles = read("app/storefront-refresh.css");
+    expect(source).toContain("industrial-product-grid home-product-grid");
+    expect(styles).toContain(".mehrasl-storefront .home-product-section{container-type:inline-size}");
+    expect(styles).toContain("@container (min-width:600px)");
+    expect(styles).toContain("@container (min-width:1050px)");
+    expect(styles).toContain(".mehrasl-storefront .home-product-grid .industrial-card-code");
+    expect(styles).toContain(".mehrasl-storefront .home-product-grid .industrial-card-excerpt");
+    expect(styles).toContain("-webkit-line-clamp:2");
   });
 });

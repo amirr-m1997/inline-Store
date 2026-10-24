@@ -3,8 +3,8 @@ import type { EditorialArticle, EditorialCategory, FAQEntry, PaginatedResponse }
 
 const backendUrl = () => process.env.BACKEND_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
-async function getServer<T>(path: string): Promise<T> {
-  const response = await fetch(`${backendUrl()}${path}`, { next: { revalidate: 60 } });
+async function getServer<T>(path: string, init: RequestInit = { next: { revalidate: 60 } }): Promise<T> {
+  const response = await fetch(`${backendUrl()}${path}`, init);
   const data = await response.json().catch(() => null);
   if (!response.ok) throw new Error(`CONTENT_REQUEST_FAILED:${response.status}`);
   return data as T;
@@ -25,7 +25,9 @@ export function getWarrantyRegistrations<T>() { return apiRequest<T[]>("/api/v1/
 export function submitFeedback<T>(body: unknown) { return apiRequest<T>("/api/v1/site/support/feedback/", { method: "POST", body }); }
 
 export const getCompanyServer = <T,>() => getServer<T>("/api/v1/company/");
-export const getHeroServer = <T,>(locale = "fa") => getServer<T>(`/api/v1/site/hero/?locale=${locale}`);
+// Homepage banners are edited from Django admin and must reflect those changes
+// immediately, rather than waiting for the generic one-minute content cache.
+export const getHeroServer = <T,>(locale = "fa") => getServer<T>(`/api/v1/site/hero/?locale=${locale}`, { cache: "no-store" });
 export const getAdvantagesServer = <T,>() => getServer<T>("/api/v1/site/advantages/");
 export const getSupplyBrandsServer = <T,>() => getServer<T>("/api/v1/supply-brands/");
 export const getFooterServer = <T,>() => getServer<T>("/api/v1/site/footer/");

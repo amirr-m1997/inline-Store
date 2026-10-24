@@ -68,11 +68,12 @@ describe("Phase 12.2 customer RFQ UI", () => {
     expect(source).toContain("localizedStatus");
   });
 
-  it("exposes RFQ in account navigation but not the crowded primary header", () => {
+  it("exposes RFQ in account navigation and as the primary header quote CTA", () => {
     const account = read("app/[locale]/account/page.tsx");
     const header = read("components/layout/main-header.tsx");
     expect(account).toContain("/${locale}/account/rfq");
     expect(account).toContain("استعلام‌های قیمت");
-    expect(header).not.toContain("/rfq");
+    expect(header).toContain("/${locale}/rfq");
+    expect(header).toContain("استعلام قیمت");
   });
 });

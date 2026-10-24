@@ -60,14 +60,14 @@ test.describe("Phase 11.4C dark-theme contrast", () => {
     await categoryTrigger.hover();
     await expect(categoryTrigger.locator("b")).toHaveCSS("color", "rgb(255, 255, 255)");
     const active = page.locator('.reference-primary-links a[aria-current="page"]');
-    await expect(page.locator('.reference-primary-links a[aria-current="page"]')).toHaveText("دانش و اخبار");
+    await expect(page.locator('.reference-primary-links a[aria-current="page"]')).toHaveText("مقالات");
     await assertContrast(page);
     await page.screenshot({ path: mobile ? "/tmp/phase114c-header-dark-fa-mobile.png" : "/tmp/phase114c-header-dark-fa-desktop.png", fullPage: true });
     if (mobile) return;
 
     await page.goto("/en/knowledge");
     await switchTheme(page, "dark");
-    await expect(page.locator('.reference-primary-links a[aria-current="page"]')).toHaveText("Knowledge & News");
+    await expect(page.locator('.reference-primary-links a[aria-current="page"]')).toHaveText("Articles");
     await assertContrast(page);
     await page.screenshot({ path: "/tmp/phase114c-header-dark-en-desktop.png", fullPage: true });
 

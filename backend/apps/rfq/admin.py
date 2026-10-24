@@ -1,10 +1,34 @@
 from django.contrib import admin
 from django.db.models import Count
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, HttpResponseNotAllowed
+from django.shortcuts import get_object_or_404, redirect
+from django.template.response import TemplateResponse
 from django.urls import path, reverse
+from django.utils import timezone
 
 from .models import RequestForQuotation, RequestForQuotationItem, SalesQuotation, SalesQuotationItem, SalesQuotationResponse
 from .services import generate_quotation_pdf
+
+
+def create_quotation_draft(rfq, user):
+    """Create the commercial draft once, keeping its items as RFQ snapshots."""
+    quotation, created = SalesQuotation.objects.get_or_create(
+        rfq=rfq, defaults={"created_by": user},
+    )
+    if created:
+        SalesQuotationItem.objects.bulk_create([
+            SalesQuotationItem(
+                quotation=quotation,
+                source_rfq_item=item,
+                product=item.product,
+                product_name_snapshot=item.product_name_snapshot,
+                product_code_snapshot=item.product_code_snapshot,
+                quantity=item.requested_quantity,
+                unit_price=0,
+            )
+            for item in rfq.items.select_related("product").all()
+        ])
+    return quotation, created
 
 
 class RequestForQuotationItemInline(admin.TabularInline):
@@ -49,20 +73,68 @@ class RequestForQuotationAdmin(admin.ModelAdmin):
             self.message_user(request, "این عملیات فقط برای یک استعلام در هر بار مجاز است.", level="error")
             return
         rfq = queryset.first()
-        quotation, created = SalesQuotation.objects.get_or_create(rfq=rfq, defaults={"created_by": request.user})
+        quotation, created = create_quotation_draft(rfq, request.user)
         if created:
-            SalesQuotationItem.objects.bulk_create([
-                SalesQuotationItem(
-                    quotation=quotation, source_rfq_item=item, product=item.product,
-                    product_name_snapshot=item.product_name_snapshot, product_code_snapshot=item.product_code_snapshot,
-                    quantity=item.requested_quantity, unit_price=0,
-                ) for item in rfq.items.select_related("product").all()
-            ])
             self.message_user(request, f"پیش‌نویس {quotation.reference} ایجاد شد؛ قیمت‌ها باید توسط کارشناس تکمیل شوند.")
         else:
             self.message_user(request, f"برای این استعلام قبلاً {quotation.reference} ایجاد شده است.", level="warning")
 
     actions = ("create_quotation_draft",)
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom = [
+            path("workbench/", self.admin_site.admin_view(self.workbench_view), name="rfq_sales_workbench"),
+            path("workbench/<int:rfq_id>/create-draft/", self.admin_site.admin_view(self.create_draft_view), name="rfq_create_draft"),
+        ]
+        return custom + urls
+
+    def workbench_view(self, request):
+        now = timezone.now()
+        needs_quote = (
+            RequestForQuotation.objects.filter(
+                status__in=(RequestForQuotation.Status.SUBMITTED, RequestForQuotation.Status.UNDER_REVIEW),
+                quotation__isnull=True,
+            )
+            .select_related("customer")
+            .annotate(item_count_value=Count("items"))
+            .order_by("created_at")[:12]
+        )
+        awaiting_response = (
+            SalesQuotation.objects.filter(
+                status=SalesQuotation.Status.ISSUED,
+                customer_response__isnull=True,
+            )
+            .select_related("rfq", "created_by")
+            .order_by("expires_at", "issued_at")[:12]
+        )
+        context = {
+            **self.admin_site.each_context(request),
+            "title": "میز کار فروش سازمانی",
+            "needs_quote": needs_quote,
+            "awaiting_response": awaiting_response,
+            "kpis": {
+                "new_rfq": RequestForQuotation.objects.filter(status=RequestForQuotation.Status.SUBMITTED).count(),
+                "reviewing_rfq": RequestForQuotation.objects.filter(status=RequestForQuotation.Status.UNDER_REVIEW).count(),
+                "draft_quotation": SalesQuotation.objects.filter(status=SalesQuotation.Status.DRAFT).count(),
+                "awaiting_response": SalesQuotation.objects.filter(status=SalesQuotation.Status.ISSUED, customer_response__isnull=True).count(),
+                "expired_quotation": SalesQuotation.objects.filter(status=SalesQuotation.Status.ISSUED, expires_at__lt=now, customer_response__isnull=True).count(),
+            },
+        }
+        return TemplateResponse(request, "admin/rfq/workbench.html", context)
+
+    def create_draft_view(self, request, rfq_id):
+        if request.method != "POST":
+            return HttpResponseNotAllowed(["POST"])
+        rfq = get_object_or_404(RequestForQuotation, pk=rfq_id)
+        quotation, created = create_quotation_draft(rfq, request.user)
+        level = "success" if created else "warning"
+        message = (
+            f"پیش‌نویس {quotation.reference} ایجاد شد؛ قیمت و تاریخ اعتبار را تکمیل کنید."
+            if created else f"پیش‌نویس {quotation.reference} از قبل وجود داشت."
+        )
+        self.message_user(request, message, level=level)
+        return redirect(reverse("admin:rfq_salesquotation_change", args=(quotation.pk,)))
 
 
 class SalesQuotationItemInline(admin.TabularInline):

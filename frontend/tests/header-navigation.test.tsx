@@ -16,7 +16,7 @@ describe("header navigation controls", () => {
 
   it("exposes a labeled search and clear control without changing submit behavior", () => {
     render(<SearchBar />);
-    const input = screen.getAllByRole("textbox", { name: /جست‌وجوی محصولات/ }).at(-1)!;
+    const input = screen.getAllByRole("combobox", { name: /جست‌وجوی محصولات/ }).at(-1)!;
     fireEvent.change(input, { target: { value: "bearing" } });
     expect(screen.getByRole("button", { name: "پاک کردن جست‌وجو" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "جست‌وجو" }));
@@ -29,7 +29,7 @@ describe("header navigation controls", () => {
 
   it("keeps long RTL/LTR queries inside a reserved control contract", () => {
     render(<SearchBar />);
-    const input = screen.getAllByRole("textbox", { name: /جست‌وجوی محصولات/ }).at(-1)!;
+    const input = screen.getAllByRole("combobox", { name: /جست‌وجوی محصولات/ }).at(-1)!;
     fireEvent.change(input, { target: { value: "[DEMO] تجهیزات فنی برای انتخاب و نگهداری سامانه صنعتی" } });
     expect(input).toHaveAttribute("dir", "ltr");
     expect(input).toHaveClass("reference-search-input");

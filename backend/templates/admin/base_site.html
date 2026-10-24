@@ -5,6 +5,8 @@
 
 {% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/theme.css' %}">{% endblock %}
 
+{% block extrahead %}{{ block.super }}<script src="{% static 'admin/changelist-responsive.js' %}" defer></script>{% endblock %}
+
 {% block branding %}
 <div class="mehrasl-brand">
   <a class="mehrasl-brand__mark" href="{% url 'admin:index' %}" aria-hidden="true" tabindex="-1">م</a>

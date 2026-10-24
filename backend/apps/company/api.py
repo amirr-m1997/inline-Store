@@ -11,7 +11,7 @@ class HeroSerializer(serializers.ModelSerializer):
     slogan = serializers.CharField(source="hero_slogan_fa")
     description = serializers.CharField(source="hero_description_fa")
     hero_image = serializers.SerializerMethodField()
-    mobile_hero_image = serializers.SerializerMethodField()
+    contractors_image = serializers.SerializerMethodField()
     buttons = serializers.SerializerMethodField()
     banners = serializers.SerializerMethodField()
     featured_promotion = serializers.SerializerMethodField()
@@ -20,16 +20,24 @@ class HeroSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CompanyInfo
-        fields = ("title", "slogan", "description", "hero_image", "mobile_hero_image", "buttons", "banners", "featured_promotion", "home_promotions", "category_spotlights")
+        fields = ("title", "slogan", "description", "hero_image", "contractors_image", "buttons", "banners", "featured_promotion", "home_promotions", "category_spotlights")
 
     def image_url(self, value):
-        return value.url if value else None
+        if not value:
+            return None
+        # A stale FileField must not be returned to Next/Image: it would turn
+        # a valid desktop banner into a broken mobile slide.  Callers already
+        # fall back to the desktop image when the optional mobile image is None.
+        try:
+            return value.url if value.storage.exists(value.name) else None
+        except (OSError, ValueError):
+            return None
 
     def get_hero_image(self, obj):
         return self.image_url(obj.hero_image)
 
-    def get_mobile_hero_image(self, obj):
-        return self.image_url(obj.mobile_hero_image)
+    def get_contractors_image(self, obj):
+        return self.image_url(obj.contractors_image)
 
     def get_buttons(self, obj):
         pairs = ((obj.primary_button_text, obj.primary_button_link, "primary"), (obj.secondary_button_text, obj.secondary_button_link, "secondary"))

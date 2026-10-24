@@ -4,7 +4,7 @@ import AxeBuilder from "@axe-core/playwright";
 test("Phase 11.5 public editorial surfaces remain reviewable", async ({ page }) => {
   test.skip(test.info().project.name !== "chromium", "Phase 11.5 screenshot baseline is captured once in desktop Chromium.");
   for (const [path, screenshot, heading] of [
-    ["/fa/knowledge", "/tmp/phase115-knowledge-fa.png", "دانش و اخبار"],
+    ["/fa/knowledge", "/tmp/phase115-knowledge-fa.png", "مقالات"],
     ["/fa/news", "/tmp/phase115-news-fa.png", "اخبار و رویدادها"],
     ["/fa/faq", "/tmp/phase115-faq-fa.png", "سوالات متداول"],
     ["/fa/search?q=فنی", "/tmp/phase115-search-content-fa.png", "نتایج برای «فنی»"],

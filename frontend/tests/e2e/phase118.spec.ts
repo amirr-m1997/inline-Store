@@ -13,7 +13,7 @@ function screenshot(testInfo: { project: { name: string } }, desktop: string, mo
 test.describe("Phase 11.8 final content platform QA", () => {
   test("Knowledge route is localized, database-backed, and accessible", async ({ page }, testInfo) => {
     await page.goto("/fa/knowledge");
-    await expect(page.getByRole("heading", { level: 1, name: "دانش و اخبار" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "مقالات" })).toBeVisible();
     await expect(page.locator(".editorial-card").first()).toBeVisible();
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
     await assertClean(page);
@@ -65,7 +65,7 @@ test.describe("Phase 11.8 final content platform QA", () => {
     await page.screenshot({ path: screenshot(testInfo, "/tmp/phase118-events-fa-desktop.png", "/tmp/phase118-events-fa-mobile.png"), fullPage: true });
     await page.goto("/en/knowledge");
     await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
-    await expect(page.getByRole("heading", { level: 1, name: "Knowledge & News" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Articles" })).toBeVisible();
   });
 
   test("dark theme keeps Phase 11 surfaces readable", async ({ page }) => {

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Capability, CompanyAdvantage, CompanyBanner, CompanyCertification, CompanyHonor, CompanyInfo, CompanyLocation, CompanyMilestone, CompanyPromotion, CompanySection, HomepageCategorySpotlight, Industry
+from .models import Capability, CompanyAdvantage, CompanyBanner, CompanyCertification, CompanyHonor, CompanyInfo, CompanyLocation, CompanyMilestone, CompanyPromotion, CompanySection, CompanySocialLink, HomepageCategorySpotlight, Industry
 from .review import review_record
 
 
@@ -14,6 +14,12 @@ class CompanyPromotionInline(admin.StackedInline):
     model = CompanyPromotion
     extra = 0
     fields = ("placement", "promotion_type", "title_fa", "title_en", "description_fa", "description_en", "discount_percentage", "image", "button_text_fa", "button_text_en", "button_url", "order", "is_active")
+
+
+class CompanySocialLinkInline(admin.StackedInline):
+    model = CompanySocialLink
+    extra = 0
+    fields = ("platform", "url", "order", "is_active")
 
 
 class HomepageCategorySpotlightInline(admin.StackedInline):
@@ -77,12 +83,21 @@ class CompanyInfoAdmin(admin.ModelAdmin):
     fieldsets = (
         ("اطلاعات شرکت", {"fields": ("name_fa", "logo", "description", "address", "phone", "mobile", "email", "website", "working_hours")} ),
         ("تنظیمات فوتر", {"fields": ("footer_copyright_fa", "footer_copyright_en")} ),
-        ("تنظیمات هیرو", {"fields": ("hero_is_active", "hero_title_fa", "hero_title_en", "hero_slogan_fa", "hero_slogan_en", "hero_description_fa", "hero_description_en", "hero_image", "mobile_hero_image", "primary_button_text", "primary_button_link", "secondary_button_text", "secondary_button_link")} ),
+        ("تنظیمات هیرو", {"fields": ("hero_is_active", "hero_title_fa", "hero_title_en", "hero_slogan_fa", "hero_slogan_en", "hero_description_fa", "hero_description_en", "hero_image", "primary_button_text", "primary_button_link", "secondary_button_text", "secondary_button_link")} ),
+        ("تصویر ویژه پیمانکاران (صفحه اصلی)", {"fields": ("contractors_image",)} ),
     )
-    inlines = (CompanyBannerInline, CompanyPromotionInline, HomepageCategorySpotlightInline)
+    inlines = (CompanyBannerInline, CompanyPromotionInline, HomepageCategorySpotlightInline, CompanySocialLinkInline)
 
     def has_add_permission(self, request):
         return not CompanyInfo.objects.exists()
+
+
+@admin.register(CompanySocialLink)
+class CompanySocialLinkAdmin(admin.ModelAdmin):
+    list_display = ("__str__", "company_info", "platform", "order", "is_active")
+    list_filter = ("platform", "is_active", "company_info")
+    list_editable = ("order", "is_active")
+    search_fields = ("url",)
 
 
 @admin.register(CompanyBanner)

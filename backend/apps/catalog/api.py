@@ -13,7 +13,7 @@ from .models import Category, CategorySlugRedirect, Product, ProductBrand, Produ
 from .serializers import CatalogProductSerializer, CategoryNavigationSerializer, CategorySerializer, ProductBrandSerializer, ProductDetailSerializer, ProductDocumentResourceSerializer, ProductSummarySerializer, SupplyBrandSerializer
 from .services import CatalogQueryService
 from .cursor import apply_keyset, decode_cursor, encode_cursor
-from apps.pricing.models import ProductPrice
+from apps.pricing.models import CustomerPriceListItem, ProductPrice
 
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -26,7 +26,7 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=("get",), pagination_class=None)
     def roots(self, request):
-        cache_key = "category_roots_v1"
+        cache_key = "category_roots_v2"
         data = cache.get(cache_key)
         if data is None:
             roots = Category.objects.filter(is_active=True, parent=None).order_by("code")
@@ -104,6 +104,19 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             Case(When(is_primary=True, then=Value(0)), default=Value(1), output_field=IntegerField()), "sort_order", "id",
         )
         queryset = Product.objects.filter(is_active=True).select_related("category", "inventory", "brand")
+        contract_item = None
+        if self.request.user.is_authenticated:
+            contract_item = (
+                CustomerPriceListItem.objects.filter(
+                    product_id=OuterRef("pk"),
+                    minimum_quantity__lte=1,
+                    price_list__customer=self.request.user,
+                    price_list__is_active=True,
+                    price_list__valid_from__lte=now,
+                )
+                .filter(Q(price_list__valid_until__isnull=True) | Q(price_list__valid_until__gte=now))
+                .order_by("-price_list__priority", "-minimum_quantity", "-id")
+            )
         queryset = queryset.annotate(
             on_hand_quantity=F("inventory__on_hand_quantity"),
             reserved_quantity=F("inventory__reserved_quantity"),
@@ -118,6 +131,25 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             catalog_image_is_primary=Subquery(primary_image.values("is_primary")[:1]),
             catalog_image_sort_order=Subquery(primary_image.values("sort_order")[:1]),
         )
+        if contract_item is not None:
+            queryset = queryset.annotate(
+                catalog_contract_fixed_amount=Subquery(
+                    contract_item.values("fixed_amount")[:1],
+                    output_field=DecimalField(max_digits=18, decimal_places=2),
+                ),
+                catalog_contract_discount=Subquery(
+                    contract_item.values("discount_percentage")[:1],
+                    output_field=DecimalField(max_digits=5, decimal_places=2),
+                ),
+                catalog_contract_name=Subquery(
+                    contract_item.values("price_list__name")[:1],
+                    output_field=CharField(),
+                ),
+                catalog_contract_currency=Subquery(
+                    contract_item.values("price_list__currency")[:1],
+                    output_field=CharField(),
+                ),
+            )
         queryset = queryset.annotate(
             catalog_price_sort=Coalesce(F("catalog_price_amount"), Value(0), output_field=DecimalField(max_digits=18, decimal_places=2)),
             catalog_availability_sort=ExpressionWrapper(

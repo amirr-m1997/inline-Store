@@ -1,0 +1,41 @@
+{% extends "admin/base_site.html" %}
+{% load humanize static %}
+
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/management-reports.css' %}?v=1">{% endblock %}
+
+{% block content %}
+<main class="management-reports" dir="rtl">
+  <header class="management-reports__hero">
+    <div><span>تحلیل مبتنی بر داده‌های واقعی سفارش و انبار</span><h1>گزارش‌های مدیریتی</h1><p>فروش کالا، سود ناخالص، عملکرد برند و دسته، مشتریان و موجودی راکد.</p></div>
+    <a class="btn-export" href="/admin/reports/management/export.xlsx?{{ request.GET.urlencode }}">خروجی Excel</a>
+  </header>
+
+  <form method="get" class="report-filter">
+    <label>از تاریخ <input type="date" name="start" value="{{ report.start|date:'Y-m-d' }}"></label>
+    <label>تا تاریخ <input type="date" name="end" value="{{ report.end|date:'Y-m-d' }}"></label>
+    <label>رکود پس از <select name="stale_days">{% for days in stale_day_options %}<option value="{{ days }}" {% if report.stale_days == days %}selected{% endif %}>{{ days }} روز</option>{% endfor %}</select></label>
+    <button type="submit">به‌روزرسانی گزارش</button>
+  </form>
+
+  <section class="report-kpis">
+    <article><span>فروش کالا</span><b>{{ report.summary.revenue|intcomma }}</b><small>ریال در {{ report.summary.orders|intcomma }} سفارش</small></article>
+    <article><span>سود ناخالص</span><b>{{ report.summary.profit|intcomma }}</b><small>حاشیه سود {{ report.summary.margin|floatformat:1 }}٪</small></article>
+    <article><span>پوشش بهای خرید</span><b>{{ report.summary.cost_coverage|floatformat:1 }}٪</b><small>{{ report.summary.uncosted_revenue|intcomma }} ریال بدون بهای ثبت‌شده</small></article>
+    <article><span>کالاهای راکد</span><b>{{ report.stagnant_count|intcomma }}</b><small>بدون فروش در {{ report.stale_days }} روز اخیر</small></article>
+  </section>
+
+  {% if report.summary.estimated_cost_revenue %}<div class="report-notice">بخشی از بهای خرید سفارش‌های قدیمی با آخرین رسید انبار تا پایان بازه برآورد شده است. بهای خرید سفارش‌های جدید در همان لحظه خرید ذخیره می‌شود.</div>{% endif %}
+
+  <section class="report-grid">
+    {% for title, rows in report_tables %}
+      <article class="report-card"><header><h2>{{ title }}</h2><span>{{ rows|length|intcomma }} ردیف</span></header>
+        <div class="report-table"><table><thead><tr><th>عنوان</th><th>سفارش</th><th>تعداد</th><th>فروش</th><th>سود</th><th>حاشیه</th></tr></thead><tbody>
+          {% for row in rows|slice:':10' %}<tr><td>{{ row.name }}</td><td>{{ row.orders|intcomma }}</td><td>{{ row.units|intcomma }}</td><td>{{ row.revenue|intcomma }}</td><td>{{ row.profit|intcomma }}</td><td>{{ row.margin|floatformat:1 }}٪</td></tr>{% empty %}<tr><td colspan="6">داده‌ای در بازه انتخاب‌شده وجود ندارد.</td></tr>{% endfor %}
+        </tbody></table></div>
+      </article>
+    {% endfor %}
+  </section>
+
+  <section class="report-card report-card--wide"><header><h2>کالاهای راکد</h2><span>بدون فروش در {{ report.stale_days }} روز اخیر</span></header><div class="report-table"><table><thead><tr><th>کد</th><th>محصول</th><th>برند</th><th>دسته</th><th>آخرین فروش</th><th>موجودی قابل فروش</th></tr></thead><tbody>{% for item in report.stagnant|slice:':30' %}<tr><td>{{ item.code }}</td><td>{{ item.name }}</td><td>{{ item.brand }}</td><td>{{ item.category }}</td><td>{% if item.last_sale %}{{ item.last_sale|date:'Y/m/d' }}{% else %}بدون فروش{% endif %}</td><td>{{ item.available|default:'—' }}</td></tr>{% empty %}<tr><td colspan="6">کالای راکدی با معیار فعلی پیدا نشد.</td></tr>{% endfor %}</tbody></table></div></section>
+</main>
+{% endblock %}

@@ -1,0 +1,9 @@
+arabic_reshaper==3.0.0
+bleach==6.2.0
+Django==4.2.7
+django_ckeditor==6.7.3
+djangorestframework==3.14.0
+protobuf==7.36.2
+python-dotenv==1.2.4
+reportlab==4.4.6
+openpyxl==3.1.5

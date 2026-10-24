@@ -37,11 +37,11 @@ if not DEBUG and PAYMENTS_MOCK_ENABLED:
     raise ImproperlyConfigured("PAYMENTS_MOCK_ENABLED must not be enabled when DEBUG is disabled.")
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes", "django.contrib.sessions",
-    "django.contrib.messages", "django.contrib.staticfiles", "corsheaders", "rest_framework", "rest_framework.authtoken",
+    "django.contrib.messages", "django.contrib.staticfiles", "django.contrib.humanize", "corsheaders", "rest_framework", "rest_framework.authtoken",
     "ckeditor",
     "apps.accounts", "apps.catalog", "apps.inventory", "apps.pricing", "apps.carts", "apps.orders", "apps.dashboard", "apps.company", "apps.website", "apps.content", "apps.search", "apps.rfq", "apps.common", "apps.notifications",
 ]
-MIDDLEWARE = ["corsheaders.middleware.CorsMiddleware", "django.middleware.security.SecurityMiddleware", "config.csrf.CookieAuthOriginCheckMiddleware", "django.contrib.sessions.middleware.SessionMiddleware", "django.middleware.common.CommonMiddleware", "django.middleware.csrf.CsrfViewMiddleware", "django.contrib.auth.middleware.AuthenticationMiddleware", "django.contrib.messages.middleware.MessageMiddleware", "django.middleware.clickjacking.XFrameOptionsMiddleware"]
+MIDDLEWARE = ["corsheaders.middleware.CorsMiddleware", "django.middleware.security.SecurityMiddleware", "config.csrf.CookieAuthOriginCheckMiddleware", "django.contrib.sessions.middleware.SessionMiddleware", "django.middleware.common.CommonMiddleware", "apps.common.middleware.PersianDisplayMiddleware", "django.middleware.csrf.CsrfViewMiddleware", "django.contrib.auth.middleware.AuthenticationMiddleware", "apps.common.middleware.AuditContextMiddleware", "django.contrib.messages.middleware.MessageMiddleware", "django.middleware.clickjacking.XFrameOptionsMiddleware"]
 ROOT_URLCONF = "config.urls"
 # Project-level template directory: holds the branded Django admin overrides
 # (templates/admin/*) so admin theming never has to live inside a business app.

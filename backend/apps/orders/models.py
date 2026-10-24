@@ -98,6 +98,14 @@ class OrderItem(models.Model):
     product_code = models.CharField("کد محصول در زمان خرید", max_length=64)
     unit = models.CharField("واحد در زمان خرید", max_length=64, blank=True)
     unit_price = models.DecimalField("قیمت واحد در زمان خرید", max_digits=18, decimal_places=2)
+    unit_cost = models.DecimalField(
+        "بهای خرید واحد در زمان ثبت سفارش",
+        max_digits=18,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="برای محاسبه سود واقعی در گزارش‌های مدیریتی ذخیره می‌شود.",
+    )
     quantity = models.PositiveIntegerField("تعداد", validators=[MinValueValidator(1)])
     discount_percentage = models.DecimalField("درصد تخفیف قلم", max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
     discount_amount = models.DecimalField("مبلغ تخفیف قلم", max_digits=18, decimal_places=2, default=0)

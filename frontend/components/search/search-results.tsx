@@ -27,7 +27,7 @@ export function SearchBrandGroup({ brands, locale }: { brands: SiteSearchBrand[]
 
 export function SearchEditorialGroup({ articles, locale }: { articles: EditorialArticle[]; locale: string }) {
   if (!articles.length) return null;
-  return <section id="search-editorial" className="site-search-group" aria-labelledby="search-editorial-title"><header><h2 id="search-editorial-title">{locale === "en" ? "Knowledge & News" : "دانش و اخبار"}</h2></header><div className="site-search-editorial-grid">{articles.map((article) => <EditorialCard key={article.id} article={article} locale={locale} variant="compact" />)}</div></section>;
+  return <section id="search-editorial" className="site-search-group" aria-labelledby="search-editorial-title"><header><h2 id="search-editorial-title">{locale === "en" ? "Articles" : "مقالات"}</h2></header><div className="site-search-editorial-grid">{articles.map((article) => <EditorialCard key={article.id} article={article} locale={locale} variant="compact" />)}</div></section>;
 }
 
 export function SearchFAQGroup({ faqs, locale }: { faqs: FAQEntry[]; locale: string }) {
@@ -37,7 +37,7 @@ export function SearchFAQGroup({ faqs, locale }: { faqs: FAQEntry[]; locale: str
 
 type SearchGroups = { products: SiteSearchProduct[]; categories: SiteSearchCategory[]; brands: SiteSearchBrand[]; articles: EditorialArticle[]; faqs: FAQEntry[] };
 export function SearchGroupSummary({ groups, locale }: { groups: SearchGroups; locale: string }) {
-  const labels = locale === "en" ? { products: "Products", categories: "Categories", brands: "Brands", articles: "Knowledge & News", faqs: "FAQs" } : { products: "محصولات", categories: "دسته‌بندی‌ها", brands: "برندها", articles: "دانش و اخبار", faqs: "سوالات متداول" };
+  const labels = locale === "en" ? { products: "Products", categories: "Categories", brands: "Brands", articles: "Articles", faqs: "FAQs" } : { products: "محصولات", categories: "دسته‌بندی‌ها", brands: "برندها", articles: "مقالات", faqs: "سوالات متداول" };
   const entries = (Object.keys(labels) as Array<keyof SearchGroups>).filter((key) => groups[key].length > 0);
   if (entries.length < 2) return null;
   return <nav className="site-search-group-summary" aria-label={locale === "en" ? "Search result groups" : "گروه‌های نتایج جست‌وجو"}>{entries.map((key) => <a key={key} href={`#search-${key}`}><span>{labels[key]}</span><b>{formatNumber(groups[key].length)}</b></a>)}</nav>;

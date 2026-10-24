@@ -29,11 +29,30 @@ def _candidates(weight):
     return paths
 
 
+def _latin_candidates():
+    configured = os.environ.get("MEHRASL_LATIN_FONT_PATH", "").strip()
+    paths = []
+    if configured:
+        candidate = Path(configured)
+        paths.append(candidate / "DejaVuSans.ttf" if candidate.is_dir() else candidate)
+    base = Path(__file__).resolve().parents[2]
+    # The bundled asset keeps Latin business documents identical on every host;
+    # the system paths are fallbacks for deployments that ship their own font.
+    paths.extend([
+        base / "assets" / "fonts" / "latin" / "DejaVuSans.ttf",
+        base / "static" / "fonts" / "latin" / "DejaVuSans.ttf",
+        Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
+        Path("/usr/local/share/fonts/DejaVuSans.ttf"),
+        Path("/Library/Fonts/DejaVuSans.ttf"),
+    ])
+    return paths
+
+
 def document_font_paths():
     vazir = {weight: next((path for path in _candidates(weight) if path.is_file()), None) for weight in ("regular", "medium", "bold")}
-    latin = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
+    latin = next((path for path in _latin_candidates() if path.is_file()), None)
     fallback = Path("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf")
-    return {"vazir": vazir, "latin": latin if latin.is_file() else None, "fallback": fallback if fallback.is_file() else latin}
+    return {"vazir": vazir, "latin": latin, "fallback": fallback if fallback.is_file() else (latin or Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"))}
 
 
 def typography_status():

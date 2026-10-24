@@ -1,13 +1,20 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+// English storefront is temporarily disabled: every entry point lands on
+// Persian. Re-enable by restoring the accept-language negotiation.
 export function proxy(request: NextRequest) {
-  const cookieLocale = request.cookies.get("NEXT_LOCALE")?.value;
-  const accepted = request.headers.get("accept-language") || "";
-  const prefersEn = /en/i.test(cookieLocale || "") || (/en/i.test(accepted) && !/fa/i.test(accepted.split(",")[0] || ""));
-  return NextResponse.redirect(new URL(prefersEn ? "/en" : "/fa", request.url));
+  const pathname = request.nextUrl.pathname;
+  if (pathname === "/en" || pathname.startsWith("/en/")) {
+    const faPath = pathname.replace(/^\/en(?=\/|$)/, "/fa");
+    return NextResponse.redirect(new URL(faPath + request.nextUrl.search, request.url));
+  }
+  if (pathname === "/") {
+    return NextResponse.redirect(new URL("/fa", request.url));
+  }
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: "/",
+  matcher: ["/", "/en", "/en/:path*"],
 };

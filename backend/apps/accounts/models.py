@@ -38,6 +38,11 @@ class User(AbstractUser):
     updated_at = models.DateTimeField(auto_now=True)
     REQUIRED_FIELDS = []
 
+    class Meta:
+        permissions = (
+            ("view_management_reports", "Can view management reports"),
+        )
+
     def save(self, *args, **kwargs):
         self.email = self.email.strip().lower() if self.email else None
         self.phone = normalize_iranian_phone(self.phone) if self.phone else None

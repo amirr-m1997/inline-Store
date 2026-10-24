@@ -981,6 +981,155 @@ body.login .password-reset-link a:visited {
   body.login #container {
     margin: 32px auto;
   }
+
+  /* Changelist: ستون‌های عریض زیر هم می‌آیند (کارت)، به‌جای برش افقی.
+     برچسب هر سلول از data-label می‌آید (changelist-responsive.js). */
+  #changelist .results {
+    overflow: visible;
+  }
+
+  #result_list {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  #result_list thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  #result_list,
+  #result_list tbody {
+    display: block;
+  }
+
+  #result_list tr {
+    display: block;
+    margin-bottom: 12px;
+    border: 1px solid var(--mehrasl-border);
+    border-radius: var(--mehrasl-radius);
+    background: var(--mehrasl-surface);
+    box-shadow: var(--mehrasl-shadow);
+  }
+
+  #result_list tr:last-child {
+    margin-bottom: 0;
+  }
+
+  #result_list td,
+  #result_list th {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--hairline-color);
+    text-align: start;
+  }
+
+  #result_list td:last-child,
+  #result_list th:last-child {
+    border-bottom: 0;
+  }
+
+  #result_list td::before,
+  #result_list th::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    max-width: 42%;
+    color: var(--mehrasl-text-secondary);
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  #result_list td.action-checkbox,
+  #result_list th.action-checkbox {
+    justify-content: flex-start;
+  }
+
+  #result_list td.action-checkbox::before,
+  #result_list th.action-checkbox::before {
+    content: none;
+  }
+
+  /* جدول‌های داخل فرم ویرایش (اینلاین‌ها): ستون‌ها زیر هم می‌آیند.
+     برچسب هر سلول از data-label می‌آید (changelist-responsive.js). */
+  .inline-group table,
+  .inline-group tbody {
+    display: block;
+    min-width: 0;
+  }
+
+  .inline-group thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .inline-group tr {
+    display: block;
+    margin-bottom: 12px;
+    border: 1px solid var(--mehrasl-border);
+    border-radius: var(--mehrasl-radius);
+    background: var(--mehrasl-surface);
+  }
+
+  .inline-group tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .inline-group tr.add-row {
+    border-style: dashed;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .inline-group td,
+  .inline-group th {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--hairline-color);
+    text-align: start;
+  }
+
+  .inline-group td:last-child,
+  .inline-group th:last-child {
+    border-bottom: 0;
+  }
+
+  .inline-group td::before,
+  .inline-group th::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    max-width: 42%;
+    color: var(--mehrasl-text-secondary);
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .inline-group td input[type="text"],
+  .inline-group td input[type="number"],
+  .inline-group td input[type="url"],
+  .inline-group td input[type="email"],
+  .inline-group td select,
+  .inline-group td textarea,
+  .inline-group td .vTextField,
+  .inline-group td .vURLField {
+    width: 100%;
+    min-width: 0;
+  }
 }
 
 /* Users who ask for less motion get an instantly-theming panel. */

@@ -28,7 +28,7 @@ export default async function LocaleNotFound({ params }: { params: Promise<{ loc
     { href: `/${locale}`, label: "صفحه اصلی", primary: true },
     { href: `/${locale}/shop`, label: "همه محصولات", primary: false },
     { href: `/${locale}/categories`, label: "دسته‌بندی‌ها", primary: false },
-    { href: `/${locale}/rfq`, label: "درخواست پیش‌فاکتور", primary: false },
+    { href: `/${locale}/rfq`, label: "درخواست استعلام قیمت", primary: false },
     { href: `/${locale}/contact`, label: "تماس با ما", primary: false },
   ];
   return <main className="site-container not-found-page">

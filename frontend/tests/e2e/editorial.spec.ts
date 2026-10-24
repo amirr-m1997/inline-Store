@@ -10,7 +10,7 @@ async function assertEditorialA11y(page: Page) {
 test.describe("Knowledge & News editorial center", () => {
   test("Persian Knowledge landing renders CMS content and is shareable", async ({ page }) => {
     await page.goto("/fa/knowledge");
-    await expect(page.getByRole("heading", { level: 1, name: "دانش و اخبار" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "مقالات" })).toBeVisible();
     await expect(page.getByText("[DEMO] مقاله فنی نمونه").first()).toBeVisible();
     await expect(page.getByRole("link", { name: "مقالات فنی" })).toHaveAttribute("href", "/fa/knowledge?type=technical_article");
     await page.screenshot({ path: "/tmp/phase112-knowledge-fa-desktop.png", fullPage: true });
@@ -39,7 +39,7 @@ test.describe("Knowledge & News editorial center", () => {
   test("English Knowledge and article routes render in LTR", async ({ page }) => {
     await page.goto("/en/knowledge");
     await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
-    await expect(page.getByRole("heading", { level: 1, name: "Knowledge & News" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Articles" })).toBeVisible();
     await page.screenshot({ path: "/tmp/phase112-knowledge-en-desktop.png", fullPage: true });
     await page.goto("/en/knowledge/demo-technical-article");
     await expect(page.getByRole("heading", { level: 1, name: /Technical article example/ })).toBeVisible();
@@ -49,7 +49,7 @@ test.describe("Knowledge & News editorial center", () => {
 
   test("mobile editorial routes have no horizontal overflow", async ({ page }) => {
     await page.goto("/fa/knowledge");
-    await expect(page.getByRole("heading", { level: 1, name: "دانش و اخبار" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "مقالات" })).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
     expect(overflow).toBe(false);
     await page.screenshot({ path: "/tmp/phase112-knowledge-fa-mobile.png", fullPage: true });
