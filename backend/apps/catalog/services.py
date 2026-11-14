@@ -139,6 +139,15 @@ class CatalogQueryService:
             elif values:
                 queryset = self._apply_attribute_filter(queryset, attribute, values)
                 self.applied["attributes"][code] = values
+        for param_key, param_val in self.params.items():
+            if param_key.startswith("attr_spec_") and param_val:
+                vals = self._csv(param_key)
+                if vals:
+                    spec_q = Q()
+                    for v in vals:
+                        spec_q |= Q(technical_specs__icontains=v)
+                    queryset = queryset.filter(spec_q)
+                    self.applied["attributes"][param_key.replace("attr_", "")] = vals
         requested = self.params.get("sort") or self.params.get("ordering", "code")
         aliases = {"newest": "-created_at", "oldest": "created_at", "price": "catalog_price_sort", "price_low": "catalog_price_sort", "price_high": "-catalog_price_sort", "availability": "-catalog_availability_sort", "discount": "-discount_percentage", "discount_high": "-discount_percentage", "discount_low": "discount_percentage", "popular": "-catalog_availability_sort", "code": "code", "name": "name"}
         requested = aliases.get(requested, requested)
@@ -183,6 +192,36 @@ class CatalogQueryService:
         category_options = [{"value": str(row.id), "label": row.name_fa, "count": row.count, "selected": self.category is not None and row.id == self.category.id} for row in category_qs if row.count]
         if category_options:
             facets.append({"name": "category", "label": "دسته‌بندی", "type": "hierarchical_category", "options": category_options})
+        # Dynamic technical faceting from technical_specs JSON field
+        spec_samples = list(queryset.exclude(technical_specs__isnull=True).exclude(technical_specs={}).values_list("technical_specs", flat=True)[:100])
+        if spec_samples:
+            from collections import Counter
+            spec_counters = {}
+            for specs in spec_samples:
+                if isinstance(specs, dict):
+                    for k, v in specs.items():
+                        if k and v and str(v).strip():
+                            spec_counters.setdefault(str(k).strip(), Counter())[str(v).strip()] += 1
+                elif isinstance(specs, list):
+                    for item in specs:
+                        if isinstance(item, dict):
+                            label = item.get("label") or item.get("name") or item.get("key")
+                            val = item.get("value")
+                            if label and val and str(val).strip():
+                                spec_counters.setdefault(str(label).strip(), Counter())[str(val).strip()] += 1
+            existing_names = {f.get("name") for f in facets}
+            for spec_key, val_counts in spec_counters.items():
+                if 2 <= len(val_counts) <= 15:
+                    slug_key = f"spec_{spec_key.replace(' ', '_')}"
+                    if slug_key not in existing_names:
+                        selected_vals = self.applied.get("attributes", {}).get(slug_key, [])
+                        options = [{"value": val, "label": val, "count": count, "selected": val in selected_vals} for val, count in val_counts.most_common(10)]
+                        facets.append({
+                            "name": slug_key,
+                            "label": spec_key,
+                            "type": "checkbox",
+                            "options": options,
+                        })
         return facets
 
     def result(self):

@@ -114,3 +114,79 @@ def quotation_pdf(request, reference):
     locale = request.query_params.get("locale", "fa") if request.query_params.get("locale") in ("fa", "en") else "fa"
     pdf = generate_quotation_pdf(quotation, locale=locale)
     return FileResponse(__import__("io").BytesIO(pdf), as_attachment=True, filename=f"quotation-{quotation.reference}.pdf", content_type="application/pdf")
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def quotation_convert_to_order(request, reference):
+    quotation = SalesQuotation.objects.filter(reference=reference, rfq__customer=request.user, status=SalesQuotation.Status.ISSUED).select_related("rfq").prefetch_related("items__product").first()
+    if not quotation:
+        return Response({"detail": "پیشنهاد قیمت یافت نشد یا منقضی شده است."}, status=404)
+    if quotation.expires_at and quotation.expires_at < timezone.now():
+        return Response({"detail": "مهلت اعتبار این پیشنهاد قیمت به پایان رسیده است."}, status=409)
+
+    from decimal import Decimal
+    from django.db import transaction
+    from apps.orders.models import Order, OrderItem, Payment
+    import secrets
+
+    with transaction.atomic():
+        order_number = f"ORD-RFQ-{timezone.now().strftime('%Y%m%d')}-{secrets.randbelow(1000000):06d}"
+        subtotal = sum(item.line_total for item in quotation.items.all())
+        discount_amount = Decimal("0")
+        shipping_cost = Decimal("0")
+        final_amount = subtotal
+
+        order = Order.objects.create(
+            order_number=order_number,
+            customer=request.user,
+            status=Order.Status.PENDING_PAYMENT,
+            subtotal=subtotal,
+            discount_amount=discount_amount,
+            shipping_cost=shipping_cost,
+            final_amount=final_amount,
+            customer_first_name=request.user.first_name or quotation.rfq.contact_name,
+            customer_last_name=request.user.last_name or "",
+            customer_email=request.user.email or quotation.rfq.email,
+            customer_phone=request.user.phone or quotation.rfq.phone,
+            customer_company_name=quotation.rfq.company_name or getattr(request.user, "company_name", ""),
+            customer_national_id=getattr(request.user, "national_id", ""),
+            shipping_province=getattr(request.user, "province", ""),
+            shipping_city=getattr(request.user, "city", ""),
+            shipping_postal_code=getattr(request.user, "postal_code", ""),
+            shipping_address=getattr(request.user, "address", ""),
+        )
+
+        for q_item in quotation.items.all():
+            OrderItem.objects.create(
+                order=order,
+                product=q_item.product,
+                product_name=q_item.product_name_snapshot,
+                product_code=q_item.product_code_snapshot,
+                unit=q_item.product.unit if q_item.product else "عدد",
+                unit_price=q_item.unit_price,
+                quantity=q_item.quantity,
+                discount_amount=Decimal("0"),
+                line_subtotal=q_item.line_total,
+                line_total=q_item.line_total,
+            )
+
+        payment = Payment.objects.create(
+            order=order,
+            gateway="mock_zarinpal",
+            amount=order.final_amount,
+            status=Payment.Status.PENDING,
+        )
+
+        try:
+            record_customer_response(reference=reference, customer=request.user, decision="accept", note="تبدیل سیستمی پیشنهاد قیمت به سفارش قطعی")
+        except Exception:
+            pass
+
+    return Response({
+        "detail": "پیشنهاد قیمت با موفقیت به سفارش قطعی تبدیل شد.",
+        "order_id": order.id,
+        "order_number": order.order_number,
+        "payment_id": payment.id,
+        "payment_url": f"/payment/{payment.id}",
+    }, status=201)

@@ -58,7 +58,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 class CustomerAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerAddress
-        fields = ("id", "title", "recipient_name", "recipient_phone", "province", "city", "postal_code", "address", "is_default")
+        fields = ("id", "title", "project_name", "recipient_name", "recipient_phone", "province", "city", "postal_code", "address", "is_default")
         read_only_fields = ("id",)
 
     def validate_recipient_phone(self, value):

@@ -14,6 +14,17 @@ from apps.company.models import CompanyAdvantage
 from .models import Category, Product, ProductBrand, ProductDocument, ProductImage, SupplyBrand
 
 
+def persian_product_slug(product):
+    name = (getattr(product, "name", None) or "").strip()
+    if not name:
+        return getattr(product, "slug", "") or f"catalog-{getattr(product, 'code', '')}"
+    import re
+    cleaned = re.sub(r"[^\w\u0600-\u06FF\d\s-]+", "-", name)
+    cleaned = re.sub(r"[\s_]+", "-", cleaned)
+    cleaned = re.sub(r"-+", "-", cleaned).strip("-")
+    return cleaned or getattr(product, "slug", "")
+
+
 def rich_text_to_html(value):
     """Sanitize admin-authored rich text into a safe HTML fragment for public rendering."""
     if not value:
@@ -155,6 +166,13 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = ("id", "code", "name", "name_fa", "name_en", "slug", "category", "category_tree", "unit", "description", "technical_specs", "is_active", "images", "on_hand_quantity", "reserved_quantity", "available_quantity", "price", "brand", "created_at", "updated_at")
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if getattr(instance, "name", None):
+            data["slug"] = persian_product_slug(instance)
+            data["legacy_slug"] = instance.slug
+        return data
+
     def get_description(self, obj):
         return rich_text_to_html(obj.description)
 
@@ -221,6 +239,13 @@ class CatalogProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ("id", "code", "name", "name_fa", "name_en", "slug", "category", "unit", "images", "on_hand_quantity", "reserved_quantity", "available_quantity", "price", "brand", "short_description", "created_at", "updated_at")
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if getattr(instance, "name", None):
+            data["slug"] = persian_product_slug(instance)
+            data["legacy_slug"] = instance.slug
+        return data
 
     def get_short_description(self, obj):
         text = strip_tags(obj.description or "")
@@ -354,6 +379,13 @@ class ProductSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ("id", "slug", "code", "name_fa", "unit", "primary_image")
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if getattr(instance, "name", None):
+            data["slug"] = persian_product_slug(instance)
+            data["legacy_slug"] = instance.slug
+        return data
 
     def get_primary_image(self, obj):
         image = next((item for item in obj.images.all() if item.is_primary), None)

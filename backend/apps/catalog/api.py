@@ -247,11 +247,33 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             payload["previous"] = self.paginator.get_previous_link()
         return Response(payload)
 
-    def retrieve(self, request, pk=None):
-        lookup = Q(slug=pk)
-        if str(pk).isdigit():
-            lookup |= Q(pk=int(pk))
+    def _find_product(self, identifier):
+        if not identifier:
+            return None
+        from urllib.parse import unquote
+        raw = str(identifier).strip()
+        decoded = unquote(raw).strip()
+        lookup = Q(slug=raw) | Q(slug=decoded) | Q(code=raw) | Q(code=decoded)
+        if raw.isdigit():
+            lookup |= Q(pk=int(raw))
+        if raw.startswith("catalog-"):
+            lookup |= Q(code=raw.replace("catalog-", ""))
         product = self.get_queryset().filter(lookup).first()
+        if not product:
+            normalized = decoded.replace("-", " ")
+            product = self.get_queryset().filter(Q(name__iexact=decoded) | Q(name__iexact=normalized) | Q(name__icontains=normalized)).first()
+        return product
+
+    def get_object(self):
+        pk = self.kwargs.get("pk")
+        product = self._find_product(pk)
+        if not product:
+            from django.http import Http404
+            raise Http404("Product not found.")
+        return product
+
+    def retrieve(self, request, pk=None):
+        product = self._find_product(pk)
         if not product:
             return Response({"detail": "Not found."}, status=404)
         return Response(ProductDetailSerializer(product, context={"request": request}).data)
@@ -327,9 +349,9 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             "customer_name": (review.user.get_full_name() or review.user.username) if review.user_id else "مشتری",
         }
 
-    @action(detail=False, methods=("get",), url_path=r"by-slug/(?P<slug>[^/.]+)")
+    @action(detail=False, methods=("get",), url_path=r"by-slug/(?P<slug>.+)")
     def by_slug(self, request, slug=None):
-        product = self.get_queryset().filter(slug=slug).first()
+        product = self._find_product(slug)
         if not product:
             return Response({"detail": "Not found."}, status=404)
         return Response(ProductDetailSerializer(product, context={"request": request}).data)
@@ -338,7 +360,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     def discovery(self, request, pk=None):
         from apps.content.discovery import product_discovery
         from apps.content.serializers import ContentArticleListSerializer, FAQEntrySerializer
-        product = self.get_queryset().filter(Q(slug=pk) | Q(pk=int(pk) if str(pk).isdigit() else -1)).first()
+        product = self._find_product(pk)
         if not product:
             return Response({"detail": "Not found."}, status=404)
         result = product_discovery(product)

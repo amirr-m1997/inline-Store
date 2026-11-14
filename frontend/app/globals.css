@@ -907,3 +907,20 @@ html.dark .reference-topbar{background:var(--color-surface-muted)!important}
 .home-section-empty--action{display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:start}
 .home-section-empty--action p{margin:0}.home-section-empty--action a{flex:0 0 auto;color:var(--color-brand-navy);font-size:11px;font-weight:800;text-decoration:none}.home-section-empty--action a:hover{text-decoration:underline}
 @media(max-width:560px){.home-section-empty--action{align-items:flex-start;flex-direction:column}.home-section-empty--action a{min-height:38px;display:inline-flex;align-items:center}}
+
+/* Product Comparison Difference Highlighter */
+.compare-toolbar{display:flex;align-items:center;justify-content:flex-end;margin:12px 0 16px}
+.compare-diff-toggle{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--color-brand-navy);cursor:pointer;background:var(--color-surface-muted);padding:6px 14px;border-radius:20px;border:1px solid var(--color-border)}
+.compare-diff-toggle input{width:16px;height:16px;accent-color:var(--mehrasl-green)}
+.compare-row-diff{background:rgba(30,138,59,0.04)}
+.compare-row-diff th{color:var(--mehrasl-green);font-weight:800}
+.diff-tag{display:inline-block;margin-inline-start:6px;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:#e8f5e9;color:#1e8a3b}
+html.dark .diff-tag{background:#1b4d24;color:#a5d6a7}
+
+/* Product Spec Sheet Share */
+.product-b2b-share{margin-top:10px}
+.product-share-spec-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:38px;padding:6px 12px;background:var(--color-surface-muted);border:1px dashed var(--color-border);border-radius:8px;font-size:12px;font-weight:700;color:var(--color-brand-navy);cursor:pointer;transition:all .15s ease}
+.product-share-spec-btn:hover{background:var(--color-surface);border-color:var(--color-border-strong);color:var(--mehrasl-green)}
+.share-feedback{margin:6px 0 0;font-size:11px;font-weight:700;color:var(--mehrasl-green);text-align:center}
+
+

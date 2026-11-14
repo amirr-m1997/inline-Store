@@ -52,6 +52,7 @@ class User(AbstractUser):
 class CustomerAddress(models.Model):
     user = models.ForeignKey(User, related_name="delivery_addresses", on_delete=models.CASCADE)
     title = models.CharField("عنوان نشانی", max_length=100)
+    project_name = models.CharField("نام کارگاه / پروژه سازمانی", max_length=150, blank=True, default="")
     recipient_name = models.CharField("نام تحویل‌گیرنده", max_length=255)
     recipient_phone = models.CharField("شماره تحویل‌گیرنده", max_length=16)
     province = models.CharField("استان", max_length=100)

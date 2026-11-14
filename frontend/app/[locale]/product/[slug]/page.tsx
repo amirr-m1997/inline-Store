@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getProductDiscoveryServer, getProductServer, type ProductDetail } from "../../../../lib/api/products";
 import { toProductDetail } from "../../../../lib/product/adapters";
 import { ProductDetailInteractive } from "../../../../components/product/detail/product-detail-interactive";
@@ -48,6 +48,9 @@ function structuredData(product: ProductDetail, locale: string) {
 export default async function ProductPage({ params }: { params: Promise<RouteParams> }) {
   const { locale, slug } = await params;
   const product = await loadProduct(slug);
+  if (locale === "fa" && product.slug && decodeURIComponent(slug) !== product.slug && slug !== product.slug && !product.slug.startsWith("catalog-")) {
+    redirect(`/${locale}/product/${encodeURIComponent(product.slug)}`);
+  }
   const discovery = await getProductDiscoveryServer(slug).catch(() => ({ articles: [], faqs: [], resources: [], products: [] }));
   const domainProduct = toProductDetail(product);
   const jsonLd = structuredData(product, locale);

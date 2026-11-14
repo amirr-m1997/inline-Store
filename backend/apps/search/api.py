@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
 from apps.catalog.models import Category, Product, ProductBrand, ProductImage
+from apps.catalog.serializers import persian_product_slug
 from apps.catalog.services import CatalogQueryService
 from apps.catalog.search_normalization import normalize_search_text
 from apps.inventory.models import Inventory
@@ -43,7 +44,7 @@ def _product_payload(product, price_map=None, inventory_map=None):
     available = (inventory.on_hand_quantity - inventory.reserved_quantity) if inventory is not None else None
     return {
         "id": product.id,
-        "slug": product.slug,
+        "slug": persian_product_slug(product) if getattr(product, "name", None) else product.slug,
         "code": product.code,
         "name": product.name,
         "name_fa": product.name,
