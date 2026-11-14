@@ -173,25 +173,42 @@ def cart_payload(cart):
     items = list(cart.items.select_related("product", "product__category", "product__inventory").prefetch_related("product__images"))
     price_map = bulk_price_map(((item.product_id, item.quantity) for item in items), customer=cart.user)
     rows, total = [], Decimal("0")
+    unpriced_items_count = 0
+    obsolete_items_count = 0
     for item in items:
         product = ProductSerializer(item.product, context={"price_map": price_map}).data
-        price = product.get("price")
+        is_obsolete = item.product.is_obsolete or not item.product.is_active
+        if is_obsolete:
+            obsolete_items_count += 1
+        price = None if is_obsolete else product.get("price")
         if price:
             line_total = Decimal(item.quantity) * Decimal(price["final_amount"]).quantize(Decimal("0.01"))
             total += line_total
         else:
             line_total = None
-        rows.append({"id": item.id, "quantity": item.quantity, "product": product, "line_total": str(line_total) if line_total is not None else None})
+            unpriced_items_count += 1
+        replacement = item.product.replacement_product
+        rows.append({
+            "id": item.id,
+            "quantity": item.quantity,
+            "product": product,
+            "line_total": str(line_total) if line_total is not None else None,
+            "is_orderable": not is_obsolete,
+            "notice": "این کالا دیگر عرضه نمی‌شود؛ آن را از سبد حذف کنید یا جایگزین پیشنهادی را بررسی کنید." if is_obsolete else "",
+            "replacement_product": ({"name": replacement.name, "slug": replacement.slug} if replacement and replacement.is_active and not replacement.is_obsolete else None),
+        })
     subtotal = total
     coupon = cart.discount_code
     now = timezone.now()
-    coupon_valid = bool(coupon and coupon.is_active and coupon.valid_from <= now and (coupon.valid_until is None or coupon.valid_until >= now) and (coupon.max_uses is None or coupon.usage_count < coupon.max_uses) and subtotal >= coupon.minimum_order_amount)
+    # A mixed cart cannot be paid online until every line has a confirmed
+    # price. Do not apply a discount to a partial subtotal.
+    coupon_valid = bool(not unpriced_items_count and coupon and coupon.is_active and coupon.valid_from <= now and (coupon.valid_until is None or coupon.valid_until >= now) and (coupon.max_uses is None or coupon.usage_count < coupon.max_uses) and subtotal >= coupon.minimum_order_amount)
     percentage = coupon.percentage if coupon_valid else Decimal("0")
     discount_amount = (subtotal * percentage / Decimal("100")).quantize(Decimal("0.01"))
     final_total = max(Decimal("0"), subtotal - discount_amount)
     customer = CartCustomerSerializer(cart).data
     complete = all(customer[field] for field in ("customer_first_name", "customer_last_name", "customer_phone", "shipping_province", "shipping_city", "shipping_postal_code", "shipping_address"))
-    return {"id": cart.id, "guest_token": str(cart.guest_token) if cart.guest_token else None, "items": rows, "subtotal": str(subtotal), "discount_amount": str(discount_amount), "total": str(final_total), "discount": {"code": coupon.code, "percentage": str(percentage)} if coupon_valid else None, "customer": customer, "customer_complete": complete}
+    return {"id": cart.id, "guest_token": str(cart.guest_token) if cart.guest_token else None, "items": rows, "subtotal": str(subtotal), "discount_amount": str(discount_amount), "total": str(final_total), "discount": {"code": coupon.code, "percentage": str(percentage)} if coupon_valid else None, "customer": customer, "customer_complete": complete, "unpriced_items_count": unpriced_items_count, "obsolete_items_count": obsolete_items_count, "checkout_eligible": bool(rows) and not unpriced_items_count and not obsolete_items_count}
 
 
 @api_view(["GET", "PATCH"])
@@ -229,7 +246,7 @@ def add_item(request):
     try: quantity = int(request.data.get("quantity", 1))
     except (TypeError, ValueError): return Response({"detail": "Quantity must be an integer."}, status=400)
     if quantity < 1: return Response({"detail": "Quantity must be positive."}, status=400)
-    product = Product.objects.filter(pk=product_id, is_active=True).first()
+    product = Product.objects.filter(pk=product_id, is_active=True, is_obsolete=False).first()
     if not product: return Response({"detail": "Product not found."}, status=404)
     with transaction.atomic():
         inventory = Inventory.objects.select_for_update().filter(product=product).first()
@@ -245,6 +262,8 @@ def cart_item(request, item_id):
     cart = current_cart(request); item = cart.items.filter(pk=item_id).first()
     if not item: return Response({"detail": "Cart item not found."}, status=404)
     if request.method == "DELETE": item.delete(); return Response(status=204)
+    if item.product.is_obsolete or not item.product.is_active:
+        return Response({"detail": "این کالا دیگر عرضه نمی‌شود. آن را از سبد حذف کنید یا جایگزین آن را بررسی کنید.", "code": "obsolete_cart_item"}, status=400)
     try: quantity = int(request.data.get("quantity", 0))
     except (TypeError, ValueError): return Response({"detail": "Quantity must be an integer."}, status=400)
     if quantity < 1: item.delete()
@@ -270,6 +289,13 @@ def checkout(request):
     items = list(cart.items.select_related("product"))
     if not items:
         return Response({"detail": "سبد خرید خالی است."}, status=400)
+    obsolete = [item.product.name for item in items if item.product.is_obsolete or not item.product.is_active]
+    if obsolete:
+        return Response({"detail": "یک یا چند کالای سبد دیگر عرضه نمی‌شود. پیش از ادامه، آن‌ها را حذف یا با جایگزین مناسب عوض کنید.", "code": "obsolete_cart_items", "obsolete_items": obsolete}, status=400)
+    price_map = bulk_price_map(((item.product_id, item.quantity) for item in items), customer=cart.user)
+    unpriced = [item.product.name for item in items if item.product_id not in price_map]
+    if unpriced:
+        return Response({"detail": "این سبد شامل کالای نیازمند استعلام قیمت است و پرداخت آنلاین برای آن فعال نیست. لطفاً استعلام قیمت ثبت کنید.", "code": "unpriced_cart_items", "unpriced_items": unpriced}, status=400)
     if not settings.PAYMENTS_MOCK_ENABLED:
         return Response({"detail": "درگاه پرداخت هنوز فعال نشده است؛ سفارش شما ثبت نشد."}, status=503)
     with transaction.atomic():
@@ -278,6 +304,16 @@ def checkout(request):
             return Response({"detail": "این سبد قبلاً ثبت شده است."}, status=409)
         inventories = {inventory.product_id: inventory for inventory in Inventory.objects.select_for_update().filter(product_id__in=[item.product_id for item in items])}
         price_map = bulk_price_map(((item.product_id, item.quantity) for item in items), customer=locked_cart.user)
+        # Re-check prices and status after acquiring locks.  A price expiry or
+        # an obsolescence update between the first validation and this point
+        # must never turn into a zero-value order.
+        locked_items = list(locked_cart.items.select_related("product"))
+        locked_obsolete = [item.product.name for item in locked_items if item.product.is_obsolete or not item.product.is_active]
+        if locked_obsolete:
+            return Response({"detail": "یک یا چند کالای سبد دیگر عرضه نمی‌شود. سبد را به‌روزرسانی کنید.", "code": "obsolete_cart_items", "obsolete_items": locked_obsolete}, status=400)
+        locked_unpriced = [item.product.name for item in locked_items if item.product_id not in price_map]
+        if locked_unpriced:
+            return Response({"detail": "قیمت یکی از کالاهای سبد تغییر کرده یا نیازمند استعلام شده است. سبد را به‌روزرسانی کنید.", "code": "unpriced_cart_items", "unpriced_items": locked_unpriced}, status=400)
         totals = cart_payload(locked_cart)
         coupon = None
         if locked_cart.discount_code_id:
@@ -379,6 +415,9 @@ def discount(request):
         cart.discount_code = None; cart.save(update_fields=("discount_code", "updated_at"))
         return Response(cart_payload(cart))
     code = str(request.data.get("code", "")).strip().upper()
+    prices = bulk_price_map(((item.product_id, item.quantity) for item in cart.items.all()), customer=cart.user)
+    if cart.items.exclude(product_id__in=prices).exists():
+        return Response({"detail": "تا زمان استعلام همه اقلام، کد تخفیف برای این سبد قابل اعمال نیست."}, status=400)
     coupon = DiscountCode.objects.filter(code__iexact=code).first()
     now = timezone.now()
     # One generic message for unknown/expired/exhausted codes so the endpoint

@@ -21,7 +21,14 @@ export function SiteHeader({ initialCompany = null }: { initialCompany?: Company
   useEffect(() => {
     const header = headerRef.current;
     if (!header) return;
-    const updateOffset = () => document.documentElement.style.setProperty("--site-header-height", `${Math.ceil(header.getBoundingClientRect().height)}px`);
+    const updateOffset = () => {
+      const height = Math.ceil(header.getBoundingClientRect().height);
+      const root = document.documentElement;
+      root.style.setProperty("--site-header-height", `${height}px`);
+      // Preserve the expanded header's document-flow space while the sticky
+      // header condenses. This prevents content from jumping on scroll.
+      if (!compactRef.current) root.style.setProperty("--site-header-reserved-height", `${height}px`);
+    };
     updateOffset();
     const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateOffset);
     observer?.observe(header);
@@ -59,5 +66,5 @@ export function SiteHeader({ initialCompany = null }: { initialCompany?: Company
     return () => { cancelAnimationFrame(frame); window.removeEventListener("scroll", updateHeader); };
   }, []);
   const logout = async () => { await logoutRequest(); setCustomer(null); window.dispatchEvent(new CustomEvent("auth-changed", { detail: { authenticated: false } })); };
-  return <header id="page-top" ref={headerRef} className={`reference-header${compact ? " is-compact" : ""}${menuOpen ? " menu-is-open" : ""}`}><TopBar locale={locale} company={company} customer={customer} onLogout={logout} /><MainHeader locale={locale} company={company} customer={customer} menuOpen={menuOpen} onMenuToggle={() => setMenuOpen((value) => !value)} /><CategoryNavigation mobileOpen={menuOpen} onNavigate={() => setMenuOpen(false)} /></header>;
+  return <><header id="page-top" ref={headerRef} className={`reference-header${compact ? " is-compact" : ""}${menuOpen ? " menu-is-open" : ""}`}><TopBar locale={locale} company={company} customer={customer} onLogout={logout} /><MainHeader locale={locale} company={company} customer={customer} menuOpen={menuOpen} onMenuToggle={() => setMenuOpen((value) => !value)} /><CategoryNavigation mobileOpen={menuOpen} onNavigate={() => setMenuOpen(false)} /></header><div className="reference-header-spacer" aria-hidden="true" /></>;
 }

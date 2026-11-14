@@ -79,6 +79,7 @@ class CartApiTests(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_checkout_saves_cart_and_reserves_inventory(self):
+        ProductPrice.objects.create(product=self.product, amount=100000, currency=Currency.IRR, effective_from=timezone.now() - timedelta(days=1))
         added = self.client.post("/api/v1/cart/items/", {"product_id": self.product.id, "quantity": 2}, content_type="application/json")
         token = added.json()["guest_token"]
         customer = {"customer_first_name": "امیر", "customer_last_name": "محمدی", "customer_phone": "09123456789", "shipping_province": "تهران", "shipping_city": "تهران", "shipping_postal_code": "1234567890", "shipping_address": "نشانی کامل تست"}
@@ -99,7 +100,44 @@ class CartApiTests(TestCase):
         response = self.client.post("/api/v1/cart/checkout/", {}, content_type="application/json", HTTP_X_GUEST_TOKEN=added.json()["guest_token"])
         self.assertEqual(response.status_code, 400)
 
+    def test_unpriced_items_stay_quote_only_and_cannot_checkout(self):
+        added = self.client.post("/api/v1/cart/items/", {"product_id": self.product.id, "quantity": 1}, content_type="application/json")
+        token = added.json()["guest_token"]
+        cart = self.client.get("/api/v1/cart/", HTTP_X_GUEST_TOKEN=token)
+        self.assertEqual(cart.status_code, 200)
+        self.assertEqual(cart.json()["unpriced_items_count"], 1)
+        self.assertFalse(cart.json()["checkout_eligible"])
+        customer = {"customer_first_name": "امیر", "customer_last_name": "محمدی", "customer_phone": "09123456789", "shipping_province": "تهران", "shipping_city": "تهران", "shipping_postal_code": "1234567890", "shipping_address": "نشانی کامل تست"}
+        self.client.patch("/api/v1/cart/", {"customer": customer}, content_type="application/json", HTTP_X_GUEST_TOKEN=token)
+        checkout = self.client.post("/api/v1/cart/checkout/", {}, content_type="application/json", HTTP_X_GUEST_TOKEN=token)
+        self.assertEqual(checkout.status_code, 400)
+        self.assertEqual(checkout.json()["code"], "unpriced_cart_items")
+        self.assertNotEqual(Cart.objects.get(guest_token=token).status, Cart.Status.CHECKED_OUT)
+
+    def test_obsolete_product_is_not_addable_to_a_cart(self):
+        self.product.is_obsolete = True
+        self.product.save(update_fields=("is_obsolete",))
+        response = self.client.post("/api/v1/cart/items/", {"product_id": self.product.id, "quantity": 1}, content_type="application/json")
+        self.assertEqual(response.status_code, 404)
+
+    def test_obsolete_item_already_in_cart_is_blocked_with_a_clear_notice(self):
+        ProductPrice.objects.create(product=self.product, amount=100000, currency=Currency.IRR, effective_from=timezone.now() - timedelta(days=1))
+        added = self.client.post("/api/v1/cart/items/", {"product_id": self.product.id, "quantity": 1}, content_type="application/json")
+        token = added.json()["guest_token"]
+        self.product.is_obsolete = True
+        self.product.save(update_fields=("is_obsolete",))
+        payload = self.client.get("/api/v1/cart/", HTTP_X_GUEST_TOKEN=token).json()
+        self.assertFalse(payload["checkout_eligible"])
+        self.assertEqual(payload["obsolete_items_count"], 1)
+        self.assertIn("دیگر عرضه نمی‌شود", payload["items"][0]["notice"])
+        customer = {"customer_first_name": "امیر", "customer_last_name": "محمدی", "customer_phone": "09123456789", "shipping_province": "تهران", "shipping_city": "تهران", "shipping_postal_code": "1234567890", "shipping_address": "نشانی کامل تست"}
+        self.client.patch("/api/v1/cart/", {"customer": customer}, content_type="application/json", HTTP_X_GUEST_TOKEN=token)
+        checkout = self.client.post("/api/v1/cart/checkout/", {}, content_type="application/json", HTTP_X_GUEST_TOKEN=token)
+        self.assertEqual(checkout.status_code, 400)
+        self.assertEqual(checkout.json()["code"], "obsolete_cart_items")
+
     def test_authenticated_order_is_listed_and_address_is_saved(self):
+        ProductPrice.objects.create(product=self.product, amount=100000, currency=Currency.IRR, effective_from=timezone.now() - timedelta(days=1))
         user = User.objects.create_user(username="account-buyer", phone="09121234567", password="safe-pass")
         token = Token.objects.create(user=user)
         headers = {"HTTP_AUTHORIZATION": f"Token {token.key}"}

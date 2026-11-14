@@ -1,5 +1,15 @@
 export type Customer = { id: number; first_name: string; last_name: string; email: string | null; phone_number: string | null; landline: string; customer_type: "personal" | "business"; company_name: string; national_id: string; economic_code: string; job_title: string; province: string; city: string; postal_code: string; address: string; date_joined: string };
 import { getCart } from "../lib/api/cart";
+import { ApiError } from "../lib/api/client";
+
+export function isAuthenticationError(error: unknown) {
+  return error instanceof ApiError && (error.status === 401 || error.status === 403);
+}
+
+export function loginPath(locale: string, returnTo?: string) {
+  const safePath = returnTo && returnTo.startsWith(`/${locale}/`) && !returnTo.startsWith("//") ? returnTo : `/${locale}/account`;
+  return `/${locale}/login?next=${encodeURIComponent(safePath)}`;
+}
 
 export async function mergeGuestCart() {
   if (!localStorage.getItem("guestCartToken")) return;

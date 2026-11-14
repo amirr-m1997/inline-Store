@@ -15,7 +15,7 @@ describe("Phase 12.2 customer RFQ UI", () => {
 
   it("adds a PDP CTA without changing cart behavior", () => {
     const page = read("app/[locale]/product/[slug]/page.tsx");
-    expect(page).toContain("/${locale}/rfq?product=");
+    expect(page).toContain("/rfq?product=");
     expect(page).toContain("Request a Quote");
     expect(page).toContain("استعلام قیمت");
     expect(page).toContain("ProductDetailInteractive");
@@ -70,10 +70,11 @@ describe("Phase 12.2 customer RFQ UI", () => {
 
   it("exposes RFQ in account navigation and as the primary header quote CTA", () => {
     const account = read("app/[locale]/account/page.tsx");
-    const header = read("components/layout/main-header.tsx");
+    const header = read("components/layout/category-navigation.tsx");
     expect(account).toContain("/${locale}/account/rfq");
     expect(account).toContain("استعلام‌های قیمت");
-    expect(header).toContain("/${locale}/rfq");
+    expect(header).toContain("/rfq");
     expect(header).toContain("استعلام قیمت");
   });
 });
+

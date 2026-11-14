@@ -59,7 +59,9 @@ export function getArticles<T = EditorialArticlePage>(parameters: Record<string,
 
 export async function getArticlesServer<T = EditorialArticlePage>(parameters: Record<string, string | number | boolean | undefined> = {}) {
   const query = editorialQuery(parameters);
-  return getServer<T>(`/api/v1/content/articles/${query ? `?${query}` : ""}`);
+  // Editorial publication is administered in Django.  Do not keep a removed
+  // or newly published article visible for the generic content-cache window.
+  return getServer<T>(`/api/v1/content/articles/${query ? `?${query}` : ""}`, { cache: "no-store" });
 }
 
 export function getArticle<T = EditorialArticle>(slug: string, signal?: AbortSignal) {

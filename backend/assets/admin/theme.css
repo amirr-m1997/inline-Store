@@ -517,6 +517,166 @@ p.help,
   font-size: 13px;
 }
 
+/* Wide tabular inlines need a real horizontal scrolling viewport so every
+   field and the delete action remain reachable on smaller screens.
+
+   Django puts the table directly inside `fieldset.module`. The generic card
+   rule above deliberately hides overflow, which used to clip the left-hand
+   columns before the outer inline could scroll. The dedicated viewport below
+   is therefore intentionally inside the fieldset. */
+.inline-group .tabular.inline-related {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.inline-group .tabular.inline-related > fieldset.module {
+  width: 100%;
+  min-width: 0;
+  overflow: visible;
+}
+
+.mehrasl-inline-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: auto;
+  padding-bottom: 4px;
+}
+
+.mehrasl-inline-scroll table,
+.inline-group .tabular.inline-related > fieldset.module > table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: auto;
+}
+
+.mehrasl-inline-scroll th,
+.mehrasl-inline-scroll td,
+.inline-group .tabular.inline-related th,
+.inline-group .tabular.inline-related td {
+  white-space: nowrap;
+}
+
+.mehrasl-inline-scroll th:last-child,
+.mehrasl-inline-scroll td.delete,
+.inline-group .tabular.inline-related th:last-child,
+.inline-group .tabular.inline-related td.delete {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  min-width: 76px;
+  background: var(--mehrasl-surface);
+  box-shadow: 3px 0 7px rgba(0, 0, 0, .16);
+}
+
+.mehrasl-inline-scroll th:last-child,
+.inline-group .tabular.inline-related th:last-child {
+  background: var(--mehrasl-surface-muted);
+}
+
+.mehrasl-inline-scroll td.delete::before,
+.inline-group .tabular.inline-related td.delete::before {
+  content: none;
+}
+
+.mehrasl-inline-scroll td.delete input[type="checkbox"],
+.inline-group .tabular.inline-related td.delete input[type="checkbox"] {
+  display: block;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--mehrasl-danger);
+}
+
+.mehrasl-inline-scroll .inline-deletelink,
+.inline-group .tabular.inline-related .inline-deletelink {
+  display: inline-flex;
+  float: none;
+  align-items: center;
+  width: auto;
+  height: auto;
+  padding: 5px 9px;
+  border: 1px solid #d9a6a0;
+  border-radius: 6px;
+  background: var(--mehrasl-surface);
+  color: #a73b31;
+  font-size: 0;
+  font-weight: 700;
+  text-indent: 0;
+  text-decoration: none;
+}
+
+.mehrasl-inline-scroll .inline-deletelink::after,
+.inline-group .tabular.inline-related .inline-deletelink::after {
+  content: "حذف";
+  font-size: 12px;
+}
+
+.mehrasl-inline-scroll .inline-deletelink:hover,
+.mehrasl-inline-scroll .inline-deletelink:focus,
+.inline-group .tabular.inline-related .inline-deletelink:hover,
+.inline-group .tabular.inline-related .inline-deletelink:focus {
+  background: var(--mehrasl-danger);
+  color: #ffffff;
+}
+
+.mehrasl-inline-scroll::-webkit-scrollbar {
+  height: 14px;
+}
+
+.mehrasl-inline-scroll::-webkit-scrollbar-thumb {
+  border: 3px solid var(--mehrasl-surface-muted);
+  border-radius: 999px;
+  background: var(--mehrasl-text-muted);
+}
+
+.mehrasl-inline-scroll::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: var(--mehrasl-surface-muted);
+}
+
+.mehrasl-inline-scroll-hint {
+  display: none;
+  margin: 0 0 7px;
+  color: var(--mehrasl-text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.mehrasl-inline-scroll-hint.is-visible {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mehrasl-inline-scroll-hint.is-visible::before {
+  content: "↔";
+  color: var(--mehrasl-brand);
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+}
+
+/* Product technical values are frequently long text. Keep the editor useful
+   without turning the entire inline into a very tall horizontal form. */
+#attribute_values-group .field-text_value textarea {
+  width: clamp(260px, 34vw, 430px);
+  min-width: 260px;
+  min-height: 108px;
+  height: 120px;
+}
+
+#prices-group input[type="number"],
+#prices-group input[type="text"],
+#documents-group input[type="text"],
+#documents-group select {
+  max-width: 230px;
+}
+
 /* Index app list ---------------------------------------------------------- */
 #content-main .module caption a:link,
 #content-main .module caption a:visited {
@@ -1058,78 +1218,6 @@ body.login .password-reset-link a:visited {
     content: none;
   }
 
-  /* جدول‌های داخل فرم ویرایش (اینلاین‌ها): ستون‌ها زیر هم می‌آیند.
-     برچسب هر سلول از data-label می‌آید (changelist-responsive.js). */
-  .inline-group table,
-  .inline-group tbody {
-    display: block;
-    min-width: 0;
-  }
-
-  .inline-group thead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
-  .inline-group tr {
-    display: block;
-    margin-bottom: 12px;
-    border: 1px solid var(--mehrasl-border);
-    border-radius: var(--mehrasl-radius);
-    background: var(--mehrasl-surface);
-  }
-
-  .inline-group tr:last-child {
-    margin-bottom: 0;
-  }
-
-  .inline-group tr.add-row {
-    border-style: dashed;
-    background: transparent;
-    box-shadow: none;
-  }
-
-  .inline-group td,
-  .inline-group th {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--hairline-color);
-    text-align: start;
-  }
-
-  .inline-group td:last-child,
-  .inline-group th:last-child {
-    border-bottom: 0;
-  }
-
-  .inline-group td::before,
-  .inline-group th::before {
-    content: attr(data-label);
-    flex: 0 0 auto;
-    max-width: 42%;
-    color: var(--mehrasl-text-secondary);
-    font-size: 11px;
-    font-weight: 800;
-  }
-
-  .inline-group td input[type="text"],
-  .inline-group td input[type="number"],
-  .inline-group td input[type="url"],
-  .inline-group td input[type="email"],
-  .inline-group td select,
-  .inline-group td textarea,
-  .inline-group td .vTextField,
-  .inline-group td .vURLField {
-    width: 100%;
-    min-width: 0;
-  }
 }
 
 /* Users who ask for less motion get an instantly-theming panel. */

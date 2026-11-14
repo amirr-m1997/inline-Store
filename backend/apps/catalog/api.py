@@ -103,7 +103,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         primary_image = ProductImage.objects.filter(product=OuterRef("pk")).order_by(
             Case(When(is_primary=True, then=Value(0)), default=Value(1), output_field=IntegerField()), "sort_order", "id",
         )
-        queryset = Product.objects.filter(is_active=True).select_related("category", "inventory", "brand")
+        queryset = Product.objects.filter(is_active=True, is_obsolete=False).select_related("category", "inventory", "brand")
         contract_item = None
         if self.request.user.is_authenticated:
             contract_item = (

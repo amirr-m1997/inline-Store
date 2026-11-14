@@ -17,8 +17,8 @@ type Customer = {
   customer_company_name: string; customer_national_id: string; shipping_province: string; shipping_city: string;
   shipping_postal_code: string; shipping_address: string;
 };
-type CartItem = { id: number; quantity: number; line_total: string | null; product: { name: string; code?: string; slug: string; unit: string; available_quantity: number | null; images: { image: string; alt_text: string; is_primary: boolean }[]; price: { final_amount: string } | null } };
-type Cart = { id: number; guest_token: string | null; items: CartItem[]; subtotal: string; discount_amount: string; total: string; discount: { code: string; percentage: string } | null; customer: Customer; customer_complete: boolean };
+type CartItem = { id: number; quantity: number; line_total: string | null; is_orderable?: boolean; notice?: string; replacement_product?: { name: string; slug: string } | null; product: { name: string; code?: string; slug: string; unit: string; available_quantity: number | null; images: { image: string; alt_text: string; is_primary: boolean }[]; price: { final_amount: string } | null } };
+type Cart = { id: number; guest_token: string | null; items: CartItem[]; subtotal: string; discount_amount: string; total: string; discount: { code: string; percentage: string } | null; customer: Customer; customer_complete: boolean; unpriced_items_count: number; obsolete_items_count: number; checkout_eligible: boolean };
 
 const emptyCustomer: Customer = { customer_first_name: "", customer_last_name: "", customer_email: "", customer_phone: "", customer_company_name: "", customer_national_id: "", shipping_province: "", shipping_city: "", shipping_postal_code: "", shipping_address: "" };
 
@@ -63,6 +63,7 @@ export default function CartPage() {
   const acceptCart = useCallback((data: Cart) => {
     setCart(data); setCustomer({ ...emptyCustomer, ...(data.customer ?? {}) });
     if (data.guest_token) localStorage.setItem("guestCartToken", data.guest_token);
+    window.dispatchEvent(new Event("cart-updated"));
   }, []);
   const load = useCallback(async () => {
     setError("");
@@ -74,7 +75,7 @@ export default function CartPage() {
   useEffect(() => { void load(); }, [load]);
 
   const changeQuantity = async (item: CartItem, quantity: number) => {
-    if (updatingItem === item.id) return;
+    if (updatingItem === item.id || item.is_orderable === false) return;
     setUpdatingItem(item.id);
     setError("");
     try { if (quantity < 1) { await removeItem(item.id); await load(); } else acceptCart(await updateItem(item.id, quantity) as Cart); } catch (reason) { setError(reason instanceof Error ? reason.message : "تغییر تعداد ناموفق بود."); } finally { setUpdatingItem(null); }
@@ -93,7 +94,7 @@ export default function CartPage() {
     setSaving(false);
   };
   const submitOrder = async () => {
-    if (!cart?.items.length || submitting) return;
+    if (!cart?.items.length || !cart.checkout_eligible || submitting) return;
     setSubmitting(true); setMessage(""); setError("");
     const saved = await saveCustomerData();
     if (!saved?.customer_complete) { setError("لطفاً تمام فیلدهای الزامی اطلاعات مشتری را کامل کنید."); setSubmitting(false); return; }
@@ -112,22 +113,22 @@ export default function CartPage() {
 
   return <main className="cart-page container-page py-8">
     <h1 className="mb-4 text-2xl font-black">سبد خرید و ثبت سفارش</h1>
-    <CheckoutProgress hasItems={cart.items.length > 0} customerComplete={localCustomerComplete} />
+    {cart.items.length > 0 && <CheckoutProgress hasItems customerComplete={localCustomerComplete && cart.checkout_eligible} />}
     {error && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700" role="alert" aria-live="assertive"><p>{customerErrors.length > 0 ? "لطفاً موارد زیر را اصلاح کنید:" : error}</p>{customerErrors.length > 0 && <ul className="mt-2 list-disc space-y-1 ps-5">{customerErrors.map(({ label, message: fieldMessage }) => <li key={`${label}-${fieldMessage}`}><b>{label}:</b> {fieldMessage}</li>)}</ul>}</div>}
     <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
       <section className="card">
         <h2 className="text-lg font-black">کالاهای انتخاب‌شده <span className="cart-item-count">({cart.items.length} کالا)</span></h2>
         {!cart.items.length && <div className="py-12 text-center"><p className="text-slate-500">سبد خرید شما خالی است.</p><Link className="btn-primary mt-4 inline-block no-underline" href={`/${locale}/categories`}>مشاهده محصولات</Link></div>}
         {cart.items.map((item) => { const productImage = item.product.images?.find((image) => image.is_primary) ?? item.product.images?.[0]; return <article className="cart-item mt-4 grid gap-3 border-b pb-4 sm:grid-cols-[1fr_auto] sm:items-center" key={item.id}>
-          <div className="cart-item-info">{productImage && <Link className="cart-item-image" href={`/${locale}/product/${item.product.slug}`}><Image src={productImage.image} alt={productImage.alt_text || item.product.name} fill sizes="72px" /></Link>}<div><Link className="font-bold text-slate-800 no-underline" href={`/${locale}/product/${item.product.slug}`}>{item.product.name}</Link>{item.product.code && <p className="mt-1 text-xs text-slate-500">کد کالا: <b dir="ltr">{item.product.code}</b></p>}<p className="mt-1 text-xs text-slate-500">قیمت واحد: {money(item.product.price?.final_amount, locale)}</p><p className="mt-1 text-sm font-bold">جمع: {money(item.line_total, locale)}</p></div></div>
+          <div className="cart-item-info">{productImage && <Link className="cart-item-image" href={`/${locale}/product/${item.product.slug}`}><Image src={productImage.image} alt={productImage.alt_text || item.product.name} fill sizes="72px" /></Link>}<div><Link className="font-bold text-slate-800 no-underline" href={`/${locale}/product/${item.product.slug}`}>{item.product.name}</Link>{item.product.code && <p className="mt-1 text-xs text-slate-500">کد کالا: <b dir="ltr">{item.product.code}</b></p>}{item.is_orderable === false && <p className="cart-obsolete-notice" role="alert">{item.notice}{item.replacement_product && <> <Link href={`/${locale}/product/${item.replacement_product.slug}`}>جایگزین پیشنهادی: {item.replacement_product.name}</Link></>}</p>}<p className="mt-1 text-xs text-slate-500">قیمت واحد: {money(item.product.price?.final_amount, locale)}</p><p className="mt-1 text-sm font-bold">جمع: {money(item.line_total, locale)}</p></div></div>
           <div className="cart-item-controls" aria-label={`کنترل‌های ${item.product.name}`} aria-busy={updatingItem === item.id}><button type="button" className="h-9 w-9 rounded border" disabled={updatingItem === item.id} onClick={() => void changeQuantity(item, item.quantity - 1)} aria-label={`کاهش تعداد ${item.product.name}`}>−</button><b className="min-w-8 text-center" aria-live="polite">{updatingItem === item.id ? "…" : formatNumber(item.quantity)}</b><button type="button" className="h-9 w-9 rounded border" disabled={updatingItem === item.id || (item.product.available_quantity !== null && item.quantity >= item.product.available_quantity)} onClick={() => void changeQuantity(item, item.quantity + 1)} aria-label={`افزایش تعداد ${item.product.name}`}>+</button><button type="button" className="me-2 rounded border border-red-200 px-3 py-2 text-xs text-red-700" disabled={updatingItem === item.id} onClick={() => void changeQuantity(item, 0)} aria-label={`حذف ${item.product.name} از سبد`}>حذف</button></div>
         </article>; })}
-        <details className="cart-discount-box"><summary>کد تخفیف <small>اختیاری</small></summary>{cart.discount ? <div className="cart-applied-discount"><div><b dir="ltr">{cart.discount.code}</b><span role="status">٪{formatNumber(Number(cart.discount.percentage))} تخفیف اعمال شد</span></div><button type="button" onClick={() => void removeDiscountCode()} aria-label={`حذف کد تخفیف ${cart.discount.code}`}>حذف</button></div> : <form onSubmit={applyDiscountCode}><label htmlFor="discount-code" className="sr-only">کد تخفیف</label><input id="discount-code" dir="ltr" value={discountCode} onChange={(event) => setDiscountCode(event.target.value)} placeholder="کد تخفیف را وارد کنید" required /><button disabled={applyingDiscount}>{applyingDiscount ? "در حال بررسی…" : "اعمال کد"}</button></form>}</details>
-        <CartSummary cart={cart} />
+        {cart.items.length > 0 && cart.checkout_eligible && <details className="cart-discount-box"><summary>کد تخفیف <small>اختیاری</small></summary>{cart.discount ? <div className="cart-applied-discount"><div><b dir="ltr">{cart.discount.code}</b><span role="status">٪{formatNumber(Number(cart.discount.percentage))} تخفیف اعمال شد</span></div><button type="button" onClick={() => void removeDiscountCode()} aria-label={`حذف کد تخفیف ${cart.discount.code}`}>حذف</button></div> : <form onSubmit={applyDiscountCode}><label htmlFor="discount-code" className="sr-only">کد تخفیف</label><input id="discount-code" dir="ltr" value={discountCode} onChange={(event) => setDiscountCode(event.target.value)} placeholder="کد تخفیف را وارد کنید" required /><button disabled={applyingDiscount}>{applyingDiscount ? "در حال بررسی…" : "اعمال کد"}</button></form>}</details>}
+        {cart.items.length > 0 && <CartSummary cart={cart} />}
         {cart.items.length > 0 && <Link className="cart-rfq-link" href={`/${locale}/rfq?source=cart`} aria-label={english ? "Request a quote for cart items" : "استعلام قیمت اقلام سبد"}>{english ? "Request a Quote for Cart Items" : "استعلام قیمت اقلام سبد"}</Link>}
       </section>
 
-      <form className="card h-max" onSubmit={saveCustomer}>
+      {cart.items.length > 0 && cart.checkout_eligible && <form className="card h-max" onSubmit={saveCustomer}>
         <h2 className="text-lg font-black">اطلاعات مشتری و تحویل</h2><p className="mt-2 text-xs leading-6 text-slate-500">فیلدهای ستاره‌دار برای ادامه سفارش الزامی هستند.</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
           <label className="text-xs">نام *<input className="input mt-1" value={customer.customer_first_name} onChange={(e) => field("customer_first_name", e.target.value)} required /></label>
@@ -145,7 +146,7 @@ export default function CartPage() {
         {message && <p className="mt-3 text-sm text-emerald-700" role="status" aria-live="polite">{message}</p>}
         <p id="checkout-next-action" className="checkout-next-action">پس از تکمیل اطلاعات، به درگاه پرداخت منتقل می‌شوید.</p>
         <button type="button" onClick={() => void submitOrder()} className="checkout-primary-action mt-3 w-full rounded-lg border px-4 py-2 text-sm font-bold disabled:opacity-50" disabled={!cart.items.length || !localCustomerComplete || saving || submitting} aria-describedby="checkout-next-action">{submitting ? "در حال آماده‌سازی پرداخت…" : "ادامه به پرداخت"}</button>
-      </form>
+      </form>}
     </div>
   </main>;
 }

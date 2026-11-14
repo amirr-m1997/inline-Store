@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { GoogleSignIn } from "../../../components/auth/google-sign-in";
 import { authChanged, mergeGuestCart } from "../../../services/auth-client";
@@ -9,6 +9,7 @@ import { login, requestOtp, verifyOtp } from "../../../lib/api/auth";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { locale = "fa" } = useParams<{ locale: string }>();
   const [mode, setMode] = useState<"password" | "otp">("password");
   const [step, setStep] = useState<"phone" | "code">("phone");
@@ -16,11 +17,19 @@ export default function LoginPage() {
   const [developmentCode, setDevelopmentCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+
+  const returnTo = (() => {
+    const value = searchParams.get("next");
+    return value && value.startsWith(`/${locale}/`) && !value.startsWith("//") ? value : `/${locale}/account`;
+  })();
 
   const finish = async () => {
     await mergeGuestCart();
     authChanged();
-    router.replace(`/${locale}/account`);
+    router.replace(returnTo);
     router.refresh();
   };
 
@@ -29,7 +38,7 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     try {
-      await login(Object.fromEntries(new FormData(event.currentTarget)));
+      await login({ identifier, password });
       await finish();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "درخواست ناموفق بود.");
@@ -71,8 +80,8 @@ export default function LoginPage() {
   if (mode === "password") {
     loginForm = (
       <form className="auth-form" onSubmit={passwordLogin}>
-        <label>ایمیل یا شماره موبایل<input name="identifier" dir="ltr" autoComplete="username" required /></label>
-        <label>رمز عبور<input name="password" type="password" dir="ltr" autoComplete="current-password" required /></label>
+        <label>ایمیل یا شماره موبایل<input name="identifier" value={identifier} onChange={(event) => setIdentifier(event.target.value)} dir="ltr" autoComplete="username" required /></label>
+        <label>رمز عبور<input name="password" value={password} onChange={(event) => setPassword(event.target.value)} type="password" dir="ltr" autoComplete="current-password" required /></label>
         <Link className="auth-sub-link" href={`/${locale}/forgot-password`}>فراموشی رمز عبور</Link>
         <button className="auth-primary" disabled={loading}>{loading ? "در حال ورود…" : "ورود"}</button>
       </form>
@@ -89,7 +98,7 @@ export default function LoginPage() {
       <form className="auth-form" onSubmit={verifyOTP}>
         <p className="auth-hint">کد ارسال‌شده به {phone}</p>
         {developmentCode && <p className="auth-hint">محیط توسعه فعال است؛ کد ورود: <strong dir="ltr">{developmentCode}</strong></p>}
-        <label>کد شش رقمی<input name="code" dir="ltr" inputMode="numeric" maxLength={6} required /></label>
+        <label>کد شش رقمی<input name="code" value={otpCode} onChange={(event) => setOtpCode(event.target.value)} dir="ltr" inputMode="numeric" maxLength={6} required /></label>
         <button className="auth-primary" disabled={loading}>{loading ? "در حال بررسی…" : "تأیید و ورود"}</button>
         <button type="button" className="auth-text-button" onClick={() => setStep("phone")}>تغییر شماره</button>
       </form>

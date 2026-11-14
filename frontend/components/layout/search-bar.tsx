@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { FiSearch, FiX, FiPackage } from "react-icons/fi";
 import { getProducts } from "../../lib/api/products";
 import type { CatalogProduct } from "../catalog/product-card";
 
@@ -117,8 +118,14 @@ export function SearchBar() {
       aria-activedescendant={activeIndex >= 0 && suggestions[activeIndex] ? `site-search-option-${suggestions[activeIndex].id}` : undefined}
       autoComplete="off"
     />
-    {query && <button className="reference-search-clear" type="button" onClick={clear} aria-label="پاک کردن جست‌وجو">×</button>}
-    <button className="reference-search-submit" type="submit" aria-label="جست‌وجو">⌕</button>
+    {query && (
+      <button className="reference-search-clear" type="button" onClick={clear} aria-label="پاک کردن جست‌وجو" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+        <FiX size={15} aria-hidden="true" />
+      </button>
+    )}
+    <button className="reference-search-submit" type="submit" aria-label="جست‌وجو" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+      <FiSearch size={19} aria-hidden="true" />
+    </button>
     {showPanel && <div className="reference-search-suggestions" id="site-search-suggestions" role="listbox" aria-label="پیشنهادهای جست‌وجو">
       {loading && !suggestions.length && <p className="reference-search-state" role="status">{english ? "Searching…" : "در حال جست‌وجو…"}</p>}
       {!loading && !suggestions.length && <p className="reference-search-state" role="status">{english ? "No matching products." : "محصولی مطابق عبارت جست‌وجو پیدا نشد."}</p>}
@@ -134,14 +141,22 @@ export function SearchBar() {
           onMouseEnter={() => setActiveIndex(index)}
           onClick={() => setOpen(false)}
         >
-          <span className="reference-suggestion-thumb">{thumb ? <Image src={thumb} alt="" aria-hidden="true" fill sizes="44px" /> : <i aria-hidden="true">◇</i>}</span>
+          <span className="reference-suggestion-thumb">{thumb ? <Image src={thumb} alt="" aria-hidden="true" fill sizes="44px" /> : <FiPackage aria-hidden="true" size={16} />}</span>
           <span className="reference-suggestion-body">
             <b>{item.name}</b>
             <small><bdi dir="ltr">{item.code}</bdi>{item.category ? ` · ${item.category.name_fa}` : ""}</small>
           </span>
         </Link>;
       })}
-      {suggestions.length > 0 && <Link className="reference-search-all" href={`/${locale}/search?q=${encodeURIComponent(term)}`} onClick={() => setOpen(false)}>{english ? "See all results" : "مشاهده همه نتایج"}</Link>}
+      {suggestions.length > 0 && (
+        <Link
+          className="reference-search-all"
+          href={`/${locale}/shop?q=${encodeURIComponent(term)}`}
+          onClick={() => setOpen(false)}
+        >
+          {english ? "See all products in catalog" : "مشاهده همه محصولات در فروشگاه"}
+        </Link>
+      )}
     </div>}
   </form>;
 }

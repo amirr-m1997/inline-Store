@@ -6,6 +6,11 @@ from .models import Capability, CompanyAdvantage, CompanyBanner, CompanyCertific
 from rest_framework import serializers
 
 
+def without_demo_content(queryset):
+    """Keep development fixtures out of every public company endpoint."""
+    return queryset.exclude(migration_notes__icontains="demo-content:")
+
+
 class HeroSerializer(serializers.ModelSerializer):
     title = serializers.CharField(source="hero_title_fa")
     slogan = serializers.CharField(source="hero_slogan_fa")
@@ -48,10 +53,18 @@ class HeroSerializer(serializers.ModelSerializer):
         english = locale == "en"
         result = []
         for banner in (item for item in obj.banners.all() if item.is_active):
+            desktop_image = self.image_url(banner.desktop_image) or self.image_url(banner.mobile_image)
+            mobile_image = self.image_url(banner.mobile_image) or desktop_image
+            # An active database row is not enough: media can have been
+            # removed independently.  Never create a text-only carousel slide
+            # from a missing asset, because its contrast depends on fallback
+            # styles and makes the banner unreadable in one of the themes.
+            if not desktop_image:
+                continue
             result.append({
                 "id": banner.id,
-                "desktop_image": self.image_url(banner.desktop_image),
-                "mobile_image": self.image_url(banner.mobile_image) or self.image_url(banner.desktop_image),
+                "desktop_image": desktop_image,
+                "mobile_image": mobile_image,
                 "title": banner.title_en if english and banner.title_en else banner.title_fa,
                 "description": banner.description_en if english and banner.description_en else banner.description_fa,
                 "button": ({"text": banner.button_text_en if english and banner.button_text_en else banner.button_text_fa, "link": banner.button_url} if banner.button_url and (banner.button_text_fa or banner.button_text_en) else None),
@@ -245,21 +258,21 @@ def advantage_list(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def company_sections(request):
-    sections = CompanySection.objects.filter(is_active=True, is_published=True)
+    sections = without_demo_content(CompanySection.objects.filter(is_active=True, is_published=True))
     return Response(CompanySectionSerializer(sections, many=True, context={"request": request}).data)
 
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def capability_list(request):
-    capabilities = Capability.objects.filter(is_active=True, is_published=True)
+    capabilities = without_demo_content(Capability.objects.filter(is_active=True, is_published=True))
     return Response(CapabilitySerializer(capabilities, many=True, context={"request": request}).data)
 
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def capability_detail(request, slug):
-    capability = Capability.objects.filter(slug=slug, is_active=True, is_published=True).first()
+    capability = without_demo_content(Capability.objects.filter(slug=slug, is_active=True, is_published=True)).first()
     if capability is None:
         return Response({"detail": "Not found."}, status=404)
     return Response(CapabilitySerializer(capability, context={"request": request}).data)
@@ -268,41 +281,41 @@ def capability_detail(request, slug):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def company_locations(request):
-    items = CompanyLocation.objects.filter(is_active=True, is_published=True)
+    items = without_demo_content(CompanyLocation.objects.filter(is_active=True, is_published=True))
     return Response(CompanyLocationSerializer(items, many=True, context={"request": request}).data)
 
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def company_milestones(request):
-    items = CompanyMilestone.objects.filter(is_published=True)
+    items = without_demo_content(CompanyMilestone.objects.filter(is_published=True))
     return Response(CompanyMilestoneSerializer(items, many=True, context={"request": request}).data)
 
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def company_certifications(request):
-    items = CompanyCertification.objects.filter(is_published=True, verification_status=CompanyCertification.VerificationStatus.VERIFIED)
+    items = without_demo_content(CompanyCertification.objects.filter(is_published=True, verification_status=CompanyCertification.VerificationStatus.VERIFIED))
     return Response(CompanyCertificationSerializer(items, many=True, context={"request": request}).data)
 
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def company_honors(request):
-    items = CompanyHonor.objects.filter(is_published=True, verification_required=False)
+    items = without_demo_content(CompanyHonor.objects.filter(is_published=True, verification_required=False))
     return Response(CompanyHonorSerializer(items, many=True, context={"request": request}).data)
 
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def industry_list(request):
-    items = Industry.objects.filter(is_active=True, is_published=True)
+    items = without_demo_content(Industry.objects.filter(is_active=True, is_published=True))
     return Response(IndustrySerializer(items, many=True, context={"request": request}).data)
 
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def industry_detail(request, slug):
-    item = Industry.objects.filter(slug=slug, is_active=True, is_published=True).first()
+    item = without_demo_content(Industry.objects.filter(slug=slug, is_active=True, is_published=True)).first()
     if item is None: return Response({"detail": "Not found."}, status=404)
     return Response(IndustrySerializer(item, context={"request": request}).data)

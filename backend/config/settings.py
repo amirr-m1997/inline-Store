@@ -166,7 +166,7 @@ CKEDITOR_CONFIGS = {
         "language": "fa",
         "contentsLangDirection": "rtl",
         "bodyId": "ckeditor-product-description",
-        "height": 320,
+        "height": 450,
         "toolbar": [
             {"name": "clipboard", "items": ["Undo", "Redo"]},
             {"name": "paragraph", "items": ["Format", "Bold", "Italic", "Underline", "Strike", "-", "Subscript", "Superscript"]},
@@ -175,6 +175,7 @@ CKEDITOR_CONFIGS = {
             {"name": "lists", "items": ["BulletedList", "NumberedList", "Outdent", "Indent"]},
             {"name": "links", "items": ["Link", "Unlink", "Anchor"]},
             {"name": "insert", "items": ["Image", "Table", "HorizontalRule", "SpecialChar"]},
+            {"name": "tools", "items": ["Maximize", "ShowBlocks"]},
             {"name": "styles", "items": ["RemoveFormat", "Source"]},
         ],
         "format_tags": "p;h2;h3;h4;pre",

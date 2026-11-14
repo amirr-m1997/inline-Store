@@ -46,3 +46,21 @@ test-results/
 .cache/
 *.tsbuildinfo
 .pytest_cache/
+
+# Local workspace dumps, temporary files and artifacts
+*.bak*
+*.txt
+*.pdf
+*.html
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!backend/fixtures/*.json
+frontend/next.config22222 - Copy.mjs
+first page/
+MehrAsl_Store_Preview/
+LOCAL_SHOP/
+logo/
+frontend/qa-screenshots/
+

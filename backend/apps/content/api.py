@@ -14,7 +14,14 @@ from rest_framework.decorators import action
 
 class PublicEditorialQuerySetMixin:
     def _public(self, queryset):
-        return queryset.filter(is_active=True, is_published=True, published_at__isnull=False, published_at__lte=timezone.now())
+        # Development fixtures are useful for local admin previews, but must
+        # never leak through a public endpoint (including the homepage).
+        return queryset.filter(
+            is_active=True,
+            is_published=True,
+            published_at__isnull=False,
+            published_at__lte=timezone.now(),
+        ).exclude(migration_notes__icontains="demo-content:").exclude(title_fa__istartswith="[DEMO]")
 
     def _article_queryset(self):
         public_products = Product.objects.filter(is_active=True).only("id", "code", "name", "slug")
@@ -38,7 +45,9 @@ class ContentCategoryViewSet(PublicEditorialQuerySetMixin, viewsets.ReadOnlyMode
     lookup_field = "slug"
 
     def get_queryset(self):
-        return ContentCategory.objects.filter(is_active=True, is_published=True).order_by("display_order", "name_fa", "id")
+        return ContentCategory.objects.filter(is_active=True, is_published=True).exclude(
+            migration_notes__icontains="demo-content:"
+        ).exclude(name_fa__istartswith="[DEMO]").order_by("display_order", "name_fa", "id")
 
 
 class ContentArticleViewSet(PublicEditorialQuerySetMixin, viewsets.ReadOnlyModelViewSet):
@@ -76,7 +85,7 @@ class ContentArticleViewSet(PublicEditorialQuerySetMixin, viewsets.ReadOnlyModel
             queryset = queryset.filter(capabilities__slug=params["capability"])
         if params.get("featured", "").lower() in ("1", "true", "yes"):
             queryset = queryset.filter(is_featured=True)
-        return queryset.annotate(_demo_rank=Case(When(migration_notes__icontains="demo-content:", then=1), default=0, output_field=IntegerField())).distinct().order_by("_demo_rank", "display_order", "-published_at", "-id")
+        return queryset.distinct().order_by("display_order", "-published_at", "-id")
 
     @action(detail=True, methods=("get",), url_path="discovery")
     def discovery(self, request, slug=None):
@@ -103,7 +112,9 @@ class FAQEntryViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         public = lambda model: model.objects.filter(is_active=True)
-        queryset = FAQEntry.objects.filter(is_active=True, is_published=True).prefetch_related(
+        queryset = FAQEntry.objects.filter(is_active=True, is_published=True).exclude(
+            migration_notes__icontains="demo-content:"
+        ).exclude(question_fa__istartswith="[DEMO]").prefetch_related(
             Prefetch("products", queryset=public(Product).only("id", "code", "name", "slug"), to_attr="_faq_products"),
             Prefetch("categories", queryset=public(Category).only("id", "code", "name_fa", "name_en", "slug"), to_attr="_faq_categories"),
             Prefetch("industries", queryset=Industry.objects.filter(is_active=True, is_published=True).only("id", "slug", "name_fa", "name_en"), to_attr="_faq_industries"),
@@ -126,4 +137,4 @@ class FAQEntryViewSet(viewsets.ReadOnlyModelViewSet):
             if params["article"].isdigit():
                 article_lookup |= Q(articles__id=int(params["article"]))
             queryset = queryset.filter(article_lookup)
-        return queryset.annotate(_demo_rank=Case(When(migration_notes__icontains="demo-content:", then=1), default=0, output_field=IntegerField())).distinct().order_by("_demo_rank", "display_order", "id")
+        return queryset.distinct().order_by("display_order", "id")

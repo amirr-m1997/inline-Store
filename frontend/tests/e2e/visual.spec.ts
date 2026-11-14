@@ -1,5 +1,11 @@
 import { expect, test } from "playwright/test";
 
+async function waitForStablePaint(page: import("playwright/test").Page, needsHero = false) {
+  await expect(page.locator("body")).toBeVisible();
+  if (needsHero) await expect(page.locator(".site-hero h1")).toBeVisible();
+  await page.evaluate(async () => { await document.fonts.ready; });
+}
+
 const stableStates = [
   { name: "homepage", path: "/fa" },
   { name: "catalog", path: "/fa/shop" },
@@ -11,7 +17,7 @@ test.describe("stable visual QA captures", () => {
     test(`${state.name} desktop screenshot has meaningful output`, async ({ page }, testInfo) => {
       await page.setViewportSize({ width: 1280, height: 800 });
       await page.goto(state.path);
-      await expect(page.locator("body")).toBeVisible();
+      await waitForStablePaint(page, state.name === "homepage");
       const screenshot = await page.screenshot({ animations: "disabled", caret: "hide" });
       await testInfo.attach(`${state.name}-desktop.png`, { body: screenshot, contentType: "image/png" });
       expect(screenshot.byteLength).toBeGreaterThan(1000);
@@ -20,7 +26,7 @@ test.describe("stable visual QA captures", () => {
     test(`${state.name} mobile screenshot has meaningful output`, async ({ page }, testInfo) => {
       await page.setViewportSize({ width: 390, height: 844 });
       await page.goto(state.path);
-      await expect(page.locator("body")).toBeVisible();
+      await waitForStablePaint(page, state.name === "homepage");
       const screenshot = await page.screenshot({ animations: "disabled", caret: "hide", fullPage: true });
       await testInfo.attach(`${state.name}-mobile.png`, { body: screenshot, contentType: "image/png" });
       expect(screenshot.byteLength).toBeGreaterThan(1000);

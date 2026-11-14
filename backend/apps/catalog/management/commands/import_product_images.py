@@ -36,6 +36,11 @@ class Command(BaseCommand):
             action="store_true",
             help="Also link images to inactive products. By default those images are reported but skipped.",
         )
+        parser.add_argument(
+            "--replace-existing",
+            action="store_true",
+            help="Replace linked image records for matched products. Existing image files are kept on disk.",
+        )
 
     def handle(self, *args, **options):
         source = options["source"].resolve()
@@ -67,10 +72,21 @@ class Command(BaseCommand):
                 relative = file.relative_to(media_root).as_posix()
                 candidates.append((products[code], relative))
 
-        existing_paths = set(
-            ProductImage.objects.filter(image__in=[path for _, path in candidates]).values_list("image", flat=True)
+        candidate_product_ids = {product.id for product, _ in candidates}
+        records_to_replace = (
+            ProductImage.objects.filter(product_id__in=candidate_product_ids).count()
+            if options["replace_existing"]
+            else 0
         )
-        new_candidates = [(product, path) for product, path in candidates if path not in existing_paths]
+        if options["replace_existing"]:
+            new_candidates = candidates
+            already_linked = 0
+        else:
+            existing_paths = set(
+                ProductImage.objects.filter(image__in=[path for _, path in candidates]).values_list("image", flat=True)
+            )
+            new_candidates = [(product, path) for product, path in candidates if path not in existing_paths]
+            already_linked = len(candidates) - len(new_candidates)
 
         report = {
             "image_files": len(files),
@@ -78,7 +94,8 @@ class Command(BaseCommand):
             "matched_files": len(candidates),
             "unmatched_files": sum(len(by_code[code]) for code in unmatched_codes),
             "inactive_files_skipped": sum(len(by_code[code]) for code in inactive_codes if code not in eligible_codes),
-            "already_linked": len(candidates) - len(new_candidates),
+            "already_linked": already_linked,
+            "records_to_replace": records_to_replace,
             "to_create": len(new_candidates),
         }
         self.stdout.write("Product image import report: " + ", ".join(f"{key}={value}" for key, value in report.items()))
@@ -89,8 +106,16 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING("Dry run complete: no ProductImage records were changed."))
             return
 
-        created = self._create_images(new_candidates)
-        self.stdout.write(self.style.SUCCESS(f"Imported {created} ProductImage record(s). Existing files were not moved or changed."))
+        if options["replace_existing"]:
+            created = self._replace_images(new_candidates, candidate_product_ids)
+        else:
+            created = self._create_images(new_candidates)
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Imported {created} ProductImage record(s). "
+                "Existing image files were not moved or deleted."
+            )
+        )
 
     @staticmethod
     def _image_files(source):
@@ -151,5 +176,28 @@ class Command(BaseCommand):
                             sort_order=sort_order + index,
                         )
                     )
+            ProductImage.objects.bulk_create(new_images, batch_size=500)
+        return len(new_images)
+
+    @staticmethod
+    def _replace_images(candidates, product_ids):
+        images_by_product = defaultdict(list)
+        products_by_id = {}
+        for product, path in candidates:
+            products_by_id[product.id] = product
+            images_by_product[product.id].append(path)
+
+        with transaction.atomic():
+            ProductImage.objects.filter(product_id__in=product_ids).delete()
+            new_images = [
+                ProductImage(
+                    product=products_by_id[product_id],
+                    image=path,
+                    is_primary=index == 0,
+                    sort_order=index,
+                )
+                for product_id in sorted(images_by_product)
+                for index, path in enumerate(images_by_product[product_id])
+            ]
             ProductImage.objects.bulk_create(new_images, batch_size=500)
         return len(new_images)

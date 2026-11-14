@@ -93,7 +93,7 @@ def unified_search(request):
     image_queryset = ProductImage.objects.filter(is_primary=True).only("id", "image", "product_id")
     # Keep product matching aligned with the catalog's proven normalization,
     # identifier handling, ranking, and deduplication rules.
-    products_queryset = CatalogQueryService(Product.objects.filter(is_active=True), {"q": raw_query}).apply().select_related("category", "brand").prefetch_related(Prefetch("images", queryset=image_queryset, to_attr="_search_images"))
+    products_queryset = CatalogQueryService(Product.objects.filter(is_active=True, is_obsolete=False), {"q": raw_query}).apply().select_related("category", "brand").prefetch_related(Prefetch("images", queryset=image_queryset, to_attr="_search_images"))
     products = list(products_queryset[:GROUP_LIMIT])
     # Search cards render the same price/stock block as catalog cards, so the
     # payload carries the current selling price and availability (at most

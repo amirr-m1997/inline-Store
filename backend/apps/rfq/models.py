@@ -66,7 +66,7 @@ class RequestForQuotationItem(models.Model):
         verbose_name_plural = "اقلام استعلام قیمت"
 
     def clean(self):
-        if self.product_id and not Product.objects.filter(pk=self.product_id, is_active=True).exists():
+        if self.product_id and not Product.objects.filter(pk=self.product_id, is_active=True, is_obsolete=False).exists():
             raise ValidationError({"product": "این محصول برای استعلام عمومی فعال نیست."})
 
     def __str__(self):

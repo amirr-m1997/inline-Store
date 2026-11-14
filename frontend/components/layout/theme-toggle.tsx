@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { FiSun, FiMoon } from "react-icons/fi";
 
 export function ThemeToggle() {
   const [dark, setDark] = useState(false);
@@ -20,5 +21,17 @@ export function ThemeToggle() {
     }
     window.requestAnimationFrame(() => root.classList.remove("theme-changing"));
   };
-  return <button type="button" className="theme-toggle" onClick={toggle} aria-label="تغییر تم" aria-pressed={dark} title={dark ? "بازگشت به تم روشن" : "فعال‌کردن تم تاریک"}>{dark ? "☀" : "☾"}</button>;
+  return (
+    <button
+      type="button"
+      className="theme-toggle"
+      onClick={toggle}
+      aria-label="تغییر تم"
+      aria-pressed={dark}
+      title={dark ? "بازگشت به تم روشن" : "فعال‌کردن تم تاریک"}
+      style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+    >
+      {dark ? <FiSun size={18} aria-hidden="true" /> : <FiMoon size={18} aria-hidden="true" />}
+    </button>
+  );
 }

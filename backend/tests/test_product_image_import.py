@@ -44,3 +44,34 @@ class ProductImageImportCommandTests(TestCase):
             ["products/2026/08/1001001000078.jpg", "products/2026/08/1001001000078_1.jpg"],
         )
         self.assertEqual([image.is_primary for image in images], [True, False])
+
+    def test_replace_existing_replaces_only_matched_product_records_and_keeps_old_files(self):
+        image_file = self.source / "2026" / "08" / "1001001000078.jpg"
+        extra_image_file = self.source / "2026" / "08" / "1001001000078_1.jpg"
+        image_file.write_bytes(b"new image")
+        extra_image_file.write_bytes(b"new extra image")
+
+        old_file = self.media_root / "products" / "old.jpg"
+        old_file.parent.mkdir(parents=True, exist_ok=True)
+        old_file.write_bytes(b"old image")
+        ProductImage.objects.create(product=self.product, image="products/old.jpg", is_primary=True)
+
+        other_product = Product.objects.create(
+            code="1001001000079", name="Other product", slug="other-product", category=self.category, unit="piece"
+        )
+        ProductImage.objects.create(product=other_product, image="products/other.jpg", is_primary=True)
+
+        with override_settings(MEDIA_ROOT=self.media_root):
+            call_command("import_product_images", "--replace-existing")
+
+        images = list(ProductImage.objects.filter(product=self.product).order_by("sort_order", "id"))
+        self.assertEqual(
+            [image.image.name for image in images],
+            ["products/2026/08/1001001000078.jpg", "products/2026/08/1001001000078_1.jpg"],
+        )
+        self.assertEqual([image.is_primary for image in images], [True, False])
+        self.assertTrue(old_file.is_file())
+        self.assertEqual(
+            ProductImage.objects.filter(product=other_product).values_list("image", flat=True).get(),
+            "products/other.jpg",
+        )

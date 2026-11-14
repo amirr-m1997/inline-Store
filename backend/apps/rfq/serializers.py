@@ -105,12 +105,12 @@ class SalesQuotationResponseWriteSerializer(serializers.Serializer):
 
 
 class RequestForQuotationItemWriteSerializer(serializers.Serializer):
-    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.filter(is_active=True))
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.filter(is_active=True, is_obsolete=False))
     requested_quantity = serializers.IntegerField(min_value=1, max_value=1_000_000)
     customer_note = serializers.CharField(required=False, allow_blank=True, max_length=1000)
 
     def validate_product(self, product):
-        if not product.is_active:
+        if not product.is_active or product.is_obsolete:
             raise serializers.ValidationError("محصول انتخاب‌شده برای استعلام عمومی فعال نیست.")
         return product
 

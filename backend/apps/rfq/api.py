@@ -48,7 +48,7 @@ def rfq_cart_context(request):
     omitted_count = 0
     for item in cart.items.select_related("product").order_by("id"):
         product = item.product
-        if not product.is_active:
+        if not product.is_active or product.is_obsolete:
             omitted_count += 1
             continue
         if len(rows) >= 25:

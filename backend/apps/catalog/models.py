@@ -110,6 +110,8 @@ class Product(TimestampedModel):
     brand = models.ForeignKey(ProductBrand, null=True, blank=True, related_name="products", on_delete=models.SET_NULL)
     is_featured = models.BooleanField("نمایش در محصولات منتخب", default=False, db_index=True)
     condition = models.CharField("وضعیت کالا", max_length=12, choices=Condition.choices, default=Condition.NEW, db_index=True)
+    is_obsolete = models.BooleanField("کالای منسوخ (عدم نمایش عمومی)", default=False, db_index=True)
+    replacement_product = models.ForeignKey("self", null=True, blank=True, related_name="replaces", on_delete=models.SET_NULL, verbose_name="کالای جایگزین")
     is_active = models.BooleanField(default=True)
     class Meta:
         ordering = ("name",)
@@ -121,6 +123,11 @@ class Product(TimestampedModel):
         verbose_name = "محصول"
         verbose_name_plural = "محصولات"
     def __str__(self): return f"{self.code} — {self.name}"
+
+    def get_absolute_url(self):
+        from django.conf import settings
+        frontend_base = getattr(settings, "FRONTEND_URL", "http://127.0.0.1:3000").rstrip("/")
+        return f"{frontend_base}/fa/product/{self.slug}"
 
 
 class ProductFavorite(TimestampedModel):
@@ -188,6 +195,38 @@ DOCUMENT_MIME_TYPES = {
 
 
 def validate_product_document_file(uploaded_file):
+    """Validate uploaded product document files.
+    Performs safety checks on the filename, size, extension, and MIME type.
+    For existing ``FieldFile`` instances the ``uploaded_file`` will not be an
+    ``UploadedFile``; we still run the safety checks (filename, size, extension)
+    because they are inexpensive and ensure consistency.
+    """
+    is_new_upload = isinstance(uploaded_file, UploadedFile)
+    name = os.path.basename(uploaded_file.name or "")
+    # Filename must not contain path components or control characters.
+    if name != uploaded_file.name or re.search(r"[\x00-\x1f\\/\\]", name):
+        raise ValidationError("Document filenames must be safe and contain no path components.")
+    # Size limit.
+    if uploaded_file.size > DOCUMENT_MAX_SIZE:
+        raise ValidationError("Document files must be 25 MB or smaller.")
+    # Extension validation.
+    extension = os.path.splitext(name)[1].lower().lstrip(".")
+    if not extension:
+        raise ValidationError("Document files must include an allowed extension.")
+    # MIME type validation applies only to freshly uploaded files.
+    if is_new_upload and uploaded_file.content_type and uploaded_file.content_type not in DOCUMENT_MIME_TYPES:
+        raise ValidationError("The document MIME type is not allowed.")
+    return
+    # (dead code removed)
+    # already have a safe stored path, so we skip the strict basename check to allow
+    # editing a document without re‑uploading.
+    if isinstance(uploaded_file, UploadedFile):
+        name = os.path.basename(uploaded_file.name or "")
+        if name != uploaded_file.name or re.search(r"[\x00-\x1f\\/\\]", name):
+            raise ValidationError("Document filenames must be safe and contain no path components.")
+    # For existing file objects (FieldFile), no additional validation is required.
+    return
+
     name = os.path.basename(uploaded_file.name or "")
     if name != uploaded_file.name or re.search(r"[\x00-\x1f\\/]", name):
         raise ValidationError("Document filenames must be safe and contain no path components.")

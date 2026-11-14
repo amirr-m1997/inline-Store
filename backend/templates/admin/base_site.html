@@ -3,9 +3,43 @@
 
 {% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('MehrAsl') }}{% endblock %}
 
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/theme.css' %}">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/theme.css' %}?v=9">{% endblock %}
 
-{% block extrahead %}{{ block.super }}<script src="{% static 'admin/changelist-responsive.js' %}" defer></script>{% endblock %}
+{% block extrahead %}
+{{ block.super }}
+<script src="{% static 'admin/changelist-responsive.js' %}" defer></script>
+<script defer>
+  (() => {
+    const inlineSelector = '.inline-group .tabular.inline-related > fieldset.module';
+
+    const prepareInline = (fieldset) => {
+      const table = fieldset.querySelector(':scope > table');
+      if (!table || table.parentElement.classList.contains('mehrasl-inline-scroll')) return;
+
+      const hint = document.createElement('p');
+      hint.className = 'mehrasl-inline-scroll-hint';
+      hint.textContent = 'برای دیدن همه ستون‌ها، جدول را به چپ و راست بکشید.';
+
+      const viewport = document.createElement('div');
+      viewport.className = 'mehrasl-inline-scroll';
+      viewport.tabIndex = 0;
+      viewport.setAttribute('role', 'region');
+      viewport.setAttribute('aria-label', 'جدول فیلدهای درون‌خطی قابل پیمایش افقی');
+      table.before(viewport);
+      viewport.append(table);
+      hint.before(viewport);
+
+      const refreshHint = () => hint.classList.toggle('is-visible', viewport.scrollWidth > viewport.clientWidth + 4);
+      requestAnimationFrame(refreshHint);
+      new ResizeObserver(refreshHint).observe(viewport);
+    };
+
+    const prepareAll = () => document.querySelectorAll(inlineSelector).forEach(prepareInline);
+    document.addEventListener('DOMContentLoaded', prepareAll);
+    document.addEventListener('formset:added', prepareAll);
+  })();
+</script>
+{% endblock %}
 
 {% block branding %}
 <div class="mehrasl-brand">
@@ -15,9 +49,6 @@
     <small>کنسول مدیریت فروشگاه</small>
   </span>
 </div>
-{% if user.is_anonymous %}
-  {% include "admin/color_theme_toggle.html" %}
-{% endif %}
 {% endblock %}
 
 {% block footer %}

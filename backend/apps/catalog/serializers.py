@@ -334,7 +334,7 @@ class ProductDetailSerializer(ProductSerializer):
         return [{"label": str(label), "value": value} for label, value in specs.items()]
 
     def get_related_products(self, obj):
-        products = Product.objects.filter(is_active=True, category=obj.category).exclude(pk=obj.pk).prefetch_related("images")[:4]
+        products = Product.objects.filter(is_active=True, is_obsolete=False, category=obj.category).exclude(pk=obj.pk).prefetch_related("images")[:4]
         return ProductSummarySerializer(products, many=True, context=self.context).data
 
     def get_service_advantages(self, obj):

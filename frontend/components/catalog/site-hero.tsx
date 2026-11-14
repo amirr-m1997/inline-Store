@@ -60,7 +60,19 @@ export function SiteHero({ hero, locale }: { hero: SiteHeroData | null; locale: 
   return <section className={`site-hero site-container${imageSource ? " site-hero--responsive-image" : ""}`} onKeyDown={(event) => { if (event.key === "ArrowLeft") move(english ? 1 : -1); if (event.key === "ArrowRight") move(english ? -1 : 1); }} onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocus={() => setPaused(true)} onBlur={() => setPaused(false)} aria-roledescription={banners.length > 1 ? "carousel" : undefined} aria-label={banners.length > 1 ? (english ? "Homepage banners" : "بنرهای صفحه اصلی") : undefined}>
     {imageSource && <Image className={`site-hero-media${hasSeparateMobileImage ? " site-hero-media--desktop" : " site-hero-media--single"}`} alt={banner.title || (english ? "Homepage banner" : "بنر صفحه اصلی")} fill priority={active === 0} loading={active === 0 ? "eager" : "lazy"} sizes="(max-width: 900px) 100vw, min(100vw - 2rem, 1180px)" src={banner.desktop_image || imageSource} />}
     {hasSeparateMobileImage && banner.mobile_image && <Image className="site-hero-media-mobile" alt="" aria-hidden="true" fill priority={active === 0} loading={active === 0 ? "eager" : "lazy"} sizes="(max-width: 900px) 100vw, 1px" src={banner.mobile_image} />}
-    <div className="site-hero-content" key={banner.id} aria-live="polite"><h1>{banner.title}</h1>{isLegacySlide ? hero.slogan && <h2>{hero.slogan}</h2> : banner.description && <h2>{banner.description}</h2>}{isLegacySlide && hero.description && <p>{hero.description}</p>}{(banner.button || (isLegacySlide && hero.buttons.length > 1)) && <div className="site-hero-actions">{banner.button && <Link className="site-hero-button primary" href={localizeHeroLink(banner.button.link, locale)}>{banner.button.text}</Link>}{isLegacySlide && hero.buttons.slice(1).map((button) => <Link key={button.link} className="site-hero-button secondary" href={localizeHeroLink(button.link, locale)}>{button.text}</Link>)}</div>}</div>
+    {(banner.title || (isLegacySlide ? hero.slogan : banner.description) || (isLegacySlide && hero.description) || banner.button) && (
+      <div className="site-hero-content" key={banner.id} aria-live="polite">
+        {banner.title && <h1>{banner.title}</h1>}
+        {isLegacySlide ? hero.slogan && <h2>{hero.slogan}</h2> : banner.description && <h2>{banner.description}</h2>}
+        {isLegacySlide && hero.description && <p>{hero.description}</p>}
+        {(banner.button || (isLegacySlide && hero.buttons.length > 1)) && (
+          <div className="site-hero-actions">
+            {banner.button && <Link className="site-hero-button primary" href={localizeHeroLink(banner.button.link, locale)}>{banner.button.text}</Link>}
+            {isLegacySlide && hero.buttons.slice(1).map((button) => <Link key={button.link} className="site-hero-button secondary" href={localizeHeroLink(button.link, locale)}>{button.text}</Link>)}
+          </div>
+        )}
+      </div>
+    )}
     {banners.length > 1 && <><button type="button" className="site-hero-control site-hero-control-prev" onClick={() => move(-1)} aria-label={english ? "Previous banner" : "بنر قبلی"}>‹</button><button type="button" className="site-hero-control site-hero-control-next" onClick={() => move(1)} aria-label={english ? "Next banner" : "بنر بعدی"}>›</button><div className="site-hero-indicators" role="group" aria-label={english ? "Choose homepage banner" : "انتخاب بنر صفحه اصلی"}>{banners.map((item, index) => <button key={item.id} type="button" className={index === active ? "is-active" : ""} onClick={() => setActive(index)} aria-label={`${english ? "Banner" : "بنر"} ${index + 1}`} aria-current={index === active ? "true" : undefined} />)}</div></>}
     <div ref={liveRef} className="sr-only" aria-live="polite">{english ? `Banner ${active + 1} of ${banners.length}` : `بنر ${active + 1} از ${banners.length}`}</div>
   </section>;

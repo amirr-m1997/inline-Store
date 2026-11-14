@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Customer } from "../../../services/auth-client";
 import { createAddress, deleteAddress, getAddresses, getProfile, updateProfile } from "../../../lib/api/account";
 import { changePassword } from "../../../lib/api/auth";
 import { getOrders, sendInvoice } from "../../../lib/api/orders";
 import { formatAccountDate, formatAccountNumber } from "../../../lib/account-format";
+import { isAuthenticationError, loginPath } from "../../../services/auth-client";
 
 type Address = { id: number; title: string; recipient_name: string; recipient_phone: string; province: string; city: string; postal_code: string; address: string; is_default: boolean };
 type AddressDraft = Omit<Address, "id">;
@@ -39,6 +40,7 @@ function normalizeProfile(value: Partial<Customer>): Customer {
 
 export default function AccountPage() {
   const { locale = "fa" } = useParams<{ locale: string }>();
+  const pathname = usePathname();
   const router = useRouter();
   const [profile, setProfile] = useState<Customer | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -50,7 +52,7 @@ export default function AccountPage() {
   const [message, setMessage] = useState(""); const [error, setError] = useState("");
 
   const loadAddresses = () => getAddresses<Address[]>().then(setAddresses);
-  useEffect(() => { getProfile<Customer>().then((value) => setProfile(normalizeProfile(value))).catch(() => router.replace(`/${locale}/login`)); loadAddresses().catch(() => setAddresses([])); getOrders<CustomerOrder[]>().then(setOrders).catch(() => setOrders([])); }, [locale, router]);
+  useEffect(() => { getProfile<Customer>().then((value) => setProfile(normalizeProfile(value))).catch((reason) => { if (isAuthenticationError(reason)) router.replace(loginPath(locale, pathname)); else setError(reason instanceof Error ? reason.message : "دریافت حساب کاربری ناموفق بود."); }); loadAddresses().catch(() => setAddresses([])); getOrders<CustomerOrder[]>().then(setOrders).catch(() => setOrders([])); }, [locale, pathname, router]);
   const update = (name: keyof Customer, value: string) => setProfile((current) => current ? { ...current, [name]: value } : current);
   const saveProfile = async (event: React.FormEvent) => {
     event.preventDefault();

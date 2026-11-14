@@ -1,8 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BackToTop } from "./back-to-top";
+import { FiPhone, FiMail, FiMapPin, FiChevronLeft } from "react-icons/fi";
+import { FaWhatsapp, FaTelegramPlane, FaLinkedinIn, FaInstagram } from "react-icons/fa";
 import { getFooterServer } from "../../lib/api/content";
-import { getCatalogQueryServer } from "../../lib/api/products";
+import { FooterAccordionCol } from "./footer-accordion-col";
 
 type FooterPayload = {
   company: {
@@ -24,115 +25,283 @@ type FooterPayload = {
   copyright: string;
 };
 
-type FooterLink = { label: string; href: string; external?: boolean; newTab?: boolean };
+type FooterLink = { id?: string | number; label: string; href: string; external?: boolean; newTab?: boolean };
+
+function normalizeLegacyFooterUrl(url: string, locale: string) {
+  const normalized = url.trim();
+  if (/^\/?fa\/category\/search\?ordering=-created_at$/i.test(normalized) || /^\/?category\/search\?ordering=-created_at$/i.test(normalized)) return `/${locale}/newest`;
+  if (/^\/?fa\/category\/search\?discount=true$/i.test(normalized) || /^\/?category\/search\?discount=true$/i.test(normalized)) return `/${locale}/best-discounts`;
+  return normalized;
+}
 
 function toAsciiPhone(value: string): string {
   const faToEn: Record<string, string> = { "۰": "0", "۱": "1", "۲": "2", "۳": "3", "۴": "4", "۵": "5", "۶": "6", "۷": "7", "۸": "8", "۹": "9" };
   return value.replace(/[۰-۹]/g, (digit) => faToEn[digit] ?? digit).replace(/[^\d+]/g, "");
 }
 
+function displayPhone(value: string): string {
+  return value.trim().replace(/^[^\d۰-۹+]+/, "");
+}
+
 function FooterLinks({ links }: { links: FooterLink[] }) {
-  return <ul className="footer-nav-list">{links.map((link) => <li key={link.href}>{link.external ? <a href={link.href} target={link.newTab ? "_blank" : undefined} rel={link.newTab ? "noreferrer" : undefined}>{link.label}<span aria-hidden="true" className="footer-link-arrow">←</span></a> : <Link href={link.href}>{link.label}<span aria-hidden="true" className="footer-link-arrow">←</span></Link>}</li>)}</ul>;
+  return (
+    <ul className="footer-nav-list">
+      {links.map((link, index) => {
+        const key = link.id ? `link-${link.id}` : `link-${link.href}-${index}`;
+        return (
+          <li key={key}>
+            {link.external ? (
+              <a href={link.href} target={link.newTab ? "_blank" : undefined} rel={link.newTab ? "noreferrer" : undefined}>
+                <FiChevronLeft size={13} className="footer-link-icon" aria-hidden="true" />
+                <span>{link.label}</span>
+              </a>
+            ) : (
+              <Link href={link.href}>
+                <FiChevronLeft size={13} className="footer-link-icon" aria-hidden="true" />
+                <span>{link.label}</span>
+              </Link>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
 }
 
 export async function SiteFooter({ locale = "fa" }: { locale?: string }) {
   const english = locale === "en";
-  const [footer, discounts] = await Promise.all([
-    getFooterServer<FooterPayload>().catch((error) => {
-      console.error("Unable to load footer content.", error);
-      return null;
-    }),
-    getCatalogQueryServer({ page_size: 1, discounted: "1" }).catch((error) => {
-      console.error("Unable to check active discounted products for the footer.", error);
-      return null;
-    }),
-  ]);
+  const footer = await getFooterServer<FooterPayload>().catch((error) => {
+    console.error("Unable to load footer content.", error);
+    return null;
+  });
 
   const company = footer?.company;
-  const companyName = company?.name_fa || (english ? "Mehr Asl Manufacturing Co." : "کارخانجات تولیدی مهراصل");
-  const companyDesc = company?.description || (english
-    ? "Mehr Asl Manufacturing was registered and established in 1990 with a focus on industrial air conditioning and refrigeration."
-    : "شرکت تولیدی مهراصل در سال ۱۳۶۹ با زمینه فعالیت تهویه مطبوع و تبرید صنعتی ثبت و افتتاح شد.");
-  const phone = company?.phone || "۰۲۱-۸۸۳۰۰۸۰۱";
-  const factoryPhone = company?.mobile || "۰۴۱-۳۴۳۲۸۹۴۱";
+  const companyName = company?.name_fa || (english ? "Mehr Asl Manufacturing Co." : "شرکت تولیدی مهر اصل");
+  const companyDesc =
+    company?.description ||
+    (english
+      ? "Manufacturer and specialist supplier of industrial refrigeration, HVAC equipment, and chillers nationwide."
+      : "تولیدکننده و تأمین‌کننده تجهیزات تهویه مطبوع، چیلرها و برودت صنعتی با ضمانت اصالت کالا و خدمات پس از فروش سراسری.");
+  const phone = company?.phone || "۰۲۱-۶۷۳۸۹۸۸۵";
+  const factoryPhone = company?.mobile || "۰۴۱-۳۳۳۸۹۸۸۵";
   const email = company?.email || "sales.manager@mehrasl.ir";
-  const address = company?.address || (english
-    ? "Tehran: No. 17, Zohreh St., North Mofatteh Ave. | Tabriz Factory: Km 35 Azarshahr Road, Shahid Salimi Industrial Zone"
-    : "دفتر مرکزی: تهران، خیابان مفتح شمالی، خیابان زهره، شماره ۱۷ | کارخانه مرکزی: تبریز، کیلومتر ۳۵ جاده آذرشهر، شهرک صنعتی شهید سلیمی");
+  const address =
+    company?.address ||
+    (english
+      ? "Tehran Central Office: Ayatollah Hashemi Rafsanjani Expy, Shahid Sattari St. | Tabriz Factory: Km 35 Azarshahr Rd, Shahid Salimi Zone"
+      : "تهران: بزرگراه آیت‌الله هاشمی رفسنجانی، خیابان شهید ستاری | کارخانه: تبریز، کیلومتر ۳۵ جاده آذرشهر، شهرک صنعتی شهید سلیمی");
   const copyright = english
     ? footer?.copyright || "All rights reserved for Mehr Asl Manufacturing Corporation. © 2026"
-    : "تمام حقوق برای شرکت تولیدی مهر اصل محفوظ است.";
+    : "تمامی حقوق برای شرکت تولیدی مهر اصل محفوظ است.";
+
   const path = (value: string) => `/${locale}${value}`;
+
+  // Structured columns matching standard prompt with exactly 5 to 6 links per column
   const productLinks: FooterLink[] = [
-    { label: english ? "All products" : "همه محصولات", href: path("/shop") },
-    { label: english ? "Product categories" : "دسته‌بندی محصولات", href: path("/categories") },
-    { label: english ? "Newest products" : "جدیدترین محصولات", href: path("/newest") },
-    ...(discounts && discounts.total_count > 0 ? [{ label: english ? "Discounted products" : "محصولات تخفیف‌دار", href: path("/best-discounts") }] : []),
-    { label: english ? "Search products and codes" : "جستجوی محصولات و کد فنی", href: path("/search") },
-    { label: english ? "Technical articles" : "دانشنامه و راهنمای انتخاب", href: path("/knowledge") },
+    { id: "all-products", label: english ? "All products" : "همه محصولات", href: path("/shop") },
+    { id: "categories", label: english ? "Product categories" : "دسته‌بندی‌های اصلی", href: path("/categories") },
+    { id: "brands", label: english ? "Industrial brands" : "برندهای معتبر صنعتی", href: path("/shop") },
+    { id: "advanced-search", label: english ? "Advanced search" : "جستجوی پیشرفته و کد فنی", href: path("/search") },
+    { id: "discounts", label: english ? "Discounted products" : "محصولات تخفیف‌دار", href: path("/best-discounts") },
+    { id: "newest", label: english ? "Newest products" : "جدیدترین محصولات", href: path("/newest") },
   ];
-  const guideLinks: FooterLink[] = [
-    { label: english ? "Frequently asked questions" : "سؤالات متداول", href: path("/faq") },
-    { label: english ? "Track orders" : "پیگیری سفارش‌ها", href: path("/account/orders") },
-    { label: english ? "Technical resources" : "منابع فنی", href: path("/support/resources") },
-  ];
+
   const serviceLinks: FooterLink[] = [
-    { label: english ? "Request a quotation" : "درخواست استعلام قیمت", href: path("/rfq") },
-    { label: english ? "Contact sales" : "تماس با واحد فروش", href: path("/contact") },
-    { label: english ? "Customer support" : "پشتیبانی مشتریان", href: path("/support") },
-    { label: english ? "Submit a support request" : "ثبت درخواست پشتیبانی", href: path("/support/request") },
-    { label: english ? "Warranty information" : "اطلاعات و درخواست گارانتی", href: path("/support/warranty") },
+    { id: "project-orders", label: english ? "Project orders" : "ثبت سفارشات پروژه‌ای", href: path("/rfq") },
+    { id: "quote", label: english ? "Request quotation" : "درخواست پیش‌فاکتور رسمی", href: path("/rfq") },
+    { id: "track-order", label: english ? "Track orders" : "پیگیری سفارش‌ها", href: path("/account/orders") },
+    { id: "support", label: english ? "Customer support" : "پشتیبانی و امور مشتریان", href: path("/support") },
+    { id: "sales-contact", label: english ? "Contact sales" : "تماس مستقیم با واحد فروش", href: path("/contact") },
+    { id: "warranty", label: english ? "Warranty services" : "اطلاعات و خدمات گارانتی", href: path("/support/warranty") },
   ];
+
   const companyLinks: FooterLink[] = [
-    { label: english ? "About Mehr Asl" : "درباره مهر اصل", href: path("/about") },
-    ...(footer?.company?.website && /^https?:\/\//i.test(footer.company.website) ? [{ label: english ? "Company website" : "وب‌سایت شرکت", href: footer.company.website, external: true }] : []),
+    { id: "about", label: english ? "About company" : "درباره شرکت", href: path("/about") },
+    { id: "factory", label: english ? "Factory specs" : "مشخصات و خطوط کارخانه", href: path("/about") },
+    { id: "knowledge", label: english ? "Articles & news" : "آخرین مقالات و اخبار فنی", href: path("/knowledge") },
+    { id: "faq", label: english ? "FAQ" : "سؤالات متداول", href: path("/faq") },
+    { id: "contact", label: english ? "Contact us" : "تماس مستقیم با ما", href: path("/contact") },
+    ...(company?.website && /^https?:\/\//i.test(company.website)
+      ? [{ id: "website", label: english ? "Company website" : "وب‌سایت رسمی شرکت", href: company.website, external: true }]
+      : [{ id: "terms", label: english ? "Terms of service" : "شرایط و قوانین فروش", href: path("/faq") }]),
   ];
-  const knownCompanyLinks = new Set(companyLinks.map((link) => link.href));
+
+  // Dynamically attach any custom database links created in Django admin that aren't already represented
+  const existingHrefs = new Set([
+    ...productLinks.map((l) => l.href),
+    ...serviceLinks.map((l) => l.href),
+    ...companyLinks.map((l) => l.href),
+    path("/account"),
+    path("/cart"),
+  ]);
+
   for (const section of footer?.sections ?? []) {
+    const sTitle = section.title.toLowerCase();
     for (const link of section.links) {
-      const validUrl = (link.url.startsWith("/") && !link.url.startsWith("//")) || /^https?:\/\//i.test(link.url);
-      if (!validUrl || knownCompanyLinks.has(link.url)) continue;
-      knownCompanyLinks.add(link.url);
-      companyLinks.push({ label: link.title, href: link.url, external: /^https?:\/\//i.test(link.url), newTab: link.open_in_new_tab });
+      const url = normalizeLegacyFooterUrl(link.url, locale);
+      const validUrl = (url.startsWith("/") && !url.startsWith("//")) || /^https?:\/\//i.test(url);
+      if (!validUrl || existingHrefs.has(url)) continue;
+      existingHrefs.add(url);
+
+      const footerItem: FooterLink = {
+        id: `db-${link.id}`,
+        label: link.title,
+        href: url,
+        external: /^https?:\/\//i.test(url),
+        newTab: link.open_in_new_tab,
+      };
+
+      if (sTitle.includes("فروشگاه") || sTitle.includes("محصول") || url.includes("/shop") || url.includes("/categor")) {
+        productLinks.push(footerItem);
+      } else if (sTitle.includes("پشتیبانی") || url.includes("/support")) {
+        serviceLinks.push(footerItem);
+      } else {
+        companyLinks.push(footerItem);
+      }
     }
   }
 
+  const badges = footer?.trust_badges?.length
+    ? footer.trust_badges
+    : [
+        { id: 1, title: "نماد اعتماد الکترونیکی (eNamad)", image: "", url: "#", alt: "نماد اعتماد الکترونیکی" },
+        { id: 2, title: "گواهینامه‌های استاندارد و ایزو صنعتی", image: "", url: "#", alt: "استاندارد ملی و ایزو" },
+      ];
+
   return (
     <footer className="database-footer" aria-label={english ? "Site footer" : "پاورقی سایت"}>
-      <div className="footer-main responsive-container">
-        <section className="footer-col footer-company" aria-labelledby="footer-company-title">
-          <div className="footer-brand">
-            {company?.logo ? <Image src={company.logo} alt="" aria-hidden="true" width={92} height={92} sizes="68px" className="footer-logo-img" /> : <div className="footer-brand-mark" aria-hidden="true"><i>❄</i></div>}
-            <div><h2 className="footer-company-name" id="footer-company-title">{companyName}</h2><span className="footer-brand-tagline">{english ? "Industrial HVAC & Refrigeration" : "تهویه مطبوع و تبرید صنعتی"}</span></div>
+      <div className="responsive-container">
+        {/* 5-Column Grid */}
+        <div className="footer-main">
+          {/* Column 1: Company & Live Contact Info */}
+          <section className="footer-col footer-company" aria-labelledby="footer-company-title">
+            <div className="ma-brand-header">
+              <Link href={`/${locale}`} className="ma-footer-logo-link" aria-label={`صفحه اصلی ${companyName}`}>
+                {company?.logo ? (
+                  <Image src={company.logo} alt="" aria-hidden="true" width={220} height={90} sizes="(max-width: 768px) 180px, 220px" className="ma-footer-logo-img" />
+                ) : (
+                  <h2 id="footer-company-title" className="ma-brand-fallback-title">{companyName}</h2>
+                )}
+              </Link>
+            </div>
+            <p className="ma-brand-desc">{companyDesc}</p>
+            <div className="ma-contact-list">
+              <div className="ma-contact-item">
+                <span className="ma-contact-label">
+                  <FiPhone size={14} className="ma-contact-icon" aria-hidden="true" />
+                  {english ? "Sales Office:" : "دفتر فروش مرکزی:"}
+                </span>
+                <a href={`tel:${toAsciiPhone(displayPhone(phone))}`} dir="ltr" className="ma-contact-value">
+                  {displayPhone(phone)}
+                </a>
+              </div>
+              {factoryPhone && (
+                <div className="ma-contact-item">
+                  <span className="ma-contact-label">
+                    <FiPhone size={14} className="ma-contact-icon" aria-hidden="true" />
+                    {english ? "Factory:" : "کارخانه مرکزی:"}
+                  </span>
+                  <a href={`tel:${toAsciiPhone(displayPhone(factoryPhone))}`} dir="ltr" className="ma-contact-value">
+                    {displayPhone(factoryPhone)}
+                  </a>
+                </div>
+              )}
+              {email && (
+                <div className="ma-contact-item">
+                  <span className="ma-contact-label">
+                    <FiMail size={14} className="ma-contact-icon" aria-hidden="true" />
+                    {english ? "Email:" : "پست الکترونیکی:"}
+                  </span>
+                  <a href={`mailto:${email}`} dir="ltr" className="ma-contact-value">
+                    {email}
+                  </a>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Column 2: Products & Purchase */}
+          <FooterAccordionCol
+            title={english ? "Products & Catalog" : "خرید و محصولات"}
+            id="footer-products-title"
+            links={productLinks}
+            english={english}
+          />
+
+          {/* Column 3: Corporate Sales & Customer Portal */}
+          <FooterAccordionCol
+            title={english ? "Corporate Services" : "خدمات و فروش سازمانی"}
+            id="footer-service-title"
+            links={serviceLinks}
+            english={english}
+          />
+
+          {/* Column 4: Corporate & Content */}
+          <FooterAccordionCol
+            title={english ? "About Mehr Asl" : "درباره مهر اصل"}
+            id="footer-company-links-title"
+            links={companyLinks}
+            english={english}
+          />
+
+          {/* Column 5: Location & Authentications */}
+          <section className="footer-col" aria-labelledby="footer-location-title">
+            <h2 className="footer-col-title" id="footer-location-title">
+              {english ? "Location & Authentications" : "نشانی و مجوزها"}
+            </h2>
+            <div className="ma-address-box">
+              <strong>
+                <FiMapPin size={15} aria-hidden="true" style={{ color: "#2ecc71" }} />
+                {english ? "Central Office:" : "دفتر مرکزی:"}
+              </strong>
+              <p>{address}</p>
+            </div>
+            <div className="ma-badges">
+              {badges.map((badge) => {
+                const validUrl = /^https?:\/\//i.test(badge.url);
+                return (
+                  <div key={badge.id} className="ma-badge-item">
+                    {badge.image ? (
+                      validUrl ? (
+                        <a href={badge.url} target="_blank" rel="noreferrer" title={badge.title}>
+                          <Image src={badge.image} alt={badge.alt || badge.title} width={80} height={60} sizes="80px" />
+                        </a>
+                      ) : (
+                        <Image src={badge.image} alt={badge.alt || badge.title} width={80} height={60} sizes="80px" />
+                      )
+                    ) : (
+                      <span>{badge.title}</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+
+        {/* Footer Bottom Utility Bar */}
+        <div className="footer-bottom">
+          <div className="footer-bottom-inner">
+            <p className="footer-copyright-text">
+              © {copyright}
+            </p>
+            <div className="ma-socials" aria-label={english ? "Social media links" : "شبکه‌های اجتماعی"}>
+              <a href="https://wa.me/" target="_blank" rel="noreferrer" className="ma-social-btn" title="واتساپ" aria-label="WhatsApp">
+                <FaWhatsapp size={16} aria-hidden="true" />
+              </a>
+              <a href="https://t.me/" target="_blank" rel="noreferrer" className="ma-social-btn" title="تلگرام" aria-label="Telegram">
+                <FaTelegramPlane size={16} aria-hidden="true" />
+              </a>
+              <a href="https://linkedin.com/" target="_blank" rel="noreferrer" className="ma-social-btn" title="لینکدین" aria-label="LinkedIn">
+                <FaLinkedinIn size={16} aria-hidden="true" />
+              </a>
+              <a href="https://instagram.com/" target="_blank" rel="noreferrer" className="ma-social-btn" title="اینستاگرام" aria-label="Instagram">
+                <FaInstagram size={16} aria-hidden="true" />
+              </a>
+            </div>
           </div>
-          <p className="footer-description">{companyDesc}</p>
-          <address className="footer-address-block">
-            <div className="footer-contact-item"><span className="footer-contact-icon" aria-hidden="true">⌖</span><span className="footer-contact-text">{address}</span></div>
-            <div className="footer-contact-item"><span className="footer-contact-icon" aria-hidden="true">☎</span><div><span className="footer-contact-label">{english ? "Sales:" : "دفتر فروش:"} </span><a href={`tel:${toAsciiPhone(phone)}`} dir="ltr" className="footer-contact-link">{phone}</a></div></div>
-            {factoryPhone && <div className="footer-contact-item"><span className="footer-contact-icon" aria-hidden="true">☎</span><div><span className="footer-contact-label">{english ? "Factory:" : "کارخانه:"} </span><a href={`tel:${toAsciiPhone(factoryPhone)}`} dir="ltr" className="footer-contact-link">{factoryPhone}</a></div></div>}
-            {email && <div className="footer-contact-item"><span className="footer-contact-icon" aria-hidden="true">✉</span><a href={`mailto:${email}`} dir="ltr" className="footer-contact-link">{email}</a></div>}
-          </address>
-        </section>
-
-        <section className="footer-col" aria-labelledby="footer-products-title"><h2 className="footer-col-title" id="footer-products-title">{english ? "Products & search" : "خرید و محصولات"}</h2><nav aria-label={english ? "Products and search" : "محصولات و جستجو"}><FooterLinks links={productLinks} /></nav></section>
-        <section className="footer-col" aria-labelledby="footer-guide-title"><h2 className="footer-col-title" id="footer-guide-title">{english ? "Buying guide" : "راهنمای خرید"}</h2><nav aria-label={english ? "Buying guide" : "راهنمای خرید"}><FooterLinks links={guideLinks} /></nav></section>
-        <section className="footer-col" aria-labelledby="footer-service-title"><h2 className="footer-col-title" id="footer-service-title">{english ? "Customer service & business" : "خدمات مشتریان و فروش سازمانی"}</h2><nav aria-label={english ? "Customer and business services" : "خدمات مشتریان و فروش سازمانی"}><FooterLinks links={serviceLinks} /></nav></section>
-        <section className="footer-col" aria-labelledby="footer-company-links-title"><h2 className="footer-col-title" id="footer-company-links-title">{english ? "Company information" : "درباره شرکت"}</h2><nav aria-label={english ? "Company information" : "درباره و اطلاعات شرکت"}><FooterLinks links={companyLinks} /></nav></section>
+        </div>
       </div>
-
-      {footer?.trust_badges?.length ? <section className="footer-trust responsive-container" aria-labelledby="footer-trust-title">
-        <h2 className="footer-trust-title" id="footer-trust-title">{english ? "Licenses & trust marks" : "مجوزها و نمادهای اعتماد"}</h2>
-        <div className="footer-trust-badges">{footer.trust_badges.map((badge) => {
-          const image = <Image src={badge.image} alt={badge.alt || badge.title} width={96} height={96} sizes="96px" />;
-          const validUrl = /^https?:\/\//i.test(badge.url);
-          return <div key={badge.id} className="footer-trust-item">{validUrl ? <a href={badge.url} target="_blank" rel="noreferrer" title={badge.title}>{image}</a> : image}</div>;
-        })}</div>
-      </section> : null}
-
-      <div className="footer-bottom"><div className="responsive-container footer-bottom-inner">
-        <p className="footer-copyright-text">{copyright}</p>
-        <BackToTop english={english} />
-      </div></div>
     </footer>
   );
 }

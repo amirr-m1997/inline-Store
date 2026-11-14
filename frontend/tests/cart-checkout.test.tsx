@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -33,5 +33,11 @@ describe("cart and checkout UX", () => {
     expect(screen.getByText("تخفیف")).toBeInTheDocument();
     expect(screen.getByText("مبلغ قابل پرداخت")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "خلاصه سفارش" }).closest("section")).not.toHaveTextContent("هزینه ارسال");
+  });
+
+  it("does not present an unpriced cart as a zero-value payable order", () => {
+    const view = render(<CartSummary cart={{ subtotal: "0", discount_amount: "0", total: "0", unpriced_items_count: 1, checkout_eligible: false }} />);
+    expect(within(view.container).getByText("نیازمند استعلام قیمت")).toBeInTheDocument();
+    expect(within(view.container).queryByText("مبلغ قابل پرداخت")).not.toBeInTheDocument();
   });
 });

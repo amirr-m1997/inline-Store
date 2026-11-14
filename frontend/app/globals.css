@@ -367,6 +367,12 @@ html.dark .auth-form input,html.dark .reference-search,html.dark .catalog-filter
 
 /* Phase 11.2 editorial center */
 .editorial-center,.editorial-detail-page{padding-top:var(--space-section-md);padding-bottom:var(--space-section-lg);scroll-margin-top:calc(var(--site-header-height) + 16px)}
+
+/* Anchor and programmatic focus targets must remain visible below the sticky
+   site header, especially when a form reports an invalid field on tablets. */
+html{scroll-padding-top:calc(var(--site-header-height) + 20px)}
+input,select,textarea,[tabindex]:not([tabindex="-1"]){scroll-margin-top:calc(var(--site-header-height) + 20px)}
+.cart-obsolete-notice{margin:8px 0;padding:8px 10px;border:1px solid color-mix(in srgb,#b24430 38%,var(--color-border));border-radius:8px;background:color-mix(in srgb,#b24430 8%,var(--color-surface));color:var(--color-text-primary);font-size:11px;line-height:1.8}.cart-obsolete-notice a{color:inherit;font-weight:800;text-decoration:underline;text-underline-offset:2px}
 .editorial-hero{padding:clamp(22px,3vw,34px);border:1px solid color-mix(in srgb,var(--color-brand-gold) 34%,var(--color-border));border-radius:var(--radius-lg);background:linear-gradient(120deg,var(--color-brand-navy-strong),#173d57);color:#fff}
 .editorial-hero>span,.editorial-featured>header>span,.editorial-latest header span,.editorial-preview header span,.editorial-related-articles header span,.editorial-topic-list header span{color:var(--color-editorial-accent);font-size:11px;font-weight:800;letter-spacing:.06em}
 .editorial-hero h1{margin:8px 0;font-size:clamp(30px,3.2vw,38px);line-height:1.35}.editorial-hero p{max-width:680px;margin:0;color:#d7e3ea;font-size:14px;line-height:2}
@@ -816,3 +822,88 @@ html.dark .catalog-loading-card{border-color:var(--color-border);background:var(
 .product-detail-section-title{margin:4px 0 0;padding-bottom:10px;border-bottom:2px solid var(--color-brand-gold);color:var(--color-text-primary);font-size:17px;font-weight:900}
 .product-detail-tabs--single .product-description-body{padding:8px 0 14px}
 .product-detail-tabs--single .product-spec-table{padding:8px 0 0}
+
+/* Drawers must cover fixed quick actions while a filter panel is open. */
+.ui-overlay{z-index:1000}
+/* The dots stay visually small; the pseudo-element expands their touch target. */
+.site-hero-indicators button{position:relative}
+.site-hero-indicators button::before{position:absolute;inset:-9px;content:""}
+
+/* Header density: one compact desktop utility row, an overlaying mobile menu,
+   and a reserved document-flow height so the sticky state never pulls content. */
+:root{--site-header-reserved-height:0px}
+.reference-header-spacer{height:0;transition:height .2s ease}
+.reference-header.is-compact + .reference-header-spacer{height:max(0px,calc(var(--site-header-reserved-height) - var(--site-header-height)))}
+.reference-topbar{min-height:26px;padding-block:3px;font-size:10px}
+.reference-topbar-inner{min-height:20px;gap:12px}
+.reference-topbar b{font-size:11px}
+.reference-main-header{min-height:60px;padding-block:7px;gap:16px}
+.reference-brand--logo img{width:132px;height:42px;border-radius:0;background:transparent}
+.reference-brand:not(.reference-brand--logo) i{width:42px;height:42px}
+.reference-search{min-height:42px}
+.reference-search input{padding-block:9px}
+.reference-search button{min-height:42px}
+.reference-actions{gap:7px}
+.reference-header-ctas{gap:6px}
+.reference-header-ctas .ui-button{min-height:38px;padding-inline:11px}
+.reference-cart{min-height:42px}
+.reference-nav-links{min-height:40px;gap:16px}
+.reference-nav-links>a,.reference-category-nav .category-menu-trigger{min-height:38px}
+.category-menu-trigger{min-height:34px}
+.reference-header.is-compact .reference-topbar{display:none}
+.reference-header.is-compact .reference-main-header{min-height:54px;padding-block:6px}
+.reference-header.is-compact .reference-brand--logo img{width:108px;height:36px}
+.reference-header.is-compact .reference-header-ctas{display:none}
+.reference-header.is-compact .reference-mobile-account-cart{display:flex;align-items:center;gap:4px}
+.reference-header.is-compact .reference-mobile-account{display:inline-flex;width:36px;height:36px;align-items:center;justify-content:center;border:1px solid var(--color-border);border-radius:8px;color:var(--color-text-primary)}
+.reference-header.is-compact .reference-mobile-account svg{width:20px;height:20px}
+.reference-header.is-compact .reference-nav-links{min-height:38px}
+.reference-header.is-compact .category-menu-trigger{min-height:34px}
+
+@media(min-width:901px){
+  .reference-main-header{grid-template-columns:minmax(150px,.65fr) minmax(300px,620px) auto}
+  .reference-category-nav{padding:0}
+}
+@media(max-width:900px){
+  .reference-topbar{min-height:24px;padding-block:2px}
+  .reference-topbar-inner{min-height:20px}
+  .reference-main-header{min-height:0;grid-template-columns:minmax(0,1fr) auto;gap:6px;padding-block:6px}
+  .reference-brand--logo img{width:112px;height:40px}
+  .reference-brand:not(.reference-brand--logo) i{width:40px;height:40px}
+  .reference-search{grid-column:1/-1;grid-row:2;min-height:42px;height:42px}
+  .reference-search input{font-size:12px}
+  .reference-actions .theme-toggle,.reference-cart,.reference-menu-toggle{min-width:40px;min-height:40px}
+  .reference-category-nav{position:absolute;z-index:90;top:100%;right:0;left:0;display:none!important;max-height:calc(100vh - var(--site-header-height));margin:0;padding:8px var(--site-container-gutter) max(12px,env(safe-area-inset-bottom));overflow-y:auto;border-top:1px solid var(--color-border);background:var(--color-surface);box-shadow:0 16px 32px rgba(7,29,49,.2)}
+  .reference-category-nav.mobile-open{display:block!important}
+  .reference-header.is-compact .reference-main-header{min-height:0;padding-block:5px}
+  .reference-header.is-compact .reference-search{min-height:40px;height:40px}
+  .reference-header.is-compact .reference-search button{min-height:40px}
+  .reference-header.is-compact .reference-brand--logo img{width:98px;height:34px}
+}
+@media(max-width:390px){
+  .reference-topbar{font-size:9px}
+  .reference-brand--logo img{width:96px;height:36px}
+  .reference-actions{gap:2px}
+  .reference-actions .theme-toggle,.reference-cart,.reference-menu-toggle{min-width:38px;min-height:38px}
+}
+
+/* Header follow-up: keep the original opaque palette and eliminate the
+   tablet search wrap caused by an older intermediate breakpoint. */
+.reference-header,.reference-main-header,.reference-category-nav{background:var(--color-surface)!important}
+.reference-header{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.reference-topbar{background:var(--mehrasl-green)!important;color:#f5f8f2}
+html.dark .reference-header,html.dark .reference-main-header,html.dark .reference-category-nav{background:var(--color-surface)!important}
+html.dark .reference-topbar{background:var(--color-surface-muted)!important}
+@media(min-width:901px){
+  .reference-main-header{grid-template-columns:max-content minmax(280px,580px) auto;justify-content:space-between;gap:28px}
+  .reference-search{grid-column:auto;grid-row:auto;max-width:none}
+}
+@media(max-width:900px){
+  .reference-mobile-account-cart{display:flex!important;align-items:center;flex-direction:row!important;gap:3px!important}
+  .reference-mobile-account{width:40px;height:40px}
+.reference-cart{width:40px;min-width:40px}
+}
+
+.home-section-empty--action{display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:start}
+.home-section-empty--action p{margin:0}.home-section-empty--action a{flex:0 0 auto;color:var(--color-brand-navy);font-size:11px;font-weight:800;text-decoration:none}.home-section-empty--action a:hover{text-decoration:underline}
+@media(max-width:560px){.home-section-empty--action{align-items:flex-start;flex-direction:column}.home-section-empty--action a{min-height:38px;display:inline-flex;align-items:center}}
