@@ -79,9 +79,12 @@ class CustomerAddressSerializer(serializers.ModelSerializer):
 def profile_data(user): return ProfileSerializer(user).data
 
 def auth_response(user, status=200):
-    token, _ = Token.objects.get_or_create(user=user)
+    # Rotate token on fresh authentication (login, register, otp verify, google auth)
+    Token.objects.filter(user=user).delete()
+    token = Token.objects.create(user=user)
     response = Response({"customer": profile_data(user)}, status=status)
-    response.set_cookie(settings.AUTH_COOKIE_NAME, token.key, httponly=True, secure=settings.AUTH_COOKIE_SECURE, samesite=settings.AUTH_COOKIE_SAMESITE, max_age=60 * 60 * 24 * 30, path="/")
+    cookie_max_age = getattr(settings, "AUTH_TOKEN_MAX_AGE_SECONDS", 60 * 60 * 24 * 30)
+    response.set_cookie(settings.AUTH_COOKIE_NAME, token.key, httponly=True, secure=settings.AUTH_COOKIE_SECURE, samesite=settings.AUTH_COOKIE_SAMESITE, max_age=cookie_max_age, path="/")
     return response
 
 def normalized_identifier(value):

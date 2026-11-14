@@ -2,9 +2,10 @@ from decimal import Decimal
 
 from django.db.models import Case, Count, IntegerField, Prefetch, Q, When
 from django.utils import timezone
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
 from apps.catalog.models import Category, Product, ProductBrand, ProductImage
 from apps.catalog.services import CatalogQueryService
@@ -78,8 +79,17 @@ class SearchEditorialQuerySet(PublicEditorialQuerySetMixin):
     pass
 
 
+class SearchAnonThrottle(AnonRateThrottle):
+    scope = "search_anon"
+
+
+class SearchUserThrottle(UserRateThrottle):
+    scope = "search_user"
+
+
 @api_view(["GET"])
 @permission_classes([AllowAny])
+@throttle_classes([SearchAnonThrottle, SearchUserThrottle])
 def unified_search(request):
     raw_query = request.query_params.get("q", "")
     query = _compact(raw_query)

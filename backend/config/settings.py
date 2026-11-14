@@ -126,10 +126,12 @@ CACHES["default"]["KEY_PREFIX"] = os.environ.get(
 if "test" in sys.argv:
     # Hermetic suite: no Redis required, fully isolated per process.
     CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "test-cache", "KEY_PREFIX": "test"}}
-REST_FRAMEWORK = {"DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticatedOrReadOnly"], "DEFAULT_AUTHENTICATION_CLASSES": ["apps.accounts.authentication.CookieTokenAuthentication"], "DEFAULT_PAGINATION_CLASS": "apps.common.pagination.StandardResultsSetPagination", "PAGE_SIZE": 20, "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.openapi.AutoSchema", "DEFAULT_FILTER_BACKENDS": ["rest_framework.filters.OrderingFilter"], "DEFAULT_THROTTLE_RATES": {"auth": "10/min", "otp": "5/hour", "discount": "30/min", "public_form": "30/min", "cart_export": "60/min"}}
+REST_FRAMEWORK = {"DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticatedOrReadOnly"], "DEFAULT_AUTHENTICATION_CLASSES": ["apps.accounts.authentication.CookieTokenAuthentication"], "DEFAULT_PAGINATION_CLASS": "apps.common.pagination.StandardResultsSetPagination", "PAGE_SIZE": 20, "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.openapi.AutoSchema", "DEFAULT_FILTER_BACKENDS": ["rest_framework.filters.OrderingFilter"], "DEFAULT_THROTTLE_RATES": {"auth": "10/min", "otp": "5/hour", "discount": "30/min", "public_form": "30/min", "cart_export": "60/min", "search_anon": "60/min", "search_user": "120/min"}}
 AUTH_COOKIE_NAME = "mehrasl_auth"
 AUTH_COOKIE_SECURE = parse_env_bool(os.environ.get("AUTH_COOKIE_SECURE"), default=AUTH_COOKIE_SECURE)
 AUTH_COOKIE_SAMESITE = "Lax"
+AUTH_TOKEN_TTL_DAYS = int(os.environ.get("AUTH_TOKEN_TTL_DAYS", "30"))
+AUTH_TOKEN_MAX_AGE_SECONDS = AUTH_TOKEN_TTL_DAYS * 24 * 60 * 60
 OTP_EXPIRY_SECONDS = int(os.environ.get("OTP_EXPIRY_SECONDS", "120"))
 OTP_RESEND_SECONDS = int(os.environ.get("OTP_RESEND_SECONDS", "60"))
 # OTP debug-code bypass: NEVER enable in production. Even with DEBUG=True the
