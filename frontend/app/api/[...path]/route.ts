@@ -10,7 +10,14 @@ async function proxy(request: NextRequest, { params }: RouteContext) {
   }
 
   const { path } = await params;
-  const target = new URL(`/api/${path.join("/")}/`, backendUrl);
+  if (!path || path.length === 0 || path.some(segment => segment === ".." || segment === "." || segment.includes("/") || segment.includes("\\") || segment.includes("%"))) {
+    return Response.json({ detail: "Invalid path segments." }, { status: 400 });
+  }
+  const cleanPath = path.map(segment => encodeURIComponent(segment)).join("/");
+  const target = new URL(`/api/${cleanPath}/`, backendUrl);
+  if (!target.pathname.startsWith("/api/")) {
+    return Response.json({ detail: "Invalid destination path." }, { status: 400 });
+  }
   target.search = request.nextUrl.search;
 
   // Same-origin proxy to the trusted backend: Cookie MUST be forwarded or

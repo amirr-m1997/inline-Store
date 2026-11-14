@@ -5,7 +5,14 @@ type RouteContext = { params: Promise<{ path: string[] }> };
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
   const { path } = await params;
-  const target = new URL(`/media/${path.map(encodeURIComponent).join("/")}`, backendUrl);
+  if (!path || path.length === 0 || path.some(segment => segment === ".." || segment === "." || segment.includes("/") || segment.includes("\\") || segment.includes("%"))) {
+    return new Response(null, { status: 400 });
+  }
+  const cleanPath = path.map(segment => encodeURIComponent(segment)).join("/");
+  const target = new URL(`/media/${cleanPath}`, backendUrl);
+  if (!target.pathname.startsWith("/media/")) {
+    return new Response(null, { status: 400 });
+  }
   try {
     const forwardHeaders = new Headers();
     const range = request.headers.get("Range");
