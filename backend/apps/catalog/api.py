@@ -251,6 +251,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         if not identifier:
             return None
         from urllib.parse import unquote
+        from apps.catalog.search_normalization import normalize_search_text
         raw = str(identifier).strip()
         decoded = unquote(raw).strip()
         lookup = Q(slug=raw) | Q(slug=decoded) | Q(code=raw) | Q(code=decoded)
@@ -262,6 +263,31 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         if not product:
             normalized = decoded.replace("-", " ")
             product = self.get_queryset().filter(Q(name__iexact=decoded) | Q(name__iexact=normalized) | Q(name__icontains=normalized)).first()
+        if not product:
+            # Match Persian/Arabic variants and normalized characters
+            norm_target = normalize_search_text(decoded.replace("-", " "))
+            ascii_tokens = [w for w in norm_target.split() if w.isascii() and len(w) >= 2]
+            candidates = self.get_queryset()
+            if ascii_tokens:
+                for token in ascii_tokens:
+                    candidates = candidates.filter(name__icontains=token)
+            else:
+                # build arabic/persian variants for tokens
+                tokens = [w for w in norm_target.split() if len(w) >= 2]
+                if tokens:
+                    for token in tokens:
+                        v_q = Q(name__icontains=token)
+                        alt = token.translate(str.maketrans("یک", "يك"))
+                        if alt != token:
+                            v_q |= Q(name__icontains=alt)
+                        alt2 = token.translate(str.maketrans("يك", "یک"))
+                        if alt2 != token:
+                            v_q |= Q(name__icontains=alt2)
+                        candidates = candidates.filter(v_q)
+            for candidate in candidates:
+                if normalize_search_text(candidate.name) == norm_target or normalize_search_text(candidate.slug) == norm_target:
+                    product = candidate
+                    break
         return product
 
     def get_object(self):
