@@ -267,6 +267,13 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             decoded = nxt
         decoded = decoded.strip()
 
+        # 0. Check if slug starts with unique numeric code (e.g. 2011001004803-...)
+        prefix = decoded.split("-")[0].strip()
+        if prefix.isdigit() and len(prefix) >= 7:
+            product = self.get_queryset().filter(code=prefix).first()
+            if product:
+                return product
+
         # 1. Direct slug, code, or pk matching
         lookup = Q(slug=raw) | Q(slug=decoded) | Q(code=raw) | Q(code=decoded)
         if raw.isdigit():
@@ -317,8 +324,15 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
                 if product:
                     return product
 
+        # 4.5. Match distinctive alphanumeric model codes (e.g. RAHU252HX4W262, SALC1FO005M6W)
+        code_candidates = [t for t in re.findall(r"[A-Za-z0-9]{6,}", decoded) if any(c.isdigit() for c in t) and any(c.isalpha() for c in t)]
+        for cc in code_candidates:
+            product = self.get_queryset().filter(Q(code__iexact=cc) | Q(name__icontains=cc)).first()
+            if product:
+                return product
+
         # 5. Fallback: match computed persian_product_slug
-        for candidate in self.get_queryset().only("id", "name", "code", "slug")[:500]:
+        for candidate in Product.objects.filter(is_active=True).only("id", "name", "code", "slug"):
             if persian_product_slug(candidate) == decoded:
                 return self.get_queryset().filter(pk=candidate.pk).first()
 

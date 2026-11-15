@@ -15,13 +15,30 @@ from .models import Category, Product, ProductBrand, ProductDocument, ProductIma
 
 
 def persian_product_slug(product):
+    code = (getattr(product, "code", "") or "").strip()
     name = (getattr(product, "name", None) or "").strip()
     if not name:
-        return getattr(product, "slug", "") or f"catalog-{getattr(product, 'code', '')}"
+        return getattr(product, "slug", "") or f"catalog-{code}"
+
     import re
-    cleaned = re.sub(r"[^\w\u0600-\u06FF\d\s-]+", "-", name)
+    # 1. Strip parenthetical descriptions and specs like (مجهز به ...) or [شامل ...]
+    name_clean = re.sub(r"\s*[(\[{（].*?[)\]}）]\s*", " ", name)
+    # 2. Normalize Arabic letters to standard Persian
+    name_clean = name_clean.translate(str.maketrans("يىك", "ییک"))
+    # 3. Clean non-alphanumeric Persian/English characters
+    cleaned = re.sub(r"[^\w\u0600-\u06FF\d\s-]+", "-", name_clean)
     cleaned = re.sub(r"[\s_]+", "-", cleaned)
     cleaned = re.sub(r"-+", "-", cleaned).strip("-")
+
+    # 4. Truncate at word boundary to max 70 chars for safe, SEO-friendly URLs
+    if len(cleaned) > 70:
+        truncated = cleaned[:70]
+        if "-" in truncated:
+            truncated = truncated.rsplit("-", 1)[0]
+        cleaned = truncated.strip("-")
+
+    if code:
+        return f"{code}-{cleaned}" if cleaned else code
     return cleaned or getattr(product, "slug", "")
 
 
