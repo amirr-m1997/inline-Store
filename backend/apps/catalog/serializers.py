@@ -19,11 +19,12 @@ def persian_product_slug(product):
     if not name:
         return getattr(product, "slug", "") or f"catalog-{getattr(product, 'code', '')}"
     import re
-    normalized_name = name.translate(str.maketrans("يىك", "ییک"))
-    cleaned = re.sub(r"[^\w\u0600-\u06FF\d\s-]+", "-", normalized_name)
+    cleaned = re.sub(r"[^\w\u0600-\u06FF\d\s-]+", "-", name)
     cleaned = re.sub(r"[\s_]+", "-", cleaned)
     cleaned = re.sub(r"-+", "-", cleaned).strip("-")
     return cleaned or getattr(product, "slug", "")
+
+
 def rich_text_to_html(value):
     """Sanitize admin-authored rich text into a safe HTML fragment for public rendering."""
     if not value:

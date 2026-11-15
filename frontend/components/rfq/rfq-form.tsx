@@ -15,15 +15,10 @@ type FormState = { company_name: string; contact_name: string; phone: string; em
 const emptyForm: FormState = { company_name: "", contact_name: "", phone: "", email: "", preferred_contact_method: "", subject: "", message: "" };
 
 function errorText(value: unknown, english: boolean) {
-  if (value instanceof ApiError) {
-    if (value.message && value.message !== "Request failed." && value.message !== "درخواست ناموفق بود.") {
-      return value.message;
-    }
-    if (value.data && typeof value.data === "object") {
-      const data = value.data as Record<string, unknown>;
-      const messages = Object.values(data).flatMap((item) => Array.isArray(item) ? item : [item]).filter((item): item is string => typeof item === "string");
-      if (messages.length) return messages.join(" ");
-    }
+  if (value instanceof ApiError && value.data && typeof value.data === "object") {
+    const data = value.data as Record<string, unknown>;
+    const messages = Object.values(data).flatMap((item) => Array.isArray(item) ? item : [item]).filter((item): item is string => typeof item === "string");
+    if (messages.length) return messages.join(" ");
   }
   return english ? "The request could not be submitted. Please review the fields and try again." : "ثبت استعلام قیمت ناموفق بود. لطفاً فیلدها را بررسی و دوباره تلاش کنید.";
 }

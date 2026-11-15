@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { getProductDiscoveryServer, getProductServer, type ProductDetail } from "../../../../lib/api/products";
 import { toProductDetail } from "../../../../lib/product/adapters";
 import { ProductDetailInteractive } from "../../../../components/product/detail/product-detail-interactive";
@@ -48,15 +48,12 @@ function structuredData(product: ProductDetail, locale: string) {
 export default async function ProductPage({ params }: { params: Promise<RouteParams> }) {
   const { locale, slug } = await params;
   const product = await loadProduct(slug);
-  if (locale === "fa" && product.slug && decodeURIComponent(slug) !== product.slug && slug !== product.slug && !product.slug.startsWith("catalog-")) {
-    redirect(`/${locale}/product/${encodeURIComponent(product.slug)}`);
-  }
   const discovery = await getProductDiscoveryServer(slug).catch(() => ({ articles: [], faqs: [], resources: [], products: [] }));
   const domainProduct = toProductDetail(product);
   const jsonLd = structuredData(product, locale);
   return <><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} /><main className="product-detail-page site-container" dir={locale === "fa" ? "rtl" : "ltr"}>
-    <nav className="product-breadcrumb" aria-label={locale === "en" ? "Page path" : "مسیر صفحه"}><Link href={`/${locale}`}>{locale === "en" ? "Home" : "خانه"}</Link>{product.category_tree.map((category) => <span className="breadcrumb-part" key={category.id}><span>/</span><Link href={getCategoryUrl(category, locale)}>{category.name_fa}</Link></span>)}<span>/</span><b>{product.name_fa}</b></nav>
-    <section className="product-purchase-layout"><ProductDetailInteractive product={product} domainProduct={domainProduct} identity={<ProductIdentity product={domainProduct} />} /></section>
+    <nav className="product-breadcrumb" aria-label={locale === "en" ? "Page path" : "مسیر صفحه"}><Link href={`/${locale}`}>{locale === "en" ? "Home" : "خانه"}</Link>{product.category_tree.map((category, index) => <span className="breadcrumb-part" key={category.id ?? `cat-${index}`}><span>/</span><Link href={getCategoryUrl(category, locale)}>{category.name_fa}</Link></span>)}<span>/</span><b>{product.name_fa}</b></nav>
+    <section className="product-purchase-layout"><ProductDetailInteractive key={`pdp-${product.id}`} product={product} domainProduct={domainProduct} identity={<ProductIdentity product={domainProduct} />} /></section>
     <nav className="product-support-actions" aria-label={locale === "en" ? "Product support and quotation" : "پشتیبانی و استعلام محصول"}><span>{locale === "en" ? "Need help or a business quote?" : "برای این محصول به راهنمایی یا استعلام نیاز دارید؟"}</span><Link className="product-rfq-link" href={`/${locale}/rfq?product=${encodeURIComponent(product.slug)}`}>{locale === "en" ? "Request a Quote" : "استعلام قیمت"}</Link><Link href={`/${locale}/support/request?product=${encodeURIComponent(product.slug)}`}>{locale === "en" ? "Product support" : "پشتیبانی محصول"}</Link><Link href={`/${locale}/support/warranty?product=${encodeURIComponent(product.slug)}`}>{locale === "en" ? "Warranty information" : "اطلاعات گارانتی"}</Link></nav>
     <ProductTabs description={product.description} hasSpecifications={(domainProduct.specificationGroups?.length ?? 0) > 0 || domainProduct.specifications.length > 0} specifications={<ProductSpecifications product={domainProduct} />} />
     <ProductReviews productId={product.id} />

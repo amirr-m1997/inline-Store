@@ -103,7 +103,11 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         primary_image = ProductImage.objects.filter(product=OuterRef("pk")).order_by(
             Case(When(is_primary=True, then=Value(0)), default=Value(1), output_field=IntegerField()), "sort_order", "id",
         )
-        queryset = Product.objects.filter(is_active=True, is_obsolete=False).select_related("category", "inventory", "brand")
+        is_list = self.action in ("list",)
+        queryset = Product.objects.filter(is_active=True)
+        if is_list:
+            queryset = queryset.filter(is_obsolete=False)
+        queryset = queryset.select_related("category", "inventory", "brand")
         contract_item = None
         if self.request.user.is_authenticated:
             contract_item = (
@@ -250,45 +254,75 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     def _find_product(self, identifier):
         if not identifier:
             return None
+        import re, unicodedata
         from urllib.parse import unquote
-        from apps.catalog.search_normalization import normalize_search_text
+        from .serializers import persian_product_slug
+
         raw = str(identifier).strip()
-        decoded = unquote(raw).strip()
+        decoded = raw
+        while "%" in decoded:
+            nxt = unquote(decoded)
+            if nxt == decoded:
+                break
+            decoded = nxt
+        decoded = decoded.strip()
+
+        # 1. Direct slug, code, or pk matching
         lookup = Q(slug=raw) | Q(slug=decoded) | Q(code=raw) | Q(code=decoded)
         if raw.isdigit():
             lookup |= Q(pk=int(raw))
+        if decoded.isdigit():
+            lookup |= Q(pk=int(decoded))
         if raw.startswith("catalog-"):
             lookup |= Q(code=raw.replace("catalog-", ""))
+        if decoded.startswith("catalog-"):
+            lookup |= Q(code=decoded.replace("catalog-", ""))
         product = self.get_queryset().filter(lookup).first()
-        if not product:
-            normalized = decoded.replace("-", " ")
-            product = self.get_queryset().filter(Q(name__iexact=decoded) | Q(name__iexact=normalized) | Q(name__icontains=normalized)).first()
-        if not product:
-            # Match Persian/Arabic variants and normalized characters
-            norm_target = normalize_search_text(decoded.replace("-", " "))
-            ascii_tokens = [w for w in norm_target.split() if w.isascii() and len(w) >= 2]
-            candidates = self.get_queryset()
-            if ascii_tokens:
-                for token in ascii_tokens:
-                    candidates = candidates.filter(name__icontains=token)
-            else:
-                # build arabic/persian variants for tokens
-                tokens = [w for w in norm_target.split() if len(w) >= 2]
-                if tokens:
-                    for token in tokens:
-                        v_q = Q(name__icontains=token)
-                        alt = token.translate(str.maketrans("یک", "يك"))
-                        if alt != token:
-                            v_q |= Q(name__icontains=alt)
-                        alt2 = token.translate(str.maketrans("يك", "یک"))
-                        if alt2 != token:
-                            v_q |= Q(name__icontains=alt2)
-                        candidates = candidates.filter(v_q)
-            for candidate in candidates:
-                if normalize_search_text(candidate.name) == norm_target or normalize_search_text(candidate.slug) == norm_target:
-                    product = candidate
-                    break
-        return product
+        if product:
+            return product
+
+        # 2. Exact name or name with hyphens replaced by space
+        normalized = decoded.replace("-", " ")
+        product = self.get_queryset().filter(Q(name__iexact=decoded) | Q(name__iexact=normalized)).first()
+        if product:
+            return product
+
+        # 3. Unicode normalized Persian text matching
+        def _clean_persian(t):
+            t = unicodedata.normalize("NFKC", t or "")
+            return t.replace("\u064A", "\u06CC").replace("\u0649", "\u06CC").replace("\u0643", "\u06A9").replace("\u200C", " ").replace("\u0629", "\u0647").strip()
+
+        clean_decoded = _clean_persian(normalized)
+        product = self.get_queryset().filter(Q(name__icontains=normalized) | Q(name__icontains=clean_decoded) | Q(name__icontains=decoded)).first()
+        if product:
+            return product
+
+        # 4. Token-based matching: split into words/codes
+        tokens = [t for t in re.split(r"[\s\-_/\\()\[\]]+", decoded) if len(t) > 1]
+        if tokens:
+            q_all = Q()
+            for token in tokens:
+                q_all &= Q(name__icontains=token)
+            product = self.get_queryset().filter(q_all).first()
+            if product:
+                return product
+
+            # Model numbers & specific alphanumerics
+            model_tokens = [t for t in tokens if any(c.isdigit() or c.isascii() for c in t)]
+            if model_tokens:
+                q_model = Q()
+                for mt in model_tokens:
+                    q_model &= Q(name__icontains=mt)
+                product = self.get_queryset().filter(q_model).first()
+                if product:
+                    return product
+
+        # 5. Fallback: match computed persian_product_slug
+        for candidate in self.get_queryset().only("id", "name", "code", "slug")[:500]:
+            if persian_product_slug(candidate) == decoded:
+                return self.get_queryset().filter(pk=candidate.pk).first()
+
+        return None
 
     def get_object(self):
         pk = self.kwargs.get("pk")

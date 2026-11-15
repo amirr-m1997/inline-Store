@@ -10,10 +10,25 @@ async function proxy(request: NextRequest, { params }: RouteContext) {
   }
 
   const { path } = await params;
-  if (!path || path.length === 0 || path.some(segment => segment === ".." || segment === "." || segment.includes("/") || segment.includes("\\") || segment.includes("%"))) {
+  if (!path || path.length === 0 || path.some(segment => {
+    if (segment === ".." || segment === "." || segment.includes("/") || segment.includes("\\")) return true;
+    try {
+      const decoded = decodeURIComponent(segment);
+      if (decoded === ".." || decoded === "." || decoded.includes("/") || decoded.includes("\\")) return true;
+    } catch {
+      return true;
+    }
+    return false;
+  })) {
     return Response.json({ detail: "Invalid path segments." }, { status: 400 });
   }
-  const cleanPath = path.map(segment => encodeURIComponent(segment)).join("/");
+  const cleanPath = path.map(segment => {
+    try {
+      return encodeURIComponent(decodeURIComponent(segment));
+    } catch {
+      return encodeURIComponent(segment);
+    }
+  }).join("/");
   const target = new URL(`/api/${cleanPath}/`, backendUrl);
   if (!target.pathname.startsWith("/api/")) {
     return Response.json({ detail: "Invalid destination path." }, { status: 400 });

@@ -50,13 +50,21 @@ export function getCatalogQuery(parameters: Record<string, string | number | boo
   return apiRequest<CatalogQueryResponse>(`/api/v1/products/catalog-query/?${search}`, { cache: "no-store", signal });
 }
 
+function safeEncodeSlug(slug: string): string {
+  let decoded = slug;
+  try { decoded = decodeURIComponent(slug); } catch { /* ignore */ }
+  return encodeURIComponent(decoded);
+}
+
 export function getProduct(slug: string, signal?: AbortSignal) {
-  return apiRequest<ProductDetail>(`/api/v1/catalog/products/${encodeURIComponent(slug)}/`, { signal });
+  const clean = safeEncodeSlug(slug);
+  return apiRequest<ProductDetail>(`/api/v1/catalog/products/${clean}/`, { signal });
 }
 
 export async function getProductServer(slug: string): Promise<ProductDetail> {
   const backendUrl = process.env.BACKEND_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
-  const response = await fetch(`${backendUrl}/api/v1/catalog/products/${encodeURIComponent(slug)}/`, { next: { revalidate: 60, tags: [`product:${slug}`] } });
+  const clean = safeEncodeSlug(slug);
+  const response = await fetch(`${backendUrl}/api/v1/catalog/products/${clean}/`, { next: { revalidate: 60, tags: [`product:${clean}`] } });
   const data = await response.json().catch(() => null);
   if (!response.ok) throw new Error(response.status === 404 ? "PRODUCT_NOT_FOUND" : "PRODUCT_REQUEST_FAILED");
   return data as ProductDetail;
@@ -64,7 +72,8 @@ export async function getProductServer(slug: string): Promise<ProductDetail> {
 
 export async function getProductDiscoveryServer(slug: string): Promise<ProductDiscovery> {
   const backendUrl = process.env.BACKEND_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
-  const response = await fetch(backendUrl + "/api/v1/catalog/products/" + encodeURIComponent(slug) + "/discovery/", { next: { revalidate: 60, tags: ["product-discovery:" + slug] } });
+  const clean = safeEncodeSlug(slug);
+  const response = await fetch(`${backendUrl}/api/v1/catalog/products/${clean}/discovery/`, { next: { revalidate: 60, tags: [`product-discovery:${clean}`] } });
   const data = await response.json().catch(() => null);
   if (!response.ok) throw new Error("PRODUCT_DISCOVERY_REQUEST_FAILED");
   return data as ProductDiscovery;
