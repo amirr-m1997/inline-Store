@@ -160,12 +160,12 @@ def queue_notification(*, event_type, related_reference, email="", phone="", loc
         )
         if created:
             def _dispatch(delivery_id=delivery.pk):
-            try:
-                from .tasks import deliver_notification_task
-                deliver_notification_task.delay(delivery_id)
-            except Exception:
-                deliver_notification(delivery_id)
-        transaction.on_commit(_dispatch)
+                try:
+                    from .tasks import deliver_notification_task
+                    deliver_notification_task.delay(delivery_id)
+                except Exception:
+                    deliver_notification(delivery_id)
+            transaction.on_commit(_dispatch)
         deliveries.append(delivery)
     return deliveries
 

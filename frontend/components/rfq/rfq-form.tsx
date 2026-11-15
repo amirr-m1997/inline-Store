@@ -15,10 +15,22 @@ type FormState = { company_name: string; contact_name: string; phone: string; em
 const emptyForm: FormState = { company_name: "", contact_name: "", phone: "", email: "", preferred_contact_method: "", subject: "", message: "" };
 
 function errorText(value: unknown, english: boolean) {
-  if (value instanceof ApiError && value.data && typeof value.data === "object") {
-    const data = value.data as Record<string, unknown>;
-    const messages = Object.values(data).flatMap((item) => Array.isArray(item) ? item : [item]).filter((item): item is string => typeof item === "string");
-    if (messages.length) return messages.join(" ");
+  if (value instanceof ApiError) {
+    if (value.data && typeof value.data === "object") {
+      const messages: string[] = [];
+      const extract = (obj: unknown) => {
+        if (typeof obj === "string") messages.push(obj);
+        else if (Array.isArray(obj)) obj.forEach(extract);
+        else if (obj && typeof obj === "object") Object.values(obj).forEach(extract);
+      };
+      extract(value.data);
+      if (messages.length) return messages.join(" ");
+    }
+    if (value.message && value.message !== "Request failed." && value.message !== "درخواست ناموفق بود.") {
+      return value.message;
+    }
+  } else if (value instanceof Error && value.message) {
+    return value.message;
   }
   return english ? "The request could not be submitted. Please review the fields and try again." : "ثبت استعلام قیمت ناموفق بود. لطفاً فیلدها را بررسی و دوباره تلاش کنید.";
 }
@@ -67,7 +79,31 @@ export function RfqForm() {
   const addProduct = (product: RfqProductContext) => { if (selectedIds.has(product.id)) { setError(t("این محصول قبلاً به استعلام اضافه شده است.", "This product is already in the request.")); addProductInput.current?.focus(); return; } if (lines.length >= 25) { setError(t("حداکثر ۲۵ قلم محصول مجاز است.", "A request can contain up to 25 products.")); addProductInput.current?.focus(); return; } setLines((current) => [...current, { product, quantity: product.quantity || 1, note: "" }]); setProductQuery(""); setProductResults([]); setError(""); };
   const searchProducts = async () => { if (productQuery.trim().length < 2) return; setSearchingProducts(true); setError(""); try { const result = await getProducts({ search: productQuery.trim() }); setProductResults(result.results.filter((item) => !selectedIds.has(item.id)).slice(0, 8).map((item) => ({ id: item.id, slug: item.slug, name_fa: item.name, name_en: item.name, sku: item.code, code: item.code, unit: item.unit, quantity: 1 }))); } catch { setError(t("جستجوی محصول ناموفق بود.", "Product search failed.")); } finally { setSearchingProducts(false); } };
   const updateLine = (id: number, field: "quantity" | "note", value: string) => setLines((current) => current.map((line) => line.product.id === id ? { ...line, [field]: field === "quantity" ? Math.max(1, Math.min(1000000, Number(value.replace(/[^0-9]/g, "")) || 1)) : value } : line));
-  const submit = async (event: React.FormEvent) => { event.preventDefault(); if (busy) return; setBusy(true); setError(""); const payload: RfqCreateInput = { ...form, items: lines.map((line) => ({ product: line.product.id, requested_quantity: line.quantity, customer_note: line.note })) }; try { setSuccess(await submitRfq(payload)); } catch (reason) { setError(errorText(reason, english)); } finally { setBusy(false); } };
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (busy) return;
+    if (lines.length === 0 && !form.message.trim()) {
+      setError(t("شرح نیاز یا حداقل یک قلم محصول لازم است.", "Please provide requirements or add at least one product."));
+      return;
+    }
+    setBusy(true);
+    setError("");
+    const payload: RfqCreateInput = {
+      ...form,
+      items: lines.map((line) => ({
+        product: line.product.id,
+        requested_quantity: line.quantity,
+        customer_note: line.note,
+      })),
+    };
+    try {
+      setSuccess(await submitRfq(payload));
+    } catch (reason) {
+      setError(errorText(reason, english));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   if (success) return <section className="rfq-success" role="status" aria-live="polite"><span>{t("استعلام قیمت", "Request for Quotation")}</span><h2>{t("درخواست استعلام قیمت شما ثبت شد.", "Your request for quotation has been submitted.")}</h2><p>{t("درخواست شما برای بررسی دریافت شد؛ این ثبت به‌تنهایی به معنی صدور قیمت یا سفارش نیست.", "Your request was received for review. Submission does not constitute a quotation or an order.")}</p><div className="rfq-reference"><span>{t("شناسه استعلام", "RFQ reference")}</span><code dir="ltr">{success.reference}</code><strong>{statusLabel(success.status, english)}</strong></div><div className="rfq-success-items">{success.items.map((item) => <div key={item.product.id}><b>{item.product.name}</b><span dir="ltr">{item.product.code} · {formatAccountNumber(item.requested_quantity)}</span></div>)}</div><div className="rfq-success-actions"><Link className="btn-primary" href={`/${locale}/shop`}>{t("ادامه خرید", "Continue shopping")}</Link><Link className="btn-secondary" href={`/${locale}/support`}>{t("امور مشتریان", "Customer Service")}</Link></div></section>;
 
