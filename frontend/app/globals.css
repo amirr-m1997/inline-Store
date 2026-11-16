@@ -918,9 +918,25 @@ html.dark .reference-topbar{background:var(--color-surface-muted)!important}
 html.dark .diff-tag{background:#1b4d24;color:#a5d6a7}
 
 /* Product Spec Sheet Share */
-.product-b2b-share{margin-top:10px}
-.product-share-spec-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:38px;padding:6px 12px;background:var(--color-surface-muted);border:1px dashed var(--color-border);border-radius:8px;font-size:12px;font-weight:700;color:var(--color-brand-navy);cursor:pointer;transition:all .15s ease}
-.product-share-spec-btn:hover{background:var(--color-surface);border-color:var(--color-border-strong);color:var(--mehrasl-green)}
-.share-feedback{margin:6px 0 0;font-size:11px;font-weight:700;color:var(--mehrasl-green);text-align:center}
+.product-b2b-share{margin-top:12px;background:var(--color-surface-muted);border:1px solid var(--color-border);border-radius:10px;padding:10px 12px}
+.product-share-actions-group{display:flex;flex-direction:column;gap:8px}
+.product-share-spec-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:36px;padding:6px 12px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:6px;font-size:12px;font-weight:700;color:var(--color-brand-navy);cursor:pointer;transition:all .15s ease}
+.product-share-spec-btn:hover{background:var(--color-surface-muted);border-color:var(--color-border-strong);color:var(--mehrasl-green)}
+.product-social-share-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.product-social-share-label{font-size:11px;font-weight:700;color:var(--color-text-muted);margin-inline-end:2px}
+.social-share-icon-btn{display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:5px 9px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s ease;border:1px solid transparent;background:var(--color-surface);color:var(--color-text-primary)}
+.social-share-icon-btn:hover{transform:translateY(-1px)}
+.social-share-icon-btn.whatsapp{color:#25d366;border-color:rgba(37,211,102,0.3);background:rgba(37,211,102,0.06)}
+.social-share-icon-btn.whatsapp:hover{background:rgba(37,211,102,0.15)}
+.social-share-icon-btn.telegram{color:#0088cc;border-color:rgba(0,136,204,0.3);background:rgba(0,136,204,0.06)}
+.social-share-icon-btn.telegram:hover{background:rgba(0,136,204,0.15)}
+.social-share-icon-btn.eitaa{color:#e65100;border-color:rgba(230,81,0,0.3);background:rgba(230,81,0,0.06)}
+.social-share-icon-btn.eitaa:hover{background:rgba(230,81,0,0.15)}
+.social-share-icon-btn.bale{color:#00796b;border-color:rgba(0,121,107,0.3);background:rgba(0,121,107,0.06)}
+.social-share-icon-btn.bale:hover{background:rgba(0,121,107,0.15)}
+.social-share-icon-btn.native-share{color:var(--color-text-muted);border-color:var(--color-border);background:var(--color-surface);padding:5px 8px}
+.social-share-icon-btn.native-share:hover{color:var(--color-brand-navy);border-color:var(--color-border-strong)}
+.messenger-text-badge{font-size:10px;font-weight:800;letter-spacing:-0.2px}
+.share-feedback{margin:8px 0 0;font-size:11px;font-weight:700;line-height:1.5;color:var(--mehrasl-green);background:rgba(30,138,59,0.08);border:1px solid rgba(30,138,59,0.2);padding:6px 10px;border-radius:6px;text-align:center}
 
 

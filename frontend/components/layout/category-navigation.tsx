@@ -116,7 +116,44 @@ export function CategoryNavigation({ mobileOpen, onNavigate }: CategoryNavigatio
   return <nav id="site-mobile-navigation" ref={navigationRef} className={`reference-category-nav responsive-container${mobileOpen ? " mobile-open" : ""}${mobileMode === "categories" ? " category-mode" : ""}`} aria-label="ناوبری وب‌سایت">
     <div className="reference-nav-links">
       {(!mobileOpen || mobileMode === "main") && <><div className="category-nav-section"><span className="mobile-nav-section-label">دسته‌بندی محصولات</span><button ref={triggerRef} className="category-menu-trigger" type="button" onClick={toggleCategories} aria-expanded={open} aria-controls="product-category-menu"><span className="category-menu-icon" aria-hidden="true" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><FiGrid size={16} aria-hidden="true" /></span><b>دسته‌بندی محصولات</b><i aria-hidden="true" style={{ display: "inline-flex", alignItems: "center" }}><FiChevronDown size={14} aria-hidden="true" /></i></button></div>
-      <div className="reference-primary-links">{homeItems.map((item) => <Link key={item.id} href={localizeUrl(item.url)} onClick={closeAll} aria-current={navCurrent(item.url)}>{item.icon && <span aria-hidden="true">{item.icon}</span>}{locale === "en" ? "Home" : "صفحه اصلی"}</Link>)}<Link href={`/${locale}/shop`} onClick={closeAll} aria-current={navCurrent(`/${locale}/shop`)}>{locale === "en" ? "All products" : "همه محصولات"}</Link><Link href={`/${locale}/newest`} onClick={closeAll} aria-current={navCurrent(`/${locale}/newest`)}>{locale === "en" ? "Latest" : "جدیدترین‌ها"}</Link><Link href={`/${locale}/best-discounts`} onClick={closeAll} aria-current={navCurrent(`/${locale}/best-discounts`)}>{locale === "en" ? "Best discounts" : "بیشترین تخفیف"}</Link><Link href={`/${locale}/knowledge`} onClick={closeAll} aria-current={navCurrent(`/${locale}/knowledge`)}>{locale === "en" ? "Articles" : "مقالات"}</Link><Link href={`/${locale}/rfq`} onClick={closeAll} aria-current={navCurrent(`/${locale}/rfq`)}>{locale === "en" ? "Request a Quote" : "استعلام قیمت"}</Link><Link href={`/${locale}/support`} onClick={closeAll} aria-current={supportActive ? "page" : undefined}>{locale === "en" ? "Customer Service" : "امور مشتریان"}</Link>{remainingItems.map((item) => <Link key={item.id} href={localizeUrl(item.url)} onClick={closeAll} aria-current={navCurrent(item.url)}>{item.icon && <span aria-hidden="true">{item.icon}</span>}{item.title_fa}</Link>)}</div></>}
+      <div className="reference-primary-links">
+        {homeItems.map((item) => (
+          <Link key={item.id} href={localizeUrl(item.url)} onClick={closeAll} aria-current={navCurrent(item.url)}>
+            {item.icon && <span aria-hidden="true">{item.icon}</span>}
+            {locale === "en" ? "Home" : "صفحه اصلی"}
+          </Link>
+        ))}
+        <Link href={`/${locale}/shop`} onClick={closeAll} aria-current={navCurrent(`/${locale}/shop`)}>
+          {locale === "en" ? "All products" : "همه محصولات"}
+        </Link>
+        <Link href={`/${locale}/newest`} onClick={closeAll} aria-current={navCurrent(`/${locale}/newest`)}>
+          {locale === "en" ? "Latest" : "جدیدترین‌ها"}
+        </Link>
+        <Link href={`/${locale}/best-discounts`} onClick={closeAll} aria-current={navCurrent(`/${locale}/best-discounts`)}>
+          {locale === "en" ? "Best discounts" : "بیشترین تخفیف"}
+        </Link>
+        <Link href={`/${locale}/knowledge`} onClick={closeAll} aria-current={navCurrent(`/${locale}/knowledge`)}>
+          {locale === "en" ? "Articles" : "مقالات"}
+        </Link>
+        <Link href={`/${locale}/rfq`} onClick={closeAll} aria-current={navCurrent(`/${locale}/rfq`)}>
+          {locale === "en" ? "Request a Quote" : "استعلام قیمت"}
+        </Link>
+        <Link href={`/${locale}/about`} onClick={closeAll} aria-current={navCurrent(`/${locale}/about`)}>
+          {locale === "en" ? "About us" : "درباره ما"}
+        </Link>
+        <Link href={`/${locale}/contact`} onClick={closeAll} aria-current={navCurrent(`/${locale}/contact`)}>
+          {locale === "en" ? "Contact us" : "تماس با ما"}
+        </Link>
+        <Link href={`/${locale}/support`} onClick={closeAll} aria-current={supportActive ? "page" : undefined}>
+          {locale === "en" ? "Customer Service" : "امور مشتریان"}
+        </Link>
+        {remainingItems.map((item) => (
+          <Link key={item.id} href={localizeUrl(item.url)} onClick={closeAll} aria-current={navCurrent(item.url)}>
+            {item.icon && <span aria-hidden="true">{item.icon}</span>}
+            {item.title_fa}
+          </Link>
+        ))}
+      </div></>}
     </div>
 
     {open && <section id="product-category-menu" className="product-category-menu" aria-label="دسته‌بندی محصولات">
