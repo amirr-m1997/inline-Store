@@ -127,7 +127,16 @@ class ProductBrandSerializer(serializers.ModelSerializer):
 
     def get_products(self, obj):
         if self.context.get("brief"):
-            return list(obj.products.filter(is_active=True).values("id", "name", "code", "slug")[:24])
+            products = obj.products.filter(is_active=True)[:24]
+            return [
+                {
+                    "id": p.id,
+                    "name": p.name,
+                    "code": p.code,
+                    "slug": persian_product_slug(p),
+                }
+                for p in products
+            ]
         return []
 
 
@@ -163,7 +172,12 @@ class ProductDocumentResourceSerializer(ProductDocumentSerializer):
         fields = ProductDocumentSerializer.Meta.fields + ("product",)
 
     def get_product(self, obj):
-        return {"id": obj.product_id, "name": obj.product.name, "code": obj.product.code, "slug": obj.product.slug}
+        return {
+            "id": obj.product_id,
+            "name": obj.product.name,
+            "code": obj.product.code,
+            "slug": persian_product_slug(obj.product) if getattr(obj, "product", None) else getattr(obj.product, "slug", ""),
+        }
 
 
 class ProductSerializer(serializers.ModelSerializer):
