@@ -1,11 +1,16 @@
 import type { ReactNode } from "react";
-import DOMPurify from "isomorphic-dompurify";
+import DOMPurify from "dompurify";
 
 // معرفی محصول و مشخصات فنی در یک صفحه، پشت سر هم با سرفصل مشخص (بدون تب).
 // بخش مشخصات فنی فقط وقتی رندر می‌شود که مشخصاتی ثبت شده باشد.
 export function ProductTabs({ description, specifications, hasSpecifications = true }: { description: string; specifications: ReactNode; hasSpecifications?: boolean }) {
   if (!description && !hasSpecifications) return null;
-  const sanitizedDescription = description ? DOMPurify.sanitize(description) : "";
+  // در محیط کلاینت از dompurify استفاده می‌شود؛ متون در بک‌اند توسط Bleach از قبل کاملاً پاک‌سازی شده‌اند.
+  const sanitizedDescription = description
+    ? typeof window !== "undefined"
+      ? DOMPurify.sanitize(description)
+      : description
+    : "";
 
   return <section className="product-detail-tabs product-detail-tabs--single" aria-label="توضیحات و مشخصات فنی محصول">
     {description ? <>
