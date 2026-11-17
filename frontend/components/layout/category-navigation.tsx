@@ -138,12 +138,6 @@ export function CategoryNavigation({ mobileOpen, onNavigate }: CategoryNavigatio
         <Link href={`/${locale}/rfq`} onClick={closeAll} aria-current={navCurrent(`/${locale}/rfq`)}>
           {locale === "en" ? "Request a Quote" : "استعلام قیمت"}
         </Link>
-        <Link href={`/${locale}/about`} onClick={closeAll} aria-current={navCurrent(`/${locale}/about`)}>
-          {locale === "en" ? "About us" : "درباره ما"}
-        </Link>
-        <Link href={`/${locale}/contact`} onClick={closeAll} aria-current={navCurrent(`/${locale}/contact`)}>
-          {locale === "en" ? "Contact us" : "تماس با ما"}
-        </Link>
         <Link href={`/${locale}/support`} onClick={closeAll} aria-current={supportActive ? "page" : undefined}>
           {locale === "en" ? "Customer Service" : "امور مشتریان"}
         </Link>
