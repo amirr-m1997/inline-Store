@@ -67,3 +67,11 @@ class ProductDocumentTests(TestCase):
         wrong_type = ProductDocument(product=self.product, document_type="datasheet", file=SimpleUploadedFile("drawing.dwg", b"dwg", content_type="application/octet-stream"))
         with self.assertRaises(ValidationError):
             wrong_type.full_clean()
+    def test_existing_document_can_be_saved_without_path_validation_error(self):
+        doc = self.make_document(title_fa="سند تستی")
+        doc.title_fa = "سند تستی ویرایش‌شده"
+        doc.save()
+        doc.refresh_from_db()
+        self.assertEqual(doc.title_fa, "سند تستی ویرایش‌شده")
+        self.assertTrue(doc.is_published)
+

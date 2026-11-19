@@ -199,12 +199,15 @@ def validate_product_document_file(uploaded_file):
     Performs safety checks on the filename, size, extension, and MIME type.
     For existing ``FieldFile`` instances the ``uploaded_file`` will not be an
     ``UploadedFile``; we still run the safety checks (filename, size, extension)
-    because they are inexpensive and ensure consistency.
+    because they are inexpensive and ensure consistency, but skip the basename
+    equality check since stored paths include directory prefixes.
     """
     is_new_upload = isinstance(uploaded_file, UploadedFile)
     name = os.path.basename(uploaded_file.name or "")
-    # Filename must not contain path components or control characters.
-    if name != uploaded_file.name or re.search(r"[\x00-\x1f\\/\\]", name):
+    # Filename must not contain path components or control characters on fresh uploads.
+    if is_new_upload and (name != uploaded_file.name or re.search(r"[\x00-\x1f\\/\\]", name)):
+        raise ValidationError("Document filenames must be safe and contain no path components.")
+    if not is_new_upload and re.search(r"[\x00-\x1f]", name):
         raise ValidationError("Document filenames must be safe and contain no path components.")
     # Size limit.
     if uploaded_file.size > DOCUMENT_MAX_SIZE:
@@ -214,28 +217,7 @@ def validate_product_document_file(uploaded_file):
     if not extension:
         raise ValidationError("Document files must include an allowed extension.")
     # MIME type validation applies only to freshly uploaded files.
-    if is_new_upload and uploaded_file.content_type and uploaded_file.content_type not in DOCUMENT_MIME_TYPES:
-        raise ValidationError("The document MIME type is not allowed.")
-    return
-    # (dead code removed)
-    # already have a safe stored path, so we skip the strict basename check to allow
-    # editing a document without re‑uploading.
-    if isinstance(uploaded_file, UploadedFile):
-        name = os.path.basename(uploaded_file.name or "")
-        if name != uploaded_file.name or re.search(r"[\x00-\x1f\\/\\]", name):
-            raise ValidationError("Document filenames must be safe and contain no path components.")
-    # For existing file objects (FieldFile), no additional validation is required.
-    return
-
-    name = os.path.basename(uploaded_file.name or "")
-    if name != uploaded_file.name or re.search(r"[\x00-\x1f\\/]", name):
-        raise ValidationError("Document filenames must be safe and contain no path components.")
-    if uploaded_file.size > DOCUMENT_MAX_SIZE:
-        raise ValidationError("Document files must be 25 MB or smaller.")
-    extension = os.path.splitext(name)[1].lower().lstrip(".")
-    if not extension:
-        raise ValidationError("Document files must include an allowed extension.")
-    if isinstance(uploaded_file, UploadedFile) and uploaded_file.content_type and uploaded_file.content_type not in DOCUMENT_MIME_TYPES:
+    if is_new_upload and getattr(uploaded_file, "content_type", None) and uploaded_file.content_type not in DOCUMENT_MIME_TYPES:
         raise ValidationError("The document MIME type is not allowed.")
 
 
@@ -260,7 +242,7 @@ class ProductDocument(TimestampedModel):
     revision = models.CharField(max_length=64, blank=True)
     display_order = models.PositiveSmallIntegerField(default=0)
     is_active = models.BooleanField(default=True)
-    is_published = models.BooleanField(default=False)
+    is_published = models.BooleanField(default=True)
 
     class Meta:
         ordering = ("display_order", "id")
