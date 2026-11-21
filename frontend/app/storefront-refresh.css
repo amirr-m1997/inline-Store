@@ -4094,11 +4094,12 @@ html.dark .rec-cta-secondary {
     color: #38bdf8;
   }
 
-  /* Adjust floating actions position on mobile to prevent overlapping bottom nav */
-  .floating-actions {
-    bottom: 74px !important;
-  }
-  .back-to-top-floating {
-    bottom: 74px !important;
+  /* Completely remove floating action and scroll buttons on mobile */
+  .floating-actions,
+  .floating-actions-top,
+  .floating-actions-bottom,
+  .back-to-top-floating,
+  .back-to-bottom-floating {
+    display: none !important;
   }
 }
