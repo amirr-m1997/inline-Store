@@ -40,6 +40,27 @@ export const getCompanyCertificationsServer = <T,>() => getServer<T>("/api/v1/co
 export const getCompanyHonorsServer = <T,>() => getServer<T>("/api/v1/company/honors/");
 export const getIndustriesServer = <T,>() => getServer<T>("/api/v1/company/industries/");
 export const getIndustryServer = <T,>(slug: string) => getServer<T>(`/api/v1/company/industries/${encodeURIComponent(slug)}/`);
+export const getCompanyStatsServer = () => getServer<CompanyStatsResponse>("/api/v1/company/stats/").catch(() => null);
+
+export type CompanyStatItem = {
+  id: string;
+  value_fa: string;
+  value_en: string;
+  label_fa: string;
+  label_en: string;
+  description_fa: string;
+  description_en: string;
+  icon: string;
+};
+
+export type CompanyStatsResponse = {
+  stats: CompanyStatItem[];
+  summary: {
+    locations_count: number;
+    certifications_count: number;
+    products_count: number;
+  };
+};
 
 export type EditorialArticlePage = PaginatedResponse<EditorialArticle>;
 export type DiscoveryResource = { id: number; title: string; type: string; file_url: string; file_name: string; display_name: string; size: number; revision: string; language: string; product: { id: number; name: string; code: string; slug: string } };

@@ -9,6 +9,9 @@ import { SiteHero } from "./site-hero";
 import type { CompanyInfo, SiteHeroCategorySpotlight } from "../../types/api";
 import { EditorialPreview } from "../content/editorial";
 import { TrustSections, type CompanyCertification, type CompanyHonor } from "./trust-sections";
+import { EquipmentSelector } from "./equipment-selector";
+import { FactoryStats } from "./factory-stats";
+import type { CompanyStatItem } from "../../lib/api/content";
 import type { EditorialArticle } from "../../types/api";
 
 export type HomepageIndustry = { id: number; slug: string; name_fa: string; name_en: string; description_fa: string; description_en: string; image: string | null };
@@ -29,6 +32,7 @@ export type HomepageInitialData = {
   editorial: EditorialArticle[];
   certifications: CompanyCertification[];
   honors: CompanyHonor[];
+  stats?: CompanyStatItem[];
 };
 
 const categoryArtwork = ["fancoil", "compressor-green", "axial", "exchanger", "expansion", "pcb", "copper", "pump", "bearing", "gauge"] as const;
@@ -55,7 +59,7 @@ function CategorySpotlightStrip({ locale, items }: { locale: string; items: Site
   </section>;
 }
 
-export function EnterpriseHome({ locale, company, hero, advantages, categories, featured, bestSelling, newest, discounted, lowStock, industries, capabilities, editorial, certifications, honors }: HomepageInitialData) {
+export function EnterpriseHome({ locale, company, hero, advantages, categories, featured, bestSelling, newest, discounted, lowStock, industries, capabilities, editorial, certifications, honors, stats }: HomepageInitialData) {
   const english = locale === "en";
   const spotlightsAt = (placement: SiteHeroCategorySpotlight["placement"]) => (hero?.category_spotlights || []).filter((item) => item.placement === placement);
   const demo = (value: string) => value.startsWith("[DEMO]") ? <span className="content-demo-indicator" title={english ? "Development content" : "محتوای محیط توسعه"}>{english ? "Demo" : "نمونه"}</span> : null;
@@ -138,6 +142,7 @@ export function EnterpriseHome({ locale, company, hero, advantages, categories, 
         </div>
       </Link>
     </section>
+    <EquipmentSelector locale={locale} industries={industries} categories={categories} />
     <TrustSections locale={locale} />
     {capabilities.length > 0 && <section className="enterprise-section site-container" aria-labelledby="home-capabilities-title"><header className="home-section-heading"><div><div className="section-kicker">{english ? "Company expertise" : "توانمندی شرکت"}</div><h2 id="home-capabilities-title">{english ? "Capabilities" : "توانمندی‌ها"}</h2></div><Link href={`/${locale}/capabilities`}>{english ? "View all" : "مشاهده همه"} <span aria-hidden="true">←</span></Link></header><div className="home-capability-grid">{capabilities.slice(0, 3).map((item) => <Link className="home-context-card" key={item.id} href={`/${locale}/capabilities/${item.slug}`}><span>{english ? "Published capability" : "توانمندی منتشرشده"}</span><h3>{english && item.title_en ? item.title_en : item.title_fa} {demo(english && item.title_en ? item.title_en : item.title_fa)}</h3>{(english ? item.summary_en || item.summary_fa : item.summary_fa) && <p>{english ? item.summary_en || item.summary_fa : item.summary_fa}</p>}</Link>)}</div></section>}
     <ProductSection locale={locale} title={english ? "Newest products" : "جدیدترین محصولات"} kicker={english ? "Latest catalog additions" : "تازه‌های کاتالوگ"} products={newest} href={`/${locale}/newest`} empty={english ? "No new products have been registered yet." : "محصول جدیدی ثبت نشده است."} skin="newest" />
@@ -147,6 +152,7 @@ export function EnterpriseHome({ locale, company, hero, advantages, categories, 
     <ProductSection locale={locale} title={english ? "Running low" : "محصولات در حال اتمام"} kicker={english ? "Limited remaining inventory" : "موجودی محدود؛ پیش از اتمام تهیه کنید"} products={lowStock} href={`/${locale}/shop?low_stock=true`} empty={english ? "No products currently have limited available stock." : "در حال حاضر محصولی با موجودی محدود ثبت نشده است."} skin="low-stock" />
     <CategorySpotlightStrip locale={locale} items={spotlightsAt("after_low_stock")} />
     <EditorialPreview articles={editorial} locale={locale} href={`/${locale}/knowledge`} />
+    <FactoryStats locale={locale} stats={stats} certifications={certifications} />
     <section className="home-quote-cta site-container"><aside className="home-quote-media" aria-hidden="true"><Image src="/images/mehrasl-banner-1200x430.jpg" alt="" fill sizes="100vw" /></aside><div><span>{english ? "Industrial purchasing" : "ویژه پیمانکاران، شرکت‌ها و همکاران"}</span><h2>{english ? "Contact us about availability and pricing" : "برای خرید پروژه‌ای، مسیر جدا داریم."}</h2><p>{english ? "Send the technical specification or product code you need." : "فهرست نیازتان را آماده کنید؛ استعلام قیمت و بررسی فنی از همین‌جا شروع می‌شود."}</p></div><div><Link className="primary" href={`/${locale}/rfq`}>{english ? "Request an inquiry" : "استعلام قیمت"}</Link><Link className="secondary" href={`/${locale}/shop`}>{english ? "Browse products" : "مشاهده محصولات"}</Link></div></section>
   </main>;
 }

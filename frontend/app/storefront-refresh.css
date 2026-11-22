@@ -3548,3 +3548,459 @@ html.dark .industrial-pdf-badge {
     display: none !important;
   }
 }
+
+
+/* ==========================================================================
+   Equipment Selector Tool (Server-Driven, MehrAsl Green)
+   ========================================================================== */
+.equipment-selector-wrap {
+  margin-top: 36px;
+  margin-bottom: 36px;
+}
+.equipment-selector-card {
+  background: var(--surface);
+  border: 1.5px solid rgba(45, 90, 50, 0.2);
+  border-radius: 20px;
+  padding: 32px 28px;
+  box-shadow: 0 10px 30px -10px rgba(18, 36, 21, 0.08);
+}
+html.dark .equipment-selector-card {
+  background: linear-gradient(135deg, rgba(24, 46, 32, 0.5) 0%, rgba(18, 28, 23, 0.8) 100%);
+  border-color: rgba(154, 221, 169, 0.18);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.4);
+}
+.equipment-selector-header {
+  text-align: center;
+  max-width: 680px;
+  margin: 0 auto 28px;
+}
+.selector-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  background: rgba(45, 90, 50, 0.1);
+  padding: 4px 14px;
+  border-radius: 9999px;
+  margin-bottom: 12px;
+}
+html.dark .selector-badge {
+  color: #8ce197;
+  background: rgba(154, 221, 169, 0.15);
+}
+.selector-title {
+  font-size: 23px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+.selector-subtitle {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.selector-industry-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+.selector-industry-tab {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 8px 16px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.selector-industry-tab:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.selector-industry-tab.is-active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(45, 90, 50, 0.25);
+}
+.selector-detail-box {
+  background: linear-gradient(135deg, rgba(229, 247, 232, 0.3) 0%, rgba(248, 250, 248, 0.8) 100%);
+  border: 1px solid rgba(45, 90, 50, 0.16);
+  border-radius: 16px;
+  padding: 24px;
+}
+html.dark .selector-detail-box {
+  background: rgba(18, 36, 21, 0.5);
+  border-color: rgba(154, 221, 169, 0.15);
+}
+.selector-detail-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+html.dark .selector-detail-tag {
+  color: #8ce197;
+}
+.selector-detail-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.selector-detail-desc {
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+}
+.selector-categories-group {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  margin-bottom: 20px;
+}
+.selector-categories-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+.selector-categories-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.selector-category-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.selector-category-pill:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-1px);
+}
+.pill-check {
+  color: var(--primary);
+  font-size: 13px;
+}
+html.dark .pill-check {
+  color: #8ce197;
+}
+.selector-actions-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.selector-btn-primary {
+  flex: 1;
+  min-width: 200px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 18px;
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 700;
+  border-radius: 9px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.selector-btn-primary:hover {
+  background: var(--primary-hover, #1e3d22);
+  transform: translateY(-1px);
+}
+.selector-btn-secondary {
+  flex: 1;
+  min-width: 200px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 18px;
+  background: var(--surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 9px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.selector-btn-secondary:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* ==========================================================================
+   Factory Stats Section (Server-Driven, Deep Industrial Slate-Green)
+   ========================================================================== */
+.factory-stats-wrap {
+  margin-top: 40px;
+  margin-bottom: 40px;
+}
+.factory-stats-card {
+  position: relative;
+  background: linear-gradient(135deg, #0e1e14 0%, #173321 100%);
+  color: #ffffff;
+  padding: 48px 32px;
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 14px 34px -10px rgba(0, 0, 0, 0.4);
+}
+.factory-stats-header {
+  text-align: center;
+  max-width: 720px;
+  margin: 0 auto 36px;
+}
+.stats-tag {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #8ce197;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.stats-title {
+  font-size: 26px;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.35;
+  margin-bottom: 10px;
+}
+.stats-subtitle {
+  font-size: 14px;
+  color: #c0d8c6;
+  line-height: 1.7;
+}
+.factory-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 32px;
+}
+@media (max-width: 900px) {
+  .factory-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 540px) {
+  .factory-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.factory-stat-item {
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 20px;
+  transition: all 0.25s ease;
+}
+.factory-stat-item:hover {
+  transform: translateY(-3px);
+  background: rgba(255, 255, 255, 0.11);
+  border-color: rgba(140, 225, 151, 0.4);
+}
+.stat-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(140, 225, 151, 0.16);
+  color: #8ce197;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  margin-bottom: 12px;
+}
+.stat-value {
+  font-size: 32px;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.1;
+  margin-bottom: 6px;
+}
+.stat-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e6f4ea;
+  margin-bottom: 4px;
+}
+.stat-desc {
+  font-size: 12px;
+  color: #b3d1bb;
+  line-height: 1.6;
+}
+.factory-certs-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+.certs-heading {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #b3d1bb;
+}
+.certs-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.cert-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 9999px;
+  font-size: 11.5px;
+  color: #e6f4ea;
+}
+.cert-check-icon {
+  color: #8ce197;
+}
+
+/* ==========================================================================
+   Mobile Bottom Navigation Bar (Responsive-Safe & Clean)
+   ========================================================================== */
+.mobile-bottom-nav-bar {
+  display: none;
+}
+@media (max-width: 768px) {
+  .site-footer {
+    padding-bottom: 74px;
+  }
+  .mobile-bottom-nav-bar {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 850;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(45, 90, 50, 0.15);
+    box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.06);
+    padding: 6px 12px max(6px, env(safe-area-inset-bottom));
+  }
+  html.dark .mobile-bottom-nav-bar {
+    background: rgba(18, 28, 23, 0.95);
+    border-top-color: rgba(154, 221, 169, 0.18);
+    box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.4);
+  }
+  .mobile-bottom-nav-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .mobile-bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 4px 6px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: 8px;
+    min-width: 52px;
+    transition: all 0.2s ease;
+  }
+  .item-icon-box {
+    font-size: 19px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .item-label {
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .mobile-bottom-nav-item.is-active {
+    color: var(--primary);
+  }
+  html.dark .mobile-bottom-nav-item.is-active {
+    color: #8ce197;
+  }
+  .mobile-bottom-nav-item.is-rfq-center .item-icon-box {
+    background: var(--primary);
+    color: #ffffff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    margin-top: -8px;
+    box-shadow: 0 4px 10px rgba(45, 90, 50, 0.35);
+  }
+  html.dark .mobile-bottom-nav-item.is-rfq-center .item-icon-box {
+    background: #52a45a;
+    box-shadow: 0 4px 10px rgba(82, 164, 90, 0.4);
+  }
+  .mobile-bottom-nav-item.is-rfq-center .item-label {
+    font-weight: 700;
+    color: var(--primary);
+  }
+  html.dark .mobile-bottom-nav-item.is-rfq-center .item-label {
+    color: #8ce197;
+  }
+}
+
+/* ==========================================================================
+   Smooth Shimmer Skeletons (Replacing Spinners)
+   ========================================================================== */
+.catalog-loading-card {
+  position: relative;
+  overflow: hidden;
+}
+.catalog-loading-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+  animation: shimmer-wave 1.6s infinite;
+}
+html.dark .catalog-loading-card::after {
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 50%, transparent 100%);
+}
+@keyframes shimmer-wave {
+  100% {
+    transform: translateX(100%);
+  }
+}

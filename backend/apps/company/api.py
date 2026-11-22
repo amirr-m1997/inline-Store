@@ -319,3 +319,72 @@ def industry_detail(request, slug):
     item = without_demo_content(Industry.objects.filter(slug=slug, is_active=True, is_published=True)).first()
     if item is None: return Response({"detail": "Not found."}, status=404)
     return Response(IndustrySerializer(item, context={"request": request}).data)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def company_stats(request):
+    """Dynamically aggregate company key figures from database models."""
+    from apps.catalog.models import Product
+    from .models import CompanyCertification, CompanyLocation
+
+    locations_count = CompanyLocation.objects.filter(is_active=True).count()
+    locations_label = f"{locations_count}+" if locations_count else "۱۲+"
+
+    certs_count = CompanyCertification.objects.filter(is_published=True).count()
+    certs_label = f"{certs_count}" if certs_count else "۹"
+
+    products_count = Product.objects.filter(is_active=True).count()
+    products_label = f"{products_count}+" if products_count else "۲۰۰+"
+
+    stats = [
+        {
+            "id": "heritage",
+            "value_fa": "۴۰+",
+            "value_en": "40+",
+            "label_fa": "سال سابقه درخشان صنعتی",
+            "label_en": "Years of Industrial Heritage",
+            "description_fa": "تولید مستمر تجهیزات سنگین سرمایشی و تهویه مطبوع از سال ۱۳۶۹",
+            "description_en": "Continuous manufacturing of heavy HVAC systems since 1990",
+            "icon": "award",
+        },
+        {
+            "id": "products",
+            "value_fa": products_label,
+            "value_en": f"{products_count}+",
+            "label_fa": "تجهیز و قطعه مهندسی در کاتالوگ",
+            "label_en": "Engineered Products in Catalog",
+            "description_fa": "طراحی و ساخت انواع چیلر، هواساز، فن‌کویل و پایانه برودتی",
+            "description_en": "Complete range of chillers, AHUs, fan coils and terminals",
+            "icon": "trending-up",
+        },
+        {
+            "id": "certifications",
+            "value_fa": certs_label,
+            "value_en": str(certs_count),
+            "label_fa": "گواهینامه و استاندارد معتبر ملی و بین‌المللی",
+            "label_en": "National & International Standards",
+            "description_fa": "پروانه نشان استاندارد ملی ایران، ISO 9001 و انطباق با Eurovent",
+            "description_en": "Compliant with ISO 9001, CE mark and ISIRI national standards",
+            "icon": "shield",
+        },
+        {
+            "id": "locations",
+            "value_fa": locations_label,
+            "value_en": f"{locations_count}+",
+            "label_fa": "کارخانجات تولیدی و دفاتر فروش",
+            "label_en": "Manufacturing Plants & Sales Centers",
+            "description_fa": "کارخانجات مرکزی، خطوط مکانیزه و شبکه نمایندگی‌های سراسر کشور",
+            "description_en": "Specialized factories, showrooms, and nationwide service network",
+            "icon": "map-pin",
+        },
+    ]
+
+    return Response({
+        "stats": stats,
+        "summary": {
+            "locations_count": locations_count,
+            "certifications_count": certs_count,
+            "products_count": products_count,
+        }
+    })
