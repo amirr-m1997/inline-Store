@@ -14,11 +14,11 @@ export function MobileBottomNav({ locale }: MobileBottomNavProps) {
 
   const navItems = [
     {
-      id: "home",
-      label: english ? "Home" : "خانه",
-      href: `/${locale}`,
-      icon: FiHome,
-      isActive: pathname === `/${locale}` || pathname === `/${locale}/`,
+      id: "rfq",
+      label: english ? "Quote" : "استعلام",
+      href: `/${locale}/rfq`,
+      icon: FiFileText,
+      isActive: pathname.startsWith(`/${locale}/rfq`),
     },
     {
       id: "categories",
@@ -28,11 +28,11 @@ export function MobileBottomNav({ locale }: MobileBottomNavProps) {
       isActive: pathname.startsWith(`/${locale}/categories`) || pathname.startsWith(`/${locale}/category`),
     },
     {
-      id: "rfq",
-      label: english ? "Quote" : "استعلام",
-      href: `/${locale}/rfq`,
-      icon: FiFileText,
-      isActive: pathname.startsWith(`/${locale}/rfq`),
+      id: "home",
+      label: english ? "Home" : "خانه",
+      href: `/${locale}`,
+      icon: FiHome,
+      isActive: pathname === `/${locale}` || pathname === `/${locale}/`,
       highlight: true,
     },
     {
