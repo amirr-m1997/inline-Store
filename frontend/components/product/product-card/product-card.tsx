@@ -17,7 +17,7 @@ export function ProductCard({ product, priority = false, locale = "fa" }: { prod
   const quoteInPrice = !product.pricing?.finalAmount;
   const productHref = `/${locale}/product/${product.slug}`;
   const productCode = product.sku || product.code;
-  const hasDocuments = Boolean(product.documents && product.documents.length > 0);
+  const hasDocuments = Boolean(product.hasDocuments || (product.documents && product.documents.length > 0));
 
   const handleCopyCode = async (e: React.MouseEvent) => {
     e.preventDefault();

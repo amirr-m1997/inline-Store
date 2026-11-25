@@ -7,12 +7,13 @@ import type { ProductDetail, ProductVariant, VariantSelection } from "../../../l
 import { formatNumber } from "../../../lib/product/formatters";
 import { VariantSelector } from "./variant-selector";
 
-export function ProductPurchasePanel({ product, onVariantChange, onSelectionChange }: { product: ProductDetail; onVariantChange?: (variant?: ProductVariant) => void; onSelectionChange?: (selection: VariantSelection) => void }) {
+export function ProductPurchasePanel({ product, onVariantChange, onSelectionChange, salesPhone }: { product: ProductDetail; onVariantChange?: (variant?: ProductVariant) => void; onSelectionChange?: (selection: VariantSelection) => void; salesPhone?: string | null }) {
   const { locale = "fa" } = useParams<{ locale: string }>();
   const [variant, setVariant] = useState<ProductVariant | undefined>();
   const select = (selection: VariantSelection) => { setVariant(selection.resolvedVariant); onVariantChange?.(selection.resolvedVariant); onSelectionChange?.(selection); };
   const pricing = variant?.pricing || product.pricing;
   const discount = Number(pricing?.discountPercentage ?? 0) > 0 ? pricing?.discountPercentage : undefined;
+  const phoneDigits = salesPhone ? salesPhone.replace(/[^+\d]/g, "") : "";
   return (
     <>
       <VariantSelector product={product} onChange={select} />
@@ -40,14 +41,25 @@ export function ProductPurchasePanel({ product, onVariantChange, onSelectionChan
                 <FiFileText size={16} aria-hidden="true" />
                 <span>استعلام قیمت سریع</span>
               </Link>
-              <a
-                className="b2b-quote-action-btn secondary"
-                href="tel:02188300801"
-                aria-label="تماس با مهندس فروش"
-              >
-                <FiPhoneCall size={15} aria-hidden="true" />
-                <span>گفت‌وگو با مهندس فروش</span>
-              </a>
+              {phoneDigits ? (
+                <a
+                  className="b2b-quote-action-btn secondary"
+                  href={`tel:${phoneDigits}`}
+                  aria-label="تماس با مهندس فروش"
+                >
+                  <FiPhoneCall size={15} aria-hidden="true" />
+                  <span>گفت‌وگو با مهندس فروش</span>
+                </a>
+              ) : (
+                <Link
+                  className="b2b-quote-action-btn secondary"
+                  href={`/${locale}/contact`}
+                  aria-label="تماس با مهندس فروش"
+                >
+                  <FiPhoneCall size={15} aria-hidden="true" />
+                  <span>گفت‌وگو با مهندس فروش</span>
+                </Link>
+              )}
             </div>
           </div>
         )}

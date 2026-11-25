@@ -192,10 +192,11 @@ class ProductSerializer(serializers.ModelSerializer):
     price = serializers.SerializerMethodField()
     brand = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
+    has_documents = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
-        fields = ("id", "code", "name", "name_fa", "name_en", "slug", "category", "category_tree", "unit", "description", "technical_specs", "is_active", "images", "on_hand_quantity", "reserved_quantity", "available_quantity", "price", "brand", "created_at", "updated_at")
+        fields = ("id", "code", "name", "name_fa", "name_en", "slug", "category", "category_tree", "unit", "description", "technical_specs", "is_active", "images", "on_hand_quantity", "reserved_quantity", "available_quantity", "price", "brand", "has_documents", "created_at", "updated_at")
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -206,6 +207,9 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def get_description(self, obj):
         return rich_text_to_html(obj.description)
+
+    def get_has_documents(self, obj):
+        return any(doc.is_active and doc.is_published for doc in obj.documents.all())
 
     def get_brand(self, obj):
         brand = getattr(obj, "brand", None)

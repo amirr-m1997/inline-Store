@@ -17,6 +17,7 @@ export type CatalogProduct = {
   category: { name_fa: string } | null;
   images: { image: string; alt_text: string; alt_fa?: string; is_primary?: boolean }[];
   price: { original_amount: string; final_amount: string; discount_percentage: string } | null;
+  has_documents?: boolean;
 };
 
 export function ProductCard({ product, priority = false, locale = "fa" }: { product: CatalogProduct; priority?: boolean; locale?: string }) {

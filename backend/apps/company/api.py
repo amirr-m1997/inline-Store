@@ -328,10 +328,15 @@ def company_stats(request):
     from apps.catalog.models import Product
     from .models import CompanyCertification, CompanyLocation
 
-    locations_count = CompanyLocation.objects.filter(is_active=True).count()
+    locations_count = without_demo_content(CompanyLocation.objects.filter(is_active=True, is_published=True)).count()
     locations_label = f"{locations_count}+" if locations_count else "۱۲+"
 
-    certs_count = CompanyCertification.objects.filter(is_published=True).count()
+    certs_count = without_demo_content(
+        CompanyCertification.objects.filter(
+            is_published=True,
+            verification_status=CompanyCertification.VerificationStatus.VERIFIED,
+        )
+    ).count()
     certs_label = f"{certs_count}" if certs_count else "۹"
 
     products_count = Product.objects.filter(is_active=True).count()
